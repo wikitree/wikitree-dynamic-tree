@@ -24,7 +24,8 @@
  * worthwhile to attempt it. You are welcome to prove me wrong, but you do it. :)  [Riël Smit, 4 Sep 2023]
  */
 
-import { Couple } from "./couple.js";
+import { Couple } from "../compactDescendantsTree/couple.js";
+import { Ancestors } from "../compactDescendantsTree/ancestors.js";
 import { showTree } from "./display.js";
 import { Utils } from "../shared/Utils.js";
 import { spell } from "../../lib/utilities.js";
@@ -49,6 +50,8 @@ export class CCTE {
            (e.g. in a marriage, or the parents of a child - a couple in other words) and shows the ancestors
            of both members of the couple. You can expand and contract the tree and change its focus as you please.</p>
         <p>Duplicate nodes are flagged with coloured squares. Click on the square to highlight the other copies.</p>
+        <p>The names of people will be shortened automatically if their name would overlap another node in the tree.
+           If you want the full name to be displayed, adjust the Edge and/or Height Factor to move nodes further apart.</p>
         <p>Navigation Summary</p>
         <ul>
             <li>Click in a grayed-out circle to expand the tree at that node through the loading of more people.
@@ -72,7 +75,7 @@ export class CCTE {
 
     static peopleCache;
     static ancestorRoot;
-    static descendantRoot;
+    static userAncestors;
 
     constructor(containerSelector, peopleCache) {
         CCTE.peopleCache = peopleCache;
@@ -102,6 +105,12 @@ export class CCTE {
             <label title="Determines the horizontal distance between generations. Adjust this if names overlap.">
               Edge Factor
               <input id="edgeFactor" type="number" value="200" step="10" />
+            </label>
+          </td>
+          <td>
+            <label title="Draw a box around my direct ancestors (if any)." class="left">
+              <input id="flagAncestors" type="checkbox" />
+              Flag my direct ancestors
             </label>
           </td>
           <td>
@@ -171,7 +180,7 @@ export class CCTE {
               <input id="cctTHFactor" type="number" min="1" value="55" />
             </label>
           </td>
-          <td>
+          <td colspan="2">
             <label
               title="Position couples along the horizontal tree axis relative to the year of birth of the indicated partner."
               class="left">
@@ -330,6 +339,29 @@ export class CCTE {
                 $("#drawTreeButton").click();
             }
         });
+        $("#flagAncestors")
+            .off("change")
+            .on("change", async function () {
+                if (this.checked) {
+                    const loggedInUserId = window.wtViewRegistry.session.lm.user.id;
+                    if (!loggedInUserId) {
+                        window.wtViewRegistry.showWarning(
+                            "You need to be logged in for your ancestors to be highlighted."
+                        );
+                        CCTE.userAncestors = await Ancestors.get();
+                    } else {
+                        console.log(
+                            `Loading ancestors for watcher ${window.wtViewRegistry.session.lm.user.name} (${loggedInUserId})`
+                        );
+                        Utils.showShakingTree("controlBlock");
+                        CCTE.userAncestors = await Ancestors.get(loggedInUserId);
+                        Utils.hideShakingTree();
+                    }
+                } else {
+                    CCTE.userAncestors = await Ancestors.get();
+                }
+                $("#drawTreeButton").click();
+            });
         $(
             "#cctBrickWallColour, #cctLinkLineColour, #hideTreeHeader, #anonLiving, #privatise, " +
                 "#noParents, #oneParent, #noNoSpouses, #noNoChildren"
@@ -385,6 +417,10 @@ export class CCTE {
         $(document).off("keyup", CCTE.closePopUp).on("keyup", CCTE.closePopUp);
     }
 
+    static createCouple(idPrefix, cd) {
+        return new Couple(idPrefix, cd, CCTE.peopleCache);
+    }
+
     static closePopUp(e) {
         if (e.key === "Escape") {
             // Find the popup with the highest z-index and close it
@@ -425,6 +461,7 @@ export class CCTE {
             checkedScale: document.querySelector('input[name = "theBirthScale"]:checked').value,
             privatise: document.getElementById("privatise").checked,
             anonLiving: document.getElementById("anonLiving").checked,
+            flagAncestors: document.getElementById("flagAncestors").checked,
         };
         // console.log(`Saving options ${JSON.stringify(options)}`);
         Utils.setCookie(CCTE.#COOKIE_NAME, JSON.stringify(options));
@@ -448,6 +485,7 @@ export class CCTE {
             if (["a", "b", "no"].includes(opt.checkedScale)) $(`#birthScale${opt.checkedScale}`).attr("checked", 1);
             $("#privatise").attr("checked", opt.privatise);
             $("#anonLiving").attr("checked", opt.anonLiving);
+            $("#flagAncestors").attr("checked", opt.flagAncestors);
         }
     }
 
@@ -458,14 +496,31 @@ export class CCTE {
         condLog(`loadAndDraw(${id})`);
         const self = this;
         Utils.showShakingTree("controlBlock", function () {
-            self.richLoad(id).then(function (person) {
+            let userAncestorsPromise;
+            if (document.getElementById("flagAncestors").checked) {
+                const loggedInUserId = window.wtViewRegistry.session.lm.user.id;
+                if (!loggedInUserId) {
+                    window.wtViewRegistry.showWarning("You need to be logged in for your ancestors to be highlighted.");
+                    userAncestorsPromise = Ancestors.get();
+                } else {
+                    console.log(
+                        `Loading ancestors for watcher ${window.wtViewRegistry.session.lm.user.name} (${loggedInUserId})`
+                    );
+                    // Start loading ancestors, don't await
+                    userAncestorsPromise = Ancestors.get(loggedInUserId);
+                }
+            } else {
+                userAncestorsPromise = Ancestors.get();
+            }
+
+            self.richLoad(id).then(async function (person) {
+                if (!CCTE.userAncestors) {
+                    CCTE.userAncestors = await userAncestorsPromise;
+                }
                 Utils.hideShakingTree();
                 condLog(`=======RICH_LOADed ${person.toString()}`, person);
-                // const aRoot = new Couple("A", { a: person, isRoot: true });
-                // const dRoot = new Couple("D", { a: person, isRoot: true });
-                const aRoot = Couple.get("A", { a: person, isRoot: true });
-                //const dRoot = Couple.get("D", { a: person, isRoot: true });
-                self.drawTree(aRoot, aRoot);
+                const aRoot = CCTE.createCouple("A", { a: person, isRoot: true });
+                self.drawTree(aRoot);
             });
         });
     }
@@ -597,34 +652,11 @@ export class CCTE {
         const oldPerson = couple.getInFocus();
         const oldSpouse = couple.getNotInFocus();
         const wasNotExpanded = oldPerson && !oldPerson.isFullyEnriched();
-        // if (direction != CCTE.DESCENDANTS) {
-        //     // Restore ancestors if we have contracted them before
-        //     if (couple.a && couple.a._data._Parents) {
-        //         couple.a._data.Parents = couple.a._data._Parents;
-        //         delete couple.a._data._Parents;
-        //     }
-        //     if (couple.b && couple.b._data._Parents) {
-        //         couple.b._data.Parents = couple.b._data._Parents;
-        //         delete couple.b._data._Parents;
-        //     }
-        // }
-        // if (direction != CCTE.ANCESTORS) {
-        //     // Restore descendants if we have contracted them before
-        //     if (couple.a && couple.a._data._Children) {
-        //         couple.a._data.Children = couple.a._data._Children;
-        //         delete couple.a._data._Children;
-        //     }
-        //     if (couple.b && couple.b._data._Children) {
-        //         couple.b._data.Children = couple.b._data._Children;
-        //         delete couple.b._data._Children;
-        //     }
-        // }
         // const isNowExpanded = oldPerson && oldPerson.isFullyEnriched();
         if (wasNotExpanded) {
             await self.richLoad(oldPerson.getId(), oldSpouse?.isNoSpouse ? null : oldSpouse?.getId(), direction);
             const treeInfo = this.validateAndSetGenerations();
             condLog(`expand done for ${couple.toString()}`, couple);
-            // couple.expanded = true;
             return treeInfo;
         } else {
             console.error("Attempted to expand for enriched person", oldPerson);
@@ -633,24 +665,6 @@ export class CCTE {
             });
         }
     }
-
-    // removeAncestors(couple) {
-    //     const self = this;
-    //     condLog(`Removing Ancestors for ${couple.toString()}`, couple);
-    //     return couple.removeAncestors().then(function () {
-    //         couple.expanded = false;
-    //         self.drawTree();
-    //     });
-    // }
-
-    // removeDescendants(couple) {
-    //     const self = this;
-    //     condLog(`Removing Descendants for ${couple.toString()}`, couple);
-    //     return couple.removeDescendants().then(function () {
-    //         couple.expanded = false;
-    //         self.drawTree();
-    //     });
-    // }
 
     /**
      * This is the function that gets called (via callbacks in the tree) when the change partner button
@@ -664,7 +678,6 @@ export class CCTE {
 
         // First make sure we have all the data for the new partner profile
         const newPartner = await this.richLoad(newPartnerID, personId);
-        let foundRoot = false;
 
         // Find the couple node to change, remove it from the page and then change it
         d3.select(`#${coupleId}`)
@@ -677,13 +690,32 @@ export class CCTE {
         this.drawTree();
 
         function changeIt(couple) {
-            if ([couple.a?.getId(), couple.b?.getId()].includes(+personId)) {
+            if ([couple.a, couple.b].includes(+personId)) {
                 const subTree = couple.idPrefix.startsWith("A") ? "ancestor" : "descendant";
                 condLog(
                     `Changing partner for ${personId} in ${subTree} couple ${couple.toString()} to ${newPartnerID}`
                 );
-                foundRoot = foundRoot || couple.isRoot;
-                couple.changePartner(personId, newPartner);
+                const inFocus = couple.inFocus;
+                if (couple.isRoot) {
+                    // We need to create a new root couple because couple.changePartner does not change the couple, just the
+                    // underliying people.
+                    let aP, bP;
+                    if (couple.a == +personId) {
+                        aP = couple.aPerson();
+                        bP = newPartner;
+                    } else {
+                        aP = newPartner;
+                        bP = couple.bPerson();
+                    }
+                    CCTE.ancestorRoot = CCTE.createCouple("A", {
+                        a: aP,
+                        b: bP,
+                        focus: inFocus,
+                        isRoot: true,
+                    });
+                } else {
+                    couple.changePartner(+personId, newPartner);
+                }
                 condLog(`Couple changed to: ${couple.toString()}`, couple);
             } else {
                 console.error(`Retrieved wrong couple ${couple.toString()}. It does not contain profile ${personId}`);
@@ -702,13 +734,10 @@ export class CCTE {
     /**
      * Draw/redraw the tree
      */
-    drawTree(ancestorRoot, descendantRoot) {
-        condLog("=======drawTree for:", ancestorRoot, descendantRoot, CCTE.peopleCache);
+    drawTree(ancestorRoot) {
+        condLog("=======drawTree for:", ancestorRoot, CCTE.peopleCache);
         if (ancestorRoot) {
             CCTE.ancestorRoot = ancestorRoot;
-        }
-        if (descendantRoot) {
-            CCTE.descendantRoot = descendantRoot;
         }
         CCTE.saveOptionCookies();
         const tInfo = this.validateAndSetGenerations();
@@ -719,9 +748,6 @@ export class CCTE {
         condLog("draw ancestorTree:", CCTE.ancestorRoot);
         this.clearDisplay();
         showTree(this, tInfo, connectors, hideTreeHeader);
-        // condLog("draw descendantTree:", this.descendantTree);
-        // this.descendantTree.draw();
-        // condLog("drawTree done", this.ancestorTree, this.descendantTree);
     }
 
     /**
@@ -749,23 +775,35 @@ export class CCTE {
 
         function pushD3Child(side) {
             if (couple[`${side}IsLinkToPerson`]) return;
-            const person = couple[side];
-            if (person?.getLoadedParentIds()) {
+            const person = couple.get(side);
+            if (!person?.parentsCollapsed?.includes(couple.idPrefix) && person?.getLoadedParentIds()) {
                 const father = person.getFather();
                 const mother = person.getMother();
                 if (father || mother) {
                     // children.push(new Couple(couple.idPrefix + `_${side}`, { a: father, b: mother }));
-                    const cpl = Couple.get(couple.idPrefix + `_${side}`, { a: father, b: mother });
-                    if (alreadyInTree && alreadyInTree.has(father?.getId())) {
-                        cpl.aIsLinkToPerson = true;
-                    } else if (alreadyInTree && father) {
-                        alreadyInTree.add(father.getId());
+                    const cpl = CCTE.createCouple(couple.idPrefix + `_${side}`, { a: father, b: mother });
+                    if (alreadyInTree) {
+                        if (alreadyInTree.has(father?.getId())) {
+                            cpl.aIsLinkToPerson = true;
+                        } else if (father) {
+                            alreadyInTree.add(father.getId());
+                        }
+                        if (alreadyInTree.has(mother?.getId())) {
+                            cpl.bIsLinkToPerson = true;
+                        } else if (mother) {
+                            alreadyInTree.add(mother.getId());
+                        }
                     }
-                    if (alreadyInTree && alreadyInTree.has(mother?.getId())) {
-                        cpl.bIsLinkToPerson = true;
-                    } else if (alreadyInTree && mother) {
-                        alreadyInTree.add(mother.getId());
-                    }
+                    // if (alreadyInTree && alreadyInTree.has(father?.getId())) {
+                    //     cpl.aIsLinkToPerson = true;
+                    // } else if (alreadyInTree && father) {
+                    //     alreadyInTree.add(father.getId());
+                    // }
+                    // if (alreadyInTree && alreadyInTree.has(mother?.getId())) {
+                    //     cpl.bIsLinkToPerson = true;
+                    // } else if (alreadyInTree && mother) {
+                    //     alreadyInTree.add(mother.getId());
+                    // }
                     children.push(cpl);
                 }
             }
@@ -787,10 +825,11 @@ export class CCTE {
         // Clear each person's generation info and add them to the byWtId map
         for (const person of people.values()) {
             person.clearGenerations();
+            person.isUserAncestor = CCTE.userAncestors.has(person.getId());
             tInfo.peopleByWtId.set(person.getWtId(), person);
         }
-        const aMaxGen = rootCouple.a ? validate_and_set_generations(rootCouple.a.getId(), 1, new Set(), 0) : 0;
-        const bMaxGen = rootCouple.b ? validate_and_set_generations(rootCouple.b.getId(), 1, new Set(), 0) : 0;
+        const aMaxGen = rootCouple.a ? validate_and_set_generations(rootCouple.a, 1, new Set(), 0) : 0;
+        const bMaxGen = rootCouple.b ? validate_and_set_generations(rootCouple.b, 1, new Set(), 0) : 0;
         tInfo.maxGeneration = Math.max(aMaxGen, bMaxGen);
 
         // Collect the duplicates and assign each a unique number (for colouring later)
@@ -958,7 +997,7 @@ export class CCTE {
         return allPaths;
 
         function DFS(srcNode, dstWtId, path, allPaths) {
-            if (srcNode.a?.getWtId() == dstWtId || srcNode.b?.getWtId() == dstWtId) {
+            if (srcNode.aPerson()?.getWtId() == dstWtId || srcNode.bPerson()?.getWtId() == dstWtId) {
                 allPaths.push([...path]);
             } else {
                 for (const adjnode of CCTE.getD3Children(srcNode)) {

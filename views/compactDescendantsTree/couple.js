@@ -9,15 +9,6 @@ export class Couple {
     static L = -1; // a
     static R = 1; // b
 
-    // static get(idPrefix, cd) {
-    //     const c = new Couple(idPrefix, cd);
-    //     return c;
-    // }
-
-    static formId(prefix, idA, idB) {
-        return `${prefix}-${idA || ""}-${idB || ""}`;
-    }
-
     #peopleCache;
     constructor(idPrefix, { a, b, focus, isRoot = false } = {}, peopleCache) {
         if (!peopleCache) {
@@ -142,16 +133,29 @@ export class Couple {
      *     D_2_0_1-<aId-<bId>-c2
      * @returns The ID of the node represented by this couple
      */
-    getId() {
-        const hCnt = this.collapsedChildrenCount();
-        return this.getIdSansCollapsed() + (hCnt ? `-c${hCnt}` : "");
+    getId(withCollapse = true) {
+        let descColl = "";
+        let aId = this.a || "";
+        let bId = this.b || "";
+
+        if (withCollapse) {
+            const ancestorTree = this.idPrefix.startsWith("A");
+            if (ancestorTree) {
+                if (aId && this.aPerson()?.parentsCollapsed?.includes(this.idPrefix)) aId += "c";
+                if (bId && this.bPerson()?.parentsCollapsed?.includes(this.idPrefix)) bId += "c";
+            } else {
+                const hCnt = this.collapsedChildrenCount();
+                if (hCnt) descColl = `-c${hCnt}`;
+            }
+        }
+        return `${this.idPrefix}-${aId}-${bId}${descColl}`;
     }
 
     /**
      * @returns The unique couple id, but without the last, collapsed children count part
      */
     getIdSansCollapsed() {
-        return Couple.formId(this.idPrefix, this.a, this.b);
+        return this.getId(false);
     }
 
     getInFocus() {
@@ -168,57 +172,6 @@ export class Couple {
         } else {
             return side == "a";
         }
-    }
-
-    // joint`ChildrenIds is an array of ids of children that both partners have in common.
-    // This is used in descendant trees to show the children of a couple and is used to
-    // determine the D3 children of tree nodes.
-    getJointChildrenIds() {
-        return [...this.getUncollapsedChildrenIds(), ...this.getCollapsedDescendantIds()];
-    }
-
-    jointChildrenCount() {
-        const fP = this.getInFocus();
-        return (
-            (fP.jointChildrenIds ? fP.jointChildrenIds.length : 0) +
-            (fP.collapsedChildrenIds ? fP.collapsedChildrenIds.length : 0)
-        );
-    }
-
-    collapsedChildrenCount() {
-        const fP = this.getInFocus();
-        return fP.collapsedChildrenIds ? fP.collapsedChildrenIds.length : 0;
-    }
-
-    getUncollapsedChildrenIds() {
-        return this.getInFocus().jointChildrenIds || [];
-    }
-
-    setJointChildrenIds(parent, otherParent) {
-        const childrenIds = parent.getChildrenIds() || new Set();
-        const hidden = new Set(parent.collapsedChildrenIds || []);
-        let list = [];
-
-        if (typeof otherParent == "undefined" || otherParent.isNoSpouse) {
-            list = [...childrenIds];
-        } else {
-            const otherChildrenIds = otherParent.getChildrenIds() || new Set();
-            for (const id of otherChildrenIds) {
-                if (childrenIds.has(id) && !hidden.has(id)) {
-                    list.push(id);
-                }
-            }
-        }
-        parent.jointChildrenIds = list;
-    }
-
-    getCollapsedDescendantIds() {
-        return this.getInFocus().collapsedChildrenIds || [];
-    }
-
-    hasCollapsedDescendants() {
-        const fP = this.getInFocus();
-        return fP.collapsedChildrenIds && fP.collapsedChildrenIds.length > 0;
     }
 
     getNrOlderGenerations() {
@@ -304,47 +257,152 @@ export class Couple {
             : this.aPerson()?.hasAChild() || this.bPerson()?.hasAChild();
     }
 
-    collapseAllDescendants() {
+    // jointChildrenIds is ultimately an array of ids of children that both partners have in common.
+    // We keep two maps (on the in-focus partner), shownChildrenIds and hiddenChildrenIds, with the
+    // couple id prefix as key so that we can collapse parts of duplicated subtrees (in case of
+    // pedigree collapse) separately.
+    // This is used to list all the children of a couple and is used in descendant trees to
+    // determine the D3 children of tree nodes.
+    getJointChildrenIds() {
+        return [...this.getUncollapsedChildrenIds(), ...this.getCollapsedChildrenIds()];
+    }
+
+    getUncollapsedChildrenIds() {
+        const fPerson = this.getInFocus();
+        const shown = fPerson.shownChildrenIds?.get(this.idPrefix);
+        return shown || [];
+    }
+
+    getCollapsedChildrenIds() {
+        const fPerson = this.getInFocus();
+        const hidden = fPerson.hiddenChildrenIds?.get(this.idPrefix);
+        return hidden || [];
+    }
+
+    hasCollapsedChildren() {
+        const fPerson = this.getInFocus();
+        const hidden = fPerson.hiddenChildrenIds?.get(this.idPrefix);
+        return hidden && hidden.length > 0;
+    }
+
+    jointChildrenCount() {
+        const fPerson = this.getInFocus();
+        const shown = fPerson.shownChildrenIds?.get(this.idPrefix);
+        const hidden = fPerson.hiddenChildrenIds?.get(this.idPrefix);
+        return (shown ? shown.length : 0) + (hidden ? hidden.length : 0);
+    }
+
+    collapsedChildrenCount() {
+        const fPerson = this.getInFocus();
+        const hidden = fPerson.hiddenChildrenIds?.get(this.idPrefix);
+        return hidden ? hidden.length : 0;
+    }
+
+    setJointChildrenIds(parent, otherParent) {
+        const childrenIds = parent.getChildrenIds() || new Set();
+        let common = [];
+
+        if (typeof otherParent == "undefined" || otherParent.isNoSpouse) {
+            common = [...childrenIds];
+        } else {
+            const otherChildrenIds = otherParent.getChildrenIds() || new Set();
+            for (const id of otherChildrenIds) {
+                if (childrenIds.has(id)) {
+                    common.push(id);
+                }
+            }
+        }
+
+        const oldHidden = parent.hiddenChildrenIds?.get(this.idPrefix) || [];
+        const newHidden = [];
+        const shown = [];
+        for (const id of common) {
+            if (oldHidden.includes(id)) {
+                newHidden.push(id);
+            } else {
+                shown.push(id);
+            }
+        }
+        this.updateChildren(parent, shown, newHidden);
+    }
+
+    collapseAllChildren() {
         // Assume this is a couple in a descendant tree and we want to hide their descendants
-        // Move all the entries in jointChildren to collapsedChildren, so we can restore them later.
+        // Move all the entries in shownChildren to hiddenChildren, so we can restore them later.
         // Not that collapsedChildren may already contain some children that were previously collapsed
         // individually.
-        const fP = this.getInFocus();
-
-        if (!fP.jointChildrenIds || fP.jointChildrenIds.length == 0) {
+        const fPerson = this.getInFocus();
+        const shown = fPerson.shownChildrenIds?.get(this.idPrefix);
+        if (!shown || shown.length == 0) {
             return;
         }
-        fP.collapsedChildrenIds = fP.collapsedChildrenIds || []; // ensure it exists
-        // move all children to savedChildren
-        fP.collapsedChildrenIds = fP.collapsedChildrenIds.concat(fP.jointChildrenIds);
-        fP.jointChildrenIds = [];
+        let hidden = fPerson.hiddenChildrenIds?.get(this.idPrefix) || [];
+
+        // move all children to hiddenChildren
+        hidden = hidden.concat(shown);
+        this.updateChildren(fPerson, [], hidden);
     }
 
-    collapseDescendant(childId) {
-        const fP = this.getInFocus();
-        fP.collapsedChildrenIds = fP.collapsedChildrenIds || []; // ensure it exists
-        moveChildById(childId, fP.jointChildrenIds, fP.collapsedChildrenIds);
+    collapseChild(childId) {
+        const fPerson = this.getInFocus();
+        const shown = fPerson.shownChildrenIds?.get(this.idPrefix) || [];
+        if (!shown.includes(childId)) return;
+
+        const hidden = fPerson.hiddenChildrenIds?.get(this.idPrefix) || [];
+        moveChildById(childId, shown, hidden);
+        this.updateChildren(fPerson, shown, hidden);
     }
 
-    expandAllCollapsedDescendants() {
+    expandAllCollapsedChildren() {
         // If this couple has collapsed children, expand them by moving them back to jointChildren.
         // Returns true if there were collapsed children to expand.
-        const fP = this.getInFocus();
-        if (fP.collapsedChildrenIds && fP.collapsedChildrenIds.length > 0) {
-            if (fP.jointChildrenIds) {
-                fP.jointChildrenIds = fP.jointChildrenIds.concat(fP.collapsedChildrenIds);
-            } else {
-                fP.jointChildrenIds = fP.collapsedChildrenIds;
-            }
-            fP.collapsedChildrenIds = [];
+        const fPerson = this.getInFocus();
+        const hidden = fPerson.hiddenChildrenIds?.get(this.idPrefix) || [];
+        if (hidden.length > 0) {
+            let shown = fPerson.shownChildrenIds?.get(this.idPrefix) || [];
+            shown = shown.concat(hidden);
+            this.updateChildren(fPerson, shown, []);
             return true;
         }
         return false;
     }
 
-    expandCollapsedDescendant(childId) {
-        const fP = this.getInFocus();
-        moveChildById(childId, fP.collapsedChildrenIds, fP.jointChildrenIds);
+    expandCollapsedChild(childId) {
+        const fPerson = this.getInFocus();
+        const hidden = fPerson.hiddenChildrenIds?.get(this.idPrefix) || [];
+        if (!hidden.includes(childId)) return;
+        const shown = fPerson.shownChildrenIds?.get(this.idPrefix) || [];
+        moveChildById(childId, hidden, shown);
+        this.updateChildren(fPerson, shown, hidden);
+    }
+
+    hasCollapsedParents(side) {
+        return this.get(side)?.parentsCollapsed?.includes(this.idPrefix);
+    }
+
+    collapseParents(side) {
+        if (this[side]) {
+            const person = this.get(side);
+            person.parentsCollapsed = person.parentsCollapsed || [];
+            person.parentsCollapsed.push(this.idPrefix);
+        }
+    }
+
+    expandCollapsedParents(side) {
+        const p = this.get(side);
+        if (p && p.parentsCollapsed?.includes(this.idPrefix)) {
+            const i = this.idPrefix;
+            p.parentsCollapsed = p.parentsCollapsed.filter((p) => p != i);
+            return true;
+        }
+        return false;
+    }
+
+    updateChildren(person, shown, hidden) {
+        person.hiddenChildrenIds = person.hiddenChildrenIds || new Map();
+        person.hiddenChildrenIds.set(this.idPrefix, hidden);
+        person.shownChildrenIds = person.shownChildrenIds || new Map();
+        person.shownChildrenIds.set(this.idPrefix, shown);
     }
 
     toString() {
