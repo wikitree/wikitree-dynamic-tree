@@ -77,6 +77,30 @@ div.cc7Table #tree {
 .cc7notes h2 {
   font-size: 1.2em;
 }
+
+.cc7notes .note-header {
+  display: flex;
+  justify-content: space-between; /* pushes date to the right */
+  align-items: center; /* vertically center label + select and date */
+  width: 100%; /* full width of popup */
+  margin-bottom: 0.5em;
+}
+
+.cc7notes .note-header label {
+  display: flex; /* keeps <b>Status:</b> and select together */
+  align-items: center;
+}
+
+.cc7notes .note-header select {
+  margin-left: 0.2em; /* spacing between Status label and dropdown */
+}
+
+.cc7notes .last-modified {
+  font-size: 0.75em;
+  color: #555;
+  white-space: nowrap; /* keep date on a single line */
+}
+
 .cc7Table .degree.hasNote {
   position: relative; /* Ensure the gradient respects the td's bounds */
 }
