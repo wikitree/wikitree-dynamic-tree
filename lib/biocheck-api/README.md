@@ -9,6 +9,7 @@ contexts.
 * Biography.js
 * BioCheckPerson.js
 * SourceRules.js
+
 The Bio Check app and WikiTree Dynamic Tree make use of
 * BioCheckTemplateManager
 
@@ -30,8 +31,12 @@ import { Biography } from "./Biography.js";
   if (canUseThis) {
     let biography = new Biography(theSourceRules);
     biography.parse(bioString, thePerson, searchString);
-    let isValid = biography.validate(); 
+    let hasValidSources = biography.validate(); 
+
+    // optionally determine if biography has any problems
+    let hasProblems = biography.hasProblems();
   }
+
 
   // now report from biography (use getters) as desired or just the boolean return 
   // you might want to report any biography that is not valid from the validate()
@@ -57,6 +62,7 @@ Only contains a subset of the complete set of data available.
 Expects the profile to contain the following fields from the API:
 Id,Name,IsLiving,Privacy,Manager,IsMember,
 BirthDate,DeathDate,BirthDateDecade,DeathDateDecade,
+BirthLocation,DeathLocation,
 FirstName,RealName,LastNameCurrent,LastNameAtBirth,Mother,Father,DataStatus,Bio
 
 ### canUse
@@ -128,6 +134,12 @@ Returns **[Boolean][7]** true if profile for a member
 Is profile an orphan
 
 Returns **[Boolean][7]** true if profile is an orphan
+
+### hasLocation
+
+Does profile have either birth or death location
+
+Returns **[Boolean][7]** true if either location present
 
 ### getPrivacy
 
@@ -232,9 +244,9 @@ Send request to load templates from WT+
 
 Returns **any** promise for use with loadTemplates
 
-### loadTemplates
+### loadPromisedTemplates
 
-load Templates - wait for load to complete
+load promised Templates - wait for load to complete
 
 #### Parameters
 
@@ -291,6 +303,14 @@ used when adding a new person in basic mode.
 *   `thePerson`  {BioCheckPerson} person to check
 
 Returns **[Boolean][7]** true if sources found.
+
+### hasProblems
+
+Does biography have problems.
+problems include: no valid sources, no sources, empty,
+marked unsourced, undated, has style issues
+
+Returns **[Boolean][7]** true if bio has problems
 
 ### isEmpty
 
@@ -616,6 +636,39 @@ assumes the leading {{ removed and line is lower case
 *   `line` **[String][8]** to test
 
 Returns **[String][8]** status value or blank if not a research notes box
+
+### getNavBoxStatus
+
+Return status value for Nav Box
+assumes the leading {{ removed and line is lower case
+
+#### Parameters
+
+*   `line` **[String][8]** to test
+
+Returns **[String][8]** status value or blank if not a nav box
+
+### getProjectBoxStatus
+
+Return status value for Project Box
+assumes the leading {{ removed and line is lower case
+
+#### Parameters
+
+*   `line` **[String][8]** to test
+
+Returns **[String][8]** status value or blank if not a Project box
+
+### getStickerStatus
+
+Return status value for Sticker
+assumes the leading {{ removed and line is lower case
+
+#### Parameters
+
+*   `line` **[String][8]** to test
+
+Returns **[String][8]** status value or blank if not a Project box
 
 ### isProjectBox
 
