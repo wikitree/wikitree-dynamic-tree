@@ -172,7 +172,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Super (Big Family) Tree app";
     const AboutPreamble =
         "The Super Big Family Tree app was originally created to be a member of the WikiTree Tree Apps.<br>It is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "29 May 2025";
+    const AboutUpdateDate = "31 Oct 2025";
     const AboutAppIcon = `<img height=30px src="https://apps.wikitree.com/apps/clarke11007/pix/SuperBigFamTree.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers = "Steve Adey";
@@ -3301,7 +3301,7 @@ import { PDFs } from "../shared/PDFs.js";
 
         let linesDIV = document.getElementById("theConnectors");
 
-        SuperBigFamView.HlinesATC = [];
+        SuperBigFamView.HlinesATC = []; // ATC = Air Traffic Controller - array created to avoid collisions
         SuperBigFamView.VlinesATC = [];
         SuperBigFamView.VlinesATCpeep = [];
 
@@ -5363,9 +5363,12 @@ import { PDFs } from "../shared/PDFs.js";
                     childrenMaxX
                 );
 
+                let expanderSVGforThisFamily = "";
                 drawColour = "black";
                 let backlitColour = getBackgroundColourForLeaf(primaryLeaf);
                 let tBarVertLineBacklit = "";
+                let expanderDirection = "-|-";
+
                 if (doingDirectAncestorCode > "") {
                     tBarVertLineBacklit =
                         `<polyline points="` +
@@ -5422,6 +5425,14 @@ import { PDFs } from "../shared/PDFs.js";
 
                 // condLog(tBarVertLine);
 
+                expanderSVGforThisFamily = getExpanderSVGcode(
+                    centreX,
+                    crossBarY,
+                    backlitColour,
+                    "expander4" + code,
+                    expanderDirection
+                );
+
                 let dropLines = "";
                 for (let ch = 0; ch < childrenXs.length; ch++) {
                     let kidBacklit = "";
@@ -5455,7 +5466,7 @@ import { PDFs } from "../shared/PDFs.js";
                 }
                 // condLog(dropLines);
                 if (childrenXs.length > 0) {
-                    allLinesPolySVG += equalsLine + tBarVertLine + dropLines;
+                    allLinesPolySVG += equalsLine + tBarVertLine + dropLines; // + expanderSVGforThisFamily;
                     addCrossBarYtoChunkYsList(primaryLeaf.Chunk, crossBarY);
                 } else {
                     allLinesPolySVG += equalsLine;
@@ -7779,6 +7790,102 @@ import { PDFs } from "../shared/PDFs.js";
         SuperBigFamView.theLeaves = theLeaves;
         SuperBigFamView.drawHalos();
     }
+
+    SuperBigFamView.expanderClicked = function (id) {
+        console.log("expanderClicked for id:", id);
+    };
+
+    function getExpanderSVGcode(x, y, clr, id, tShape = "-|-") {
+        // tShape options: -|- , -|, |-
+        let expWidth = 100;
+        let expHeight = 50;
+        let expHeightUp = 30;
+        // let expHeightDn = 20;
+
+        // expander SVG code starter + Rectangle outline
+        let expSVG =
+            "<g id='" + id + "' class='expanderSVG' onclick='SuperBigFamView.expanderClicked(\"" + id + "\")'>";
+        expSVG +=
+            "<rect id=" +
+            id +
+            "Rect x=" +
+            (x - expWidth / 2) +
+            " y=" +
+            (y - expHeightUp) +
+            " width=" +
+            expWidth +
+            " height=" +
+            expHeight +
+            " stroke='" +
+            clr +
+            "' stroke-width=2 fill='#FF01' stroke-dasharray='5,5'></rect>";
+        expSVG +=
+            "<rect id=" +
+            id +
+            "Rect x=" +
+            (x - expWidth / 2) +
+            " y=" +
+            (y - expHeightUp) +
+            " width=" +
+            expWidth +
+            " height=" +
+            expHeight +
+            " stroke='#000'" +
+            " stroke-width=0.5 fill='none' stroke-dasharray='5,5'></rect>";
+
+        // expander SVG code - the lines
+        let expLeftEdge = x; // - expWidth / 2;
+        let expRightEdge = x; // + expWidth / 2;
+        if (tShape == "|-") {
+            expLeftEdge = x;
+        } else if (tShape == "-|") {
+            expRightEdge = x;
+        }
+
+        expSVG +=
+            "<polyline points='" +
+            // expLeftEdge +
+            // "," +
+            // y +
+            // "," +
+            // expRightEdge +
+            // "," +
+            // y +
+            // "," +
+            x +
+            "," +
+            y +
+            "," +
+            x +
+            "," +
+            (y - expHeightUp) +
+            "' fill='none' stroke='" +
+            clr +
+            "' stroke-width='9'></polyline>";
+        expSVG +=
+            "<polyline points='" +
+            // expLeftEdge +
+            // "," +
+            // y +
+            // "," +
+            // expRightEdge +
+            // "," +
+            // y +
+            // "," +
+            x +
+            "," +
+            y +
+            "," +
+            x +
+            "," +
+            (y - expHeightUp) +
+            "' fill='none' stroke='#000' stroke-width='3'></polyline>";
+        expSVG += "</g>";
+
+        return expSVG;
+    }
+
+    SuperBigFamView.getExpanderSVGcode = getExpanderSVGcode;
 
     function showInLawsAgain(theLeaves) {
         for (let a = 1; a < 10; a++) {
