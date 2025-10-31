@@ -59,6 +59,12 @@ export class CirclesView {
             document.getElementById("PDFgenButton").removeAttribute("disabled");
             document.getElementById("PDFgenButton").style.display = "revert";
             PDFgenPopupDIV.style.display = "block";
+
+            if (!rootPerson.LongName) {
+                if (rootPerson.LongNamePrivate) {
+                    rootPerson.LongName = rootPerson.LongNamePrivate;
+                }
+            }
             // PDFgenPopupDIV.style.zIndex = Utils.getNextZLevel();
             document.getElementById("PDFtitleText").value =
                 "CC" + cc7Degree + " Circles Chart for " + rootPerson.LongName;
@@ -1462,21 +1468,29 @@ export class CirclesView {
             SVGcode += CirclesView.doCircle(rootPerson, 0, 0, centralPersonDotDY); // degree = 0, x = 0, y = centralPersonDotDY (0 or a bit down underneath photo)
         }
 
+        condLog({ extraRadiusForCentralPerson });
+
         for (let person of CirclesView.currentSortedMap.values()) {
             const degree = person.Meta.Degrees;
             if (degree == 0) {
                 currentRadiusMultipler = 0;
             }
-            // console.log("degree", degree, "currentDegree", currentDegree);
+            // condLog("degree", degree, "currentDegree", currentDegree);
             if (degree > currentDegree) {
                 currentRadiusMultipler += radiusMultipler;
                 if (degree == 1) {
                     currentRadiusMultipler = Math.max(currentRadiusMultipler, extraRadiusForCentralPerson);
+                    condLog("CC1 currentRadiusMultipler:", currentRadiusMultipler);
                 }
-                // console.log("currentRadiusMultipler", currentRadiusMultipler);
+                if (degree == 2 && degreeCount[1] == 0) {
+                    currentRadiusMultipler = Math.max(currentRadiusMultipler, extraRadiusForCentralPerson);
+                    condLog("CC2 may have some  people, but CC1 had NO BODY !!!!  YIKES !!!!");
+                }
+                // condLog("currentRadiusMultipler", currentRadiusMultipler);
                 currentDegree = degree;
                 let regPolyRadius =
                     (fNameMultiplierFactor * 2 * CirclesView.dotRadius) / (2 * Math.sin(Math.PI / degreeCount[degree]));
+                condLog({ degree }, { regPolyRadius });
                 if (regPolyRadius > currentRadiusMultipler) {
                     // this means that at this radius, the circles are going to be overcrowded, on top of each other
                     if (regPolyRadius - currentRadiusMultipler < CirclesView.dotRadius) {
@@ -1701,7 +1715,7 @@ export class CirclesView {
     }
 
     static checkForDegree1CirclesToRevise() {
-        console.log("firstDegreeCirclesToRevise", this.firstDegreeCirclesToRevise);
+        condLog("firstDegreeCirclesToRevise", this.firstDegreeCirclesToRevise);
         if (this.firstDegreeCirclesToRevise.length > 0) {
             // REVISIT the degree 1 circles
             for (let f = 0; f < this.firstDegreeCirclesToRevise.length; f++) {
