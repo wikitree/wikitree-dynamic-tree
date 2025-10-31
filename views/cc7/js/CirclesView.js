@@ -416,17 +416,20 @@ export class CirclesView {
                 const thisRow = dt.rows[r];
                 if (thisRow) {
                     for (let c = 0; c < numCols; c++) {
-                        const thisEntry = thisRow.cells[c + 1].innerText;
+                        const thisCell = thisRow.cells[c + 1];
+                        if (thisCell && thisCell.innerText) {
+                            const thisEntry = thisRow.cells[c + 1].innerText;
 
-                        PDFs.thisPDFtextArray.push([
-                            thisEntry,
-                            125 + c * 40 + PDFs.thisPDFminX, //+ 140,
-                            5 + r * 20 + whereY,
-                            "helvetica",
-                            "normal",
-                            14,
-                            { align: "right", maxWidth: 40, fill: "black", strokeColor: "black" },
-                        ]);
+                            PDFs.thisPDFtextArray.push([
+                                thisEntry,
+                                125 + c * 40 + PDFs.thisPDFminX, //+ 140,
+                                5 + r * 20 + whereY,
+                                "helvetica",
+                                "normal",
+                                14,
+                                { align: "right", maxWidth: 40, fill: "black", strokeColor: "black" },
+                            ]);
+                        }
                     }
                 }
             }
