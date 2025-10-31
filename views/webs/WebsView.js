@@ -83,14 +83,14 @@ import { Utils } from "../shared/Utils.js";
     const FullAppName = "Ancestor Webs tree app";
     const AboutPreamble =
         "The Spider Webs app, originally created as a standalone WikiTree app, is the basis for this app.<br>The current Tree App version was renamed and created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "26 February 2025";
+    const AboutUpdateDate = "31 October 2025";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/ancWebs.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers = ""; //        "<A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
-    const AboutAssistants = "Rob Pavey, Riel Smit & Ian Beacall";
+    const AboutAssistants = "Rob Pavey, Riel Smit & Ian Beacall, Liza Gervais";
     const AboutLatestG2G =
         "https://www.wikitree.com/g2g/1716948/updates-safari-trails-settings-fanchart-fractal-supertree"; //"https://www.wikitree.com/g2g/1599363/recent-updates-to-the-fan-chart-tree-app-july-2023";
-    const AboutHelpDoc = "https://www.wikitree.com/wiki/Space:Ancestor_Webs_app";
+    const AboutHelpDoc = "https://www.wikitree.com/wiki/Space:Ancestor_Webs_app_-_Help_Page";
     const AboutOtherApps = "https://apps.wikitree.com/apps/clarke11007";
 
     const SVGbtnCLOSE = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
