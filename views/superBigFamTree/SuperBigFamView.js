@@ -172,7 +172,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Super (Big Family) Tree app";
     const AboutPreamble =
         "The Super Big Family Tree app was originally created to be a member of the WikiTree Tree Apps.<br>It is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "29 May 2025";
+    const AboutUpdateDate = "31 Oct 2025";
     const AboutAppIcon = `<img height=30px src="https://apps.wikitree.com/apps/clarke11007/pix/SuperBigFamTree.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers = "Steve Adey";
@@ -5466,7 +5466,7 @@ import { PDFs } from "../shared/PDFs.js";
                 }
                 // condLog(dropLines);
                 if (childrenXs.length > 0) {
-                    allLinesPolySVG += equalsLine + tBarVertLine + dropLines + expanderSVGforThisFamily;
+                    allLinesPolySVG += equalsLine + tBarVertLine + dropLines; // + expanderSVGforThisFamily;
                     addCrossBarYtoChunkYsList(primaryLeaf.Chunk, crossBarY);
                 } else {
                     allLinesPolySVG += equalsLine;
