@@ -9,6 +9,7 @@ contexts.
 * Biography.js
 * BioCheckPerson.js
 * SourceRules.js
+
 The Bio Check app and WikiTree Dynamic Tree make use of
 * BioCheckTemplateManager
 
@@ -24,11 +25,18 @@ import { Biography } from "./Biography.js";
   bioCheckTemplateManager.load();
 
   // For each person. Get the bio text and dates to test
+  // userId is the userId number, not the WikiTree-Id
   let thePerson = new BioCheckPerson();
-  let canUseThis = thePerson.canUse(profileObj, openOnly, ignorePre1500, userId);
-  let biography = new Biography(theSourceRules);
-  biography.parse(bioString, thePerson, searchString);
-  let isValid = biography.validate(); 
+  let canUseThis = thePerson.canUse(profileObj, openOnly, orphanOnly, ignorePre1500, userId);
+  if (canUseThis) {
+    let biography = new Biography(theSourceRules);
+    biography.parse(bioString, thePerson, searchString);
+    let hasValidSources = biography.validate(); 
+
+    // optionally determine if biography has any problems
+    let hasProblems = biography.hasProblems();
+  }
+
 
   // now report from biography (use getters) as desired or just the boolean return 
   // you might want to report any biography that is not valid from the validate()
@@ -54,6 +62,7 @@ Only contains a subset of the complete set of data available.
 Expects the profile to contain the following fields from the API:
 Id,Name,IsLiving,Privacy,Manager,IsMember,
 BirthDate,DeathDate,BirthDateDecade,DeathDateDecade,
+BirthLocation,DeathLocation,
 FirstName,RealName,LastNameCurrent,LastNameAtBirth,Mother,Father,DataStatus,Bio
 
 ### canUse
@@ -61,16 +70,17 @@ FirstName,RealName,LastNameCurrent,LastNameAtBirth,Mother,Father,DataStatus,Bio
 Build person from WikiTree API profile object
 and determine if it can be used to check sources and style
 This method is used from an app, either on app server or tree tools
+When requesting the profile using the WikiTree API, resolveRedirect should be used
 
 #### Parameters
 
 *   `profileObj` **[Object][6]** containing the profile as returned from WikiTree APIs
-*   `mustBeOpen` **[Boolean][7]** true if profile must not have a manager
-*   `mustBeOrphan` &#x20;
+*   `mustBeOpen` **[Boolean][7]** true if profile must be open privacy
+*   `mustBeOrphan` **[Boolean][7]** true if profile must not have a manager
 *   `ignorePre1500` **[Boolean][7]** true to ignore Pre1500 profiles
-*   `userId` **[String][8]** wikiTreeId of the person running the app
+*   `userId` **[String][8]** ID number of the person running the app (not the WikiTree-Id)
 
-Returns **[Boolean][7]** true if this person can be checked
+Returns **[Boolean][7]** true if this person can be checked else false
 
 ### hasBio
 
@@ -124,6 +134,12 @@ Returns **[Boolean][7]** true if profile for a member
 Is profile an orphan
 
 Returns **[Boolean][7]** true if profile is an orphan
+
+### hasLocation
+
+Does profile have either birth or death location
+
+Returns **[Boolean][7]** true if either location present
 
 ### getPrivacy
 
@@ -228,9 +244,9 @@ Send request to load templates from WT+
 
 Returns **any** promise for use with loadTemplates
 
-### loadTemplates
+### loadPromisedTemplates
 
-load Templates - wait for load to complete
+load promised Templates - wait for load to complete
 
 #### Parameters
 
@@ -287,6 +303,14 @@ used when adding a new person in basic mode.
 *   `thePerson`  {BioCheckPerson} person to check
 
 Returns **[Boolean][7]** true if sources found.
+
+### hasProblems
+
+Does biography have problems.
+problems include: no valid sources, no sources, empty,
+marked unsourced, undated, has style issues
+
+Returns **[Boolean][7]** true if bio has problems
 
 ### isEmpty
 
@@ -612,6 +636,39 @@ assumes the leading {{ removed and line is lower case
 *   `line` **[String][8]** to test
 
 Returns **[String][8]** status value or blank if not a research notes box
+
+### getNavBoxStatus
+
+Return status value for Nav Box
+assumes the leading {{ removed and line is lower case
+
+#### Parameters
+
+*   `line` **[String][8]** to test
+
+Returns **[String][8]** status value or blank if not a nav box
+
+### getProjectBoxStatus
+
+Return status value for Project Box
+assumes the leading {{ removed and line is lower case
+
+#### Parameters
+
+*   `line` **[String][8]** to test
+
+Returns **[String][8]** status value or blank if not a Project box
+
+### getStickerStatus
+
+Return status value for Sticker
+assumes the leading {{ removed and line is lower case
+
+#### Parameters
+
+*   `line` **[String][8]** to test
+
+Returns **[String][8]** status value or blank if not a Project box
 
 ### isProjectBox
 

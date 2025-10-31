@@ -24,11 +24,14 @@ import { Biography } from "./Biography.js";
   bioCheckTemplateManager.load();
 
   // For each person. Get the bio text and dates to test
+  // userId is the userId number, not the WikiTree-Id
   let thePerson = new BioCheckPerson();
-  let canUseThis = thePerson.canUse(profileObj, openOnly, ignorePre1500, userId);
-  let biography = new Biography(theSourceRules);
-  biography.parse(bioString, thePerson, searchString);
-  let isValid = biography.validate(); 
+  let canUseThis = thePerson.canUse(profileObj, openOnly, orphanOnly, ignorePre1500, userId);
+  if (canUseThis) {
+    let biography = new Biography(theSourceRules);
+    biography.parse(bioString, thePerson, searchString);
+    let isValid = biography.validate(); 
+  }
 
   // now report from biography (use getters) as desired or just the boolean return 
   // you might want to report any biography that is not valid from the validate()

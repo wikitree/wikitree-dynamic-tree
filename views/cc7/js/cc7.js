@@ -164,11 +164,12 @@ class CC7 {
         </ul>
         <h4>Selecting Subsets</h4>
         <ul>
-            <li>Use the select option to the left of the HIERARCHY button to select which subset of the loaded profiles
-                should be displayed. This selection is also valid for the List View, but not for the Hierarchy View.
+            <li>Use the 2 select options to the left of the HIERARCHY button to select which subset of the loaded profiles
+                should be displayed/processed. This selection is also valid for the List and Statistics Views, but not for the
+                other views.
                 Note: Some of these subsets will be partial in the presence of private profiles since the latter will
-                "break" connections and the full subset then cannot be calculated.
-                You have 6 choices:
+                "break" connections and the full subset then cannot be calculated. There are 4 gender options (<b>Male</b>, <b>Female</b>,
+                <b>No Gender Provided</b>, and <b>All</b>) that can be used in combination with the following 6 options:
                 <ul>
                     <li><b>All</b> – All profiles.</li>
                     <li><b>Ancestors</b> – Only direct ancestors of the central person.</li>
@@ -706,10 +707,10 @@ class CC7 {
         if ($("#getExtraDegrees").prop("checked")) {
             setUrlParam("getExtra", "1");
         }
+
         //
         // Set parameters specific to the current view
         //
-        const subset = $("#cc7Subset").val();
 
         function setMissingLinksParams() {
             for (const pm of CC7MLParamMap) {
@@ -722,35 +723,25 @@ class CC7 {
             }
         }
 
-        function setOnlyParam() {
+        function setOnlyParams() {
             clearUrlParam("only");
             clearMissingLinksParams();
+            const subset = $("#cc7Subset").val();
             if (subset && subset != "all") {
                 setUrlParam("only", subset);
                 if (subset == "missing-links") {
                     setMissingLinksParams();
                 }
             }
+            const gender = $("#cc7Gender").val();
+            gender && gender != "all" ? setUrlParam("gender", gender[0]) : clearUrlParam("gender");
         }
 
         switch (PeopleTable.ACTIVE_VIEW) {
             case CC7.VIEWS.TABLE:
             case CC7.VIEWS.LIST:
-                setOnlyParam();
-                break;
-
             case CC7.VIEWS.STATS:
-                if (subset && subset != "all") {
-                    setUrlParam("only", subset);
-                } else {
-                    clearUrlParam("only");
-                }
-                // Only update gender if the select object exists
-                const $genderSelect = $("#gender");
-                if ($genderSelect.length) {
-                    const gender = $genderSelect.val();
-                    gender != "" ? setUrlParam("gender", gender) : clearUrlParam("gender");
-                } // else leave the old value as is
+                setOnlyParams();
                 break;
 
             case CC7.VIEWS.MISSING_LINKS:
@@ -769,6 +760,8 @@ class CC7 {
                         }
                     }
                 }
+                break;
+            case CC7.VIEWS.HIERARCHY:
                 break;
             default:
                 console.error(`Unknown view: ${PeopleTable.ACTIVE_VIEW}`);
@@ -903,9 +896,16 @@ class CC7 {
             const reason = resultByKey[wtId]?.status || status;
             wtViewRegistry.showError(`Could not retrieve relatives for ${wtId}. Reason: ${reason}`);
         }
-        console.log(
-            `Received ${profiles.length} degree ${theDegree - 1} to ${theDegree + 1} profiles for start:${start}`
-        );
+        const getExtra = document.getElementById("getExtraDegrees").checked;
+        if (getExtra) {
+            console.log(
+                `Received ${profiles.length} degree ${theDegree - 1} to ${theDegree + 1} profiles for start:${start}`
+            );
+        } else {
+            console.log(
+                `Retrieving getPeople result page ${callNr}. key:${wtId}, nuclear:${theDegree}, minGen:${theDegree}, start:${start}, limit:${limit}`
+            );
+        }
         let resultByKeyReturned = {};
         let profileCount = 0;
 
@@ -921,9 +921,17 @@ class CC7 {
             // We have more paged profiles to fetch
             ++callNr;
             start += limit;
-            console.log(
-                `Retrieving getPeople result page ${callNr}. key:${wtId}, nuclear:${theDegree}, start:${start}, limit:${limit}`
-            );
+            if (getExtra) {
+                console.log(
+                    `Retrieving getPeople result page ${callNr}. key:${wtId}, nuclear:${theDegree + 1}, minGen:${
+                        theDegree - 1
+                    }, start:${start}, limit:${limit}`
+                );
+            } else {
+                console.log(
+                    `Retrieving getPeople result page ${callNr}. key:${wtId}, nuclear:${theDegree}, minGen:${theDegree}, start:${start}, limit:${limit}`
+                );
+            }
             const [sstatus, , ancestorJson] = await CC7.getPeopleForNthDegree(wtId, theDegree, start, limit);
             if (sstatus == "aborted") {
                 return [sstatus, 0, false];
@@ -934,9 +942,15 @@ class CC7 {
                 isPartial = true;
             }
             profiles = ancestorJson ? Object.values(ancestorJson) : [];
-            console.log(
-                `Received ${profiles.length} degree ${theDegree - 1} to ${theDegree + 1} profiles for start:${start}`
-            );
+            if (getExtra) {
+                console.log(
+                    `Received ${profiles.length} degree ${theDegree - 1} to ${
+                        theDegree + 1
+                    } profiles for start:${start}`
+                );
+            } else {
+                console.log(`Received ${profiles.length} degree ${theDegree} profiles for start:${start}`);
+            }
         }
         console.log(
             `Retrieved ${profileCount} degree ${theDegree} profiles with ${callNr} API call(s) in ${
@@ -980,7 +994,6 @@ class CC7 {
     }
 
     static addPeople(profiles, degreeCounts, minDegree, maxDegree) {
-        const userWTuserID = window.wtViewRegistry.session.lm.user.name;
         let nrAdded = 0;
         let maxDegreeFound = -1;
         for (const person of profiles) {
@@ -1019,7 +1032,7 @@ class CC7 {
 
                 if (Settings.current["biocheck_options_biocheckOn"]) {
                     const bioPerson = new BioCheckPerson();
-                    if (bioPerson.canUse(person, false, true, userWTuserID)) {
+                    if (bioPerson.canUse(person, false, false, false, wtViewRegistry.session.lm.user.id)) {
                         const biography = new Biography(theSourceRules);
                         biography.parse(bioPerson.getBio(), bioPerson, "");
                         biography.validate();
@@ -1790,6 +1803,7 @@ class CC7 {
                 "#wideTableButton",
                 "#clearTableFiltersButton",
                 "#cc7Subset",
+                "#cc7Gender",
                 "#tableButtons",
                 "#mlButtons",
             ].join(",")
@@ -1938,6 +1952,15 @@ class CC7 {
         }
     }
 
+    static getCC7Total() {
+        // We retrieve the actual CC7 Total from the "My WikiTree/Connections" menu item, present when the user is logged in
+        // and on any WT page except G2G (and also not on the apps server).
+        const connText = $('nav[aria-label="My WikiTree Navigation"] a[href*="Special:MyConnections"]').text();
+        if (!connText) return null;
+        const m = connText.match(/\d+/);
+        return m ? +m[0] : null;
+    }
+
     static buildDegreeTableData(degreeCounts, fromDegree) {
         function addTableCol(i, degreeSum) {
             $("#trDeg").append($(`<td>${i}</td>`));
@@ -1955,6 +1978,23 @@ class CC7 {
             degreeSum = degreeSum + degreeCounts[-1];
             addTableCol(-1, degreeSum);
         }
+        const loggedInUser = window.wtViewRegistry.session.lm.user.name;
+        const currentId = wtViewRegistry.getCurrentWtId();
+        const trueSize = currentId == loggedInUser ? CC7.getCC7Total() : "";
+        const showWarn = window.people.size > 9500 && (!trueSize || trueSize >= 10000);
+        const rowSpan = $("#trTot").length == 0 ? 2 : 3;
+        let msgHtml = `True CC7 size for ${currentId} = ${trueSize ? trueSize : "[not available]"}</br>`;
+        if (showWarn) {
+            msgHtml +=
+                "<span id='sizeWarn'>This CC7 has reached such a size that we can no longer retrieve all items to display. " +
+                "What we do retrieve typically includes the latest additions, but at the cost of other, " +
+                "usually unchanged profiles still in your CC7 which are not being returned by the server.</span";
+        } else {
+            msgHtml +=
+                "We might not have retrieved all the requested connections if there are profiles with Privacy " +
+                "settings that prevent them from being loaded.";
+        }
+        $("#trDeg").append($(`<td rowspan="${rowSpan}" class='trueSize'>${msgHtml}</td>`));
     }
 }
 const downloadArray = CC7.downloadArray;

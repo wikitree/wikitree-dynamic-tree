@@ -4,10 +4,27 @@
   margin: 1px;
   justify-content: center;
   min-width: 279mm; /* Letter paper format, smallest we will allow - A4 is 297mm */
+  clear: left;
 }
 
 #profiles * {
   font-size: 0.95em;
+}
+
+#subject h2 {
+  font-size: 1.2em;
+  margin: 0;
+  padding: .4em 0;
+}
+
+#subject img {
+  float: left;
+  max-height: 3em;
+  margin-right: 1em;
+}
+
+#profiles .g6 * {
+  font-size: 0.85em;
 }
 
 #profiles > div {
@@ -17,6 +34,14 @@
   padding: 0.2em 0.5em;
   text-align: center;
   justify-items: stretch;
+}
+
+#profiles .g6 {
+  min-width:  22em
+}
+
+#profiles .g6 h3 {
+  display: inline;
 }
 
 .unknown-relative {
@@ -45,13 +70,27 @@
   margin: 0.2em 0;
 }
 
-.known-relative h2 {
-  font-size: 1em;
+#profiles .g6 * {
+  font-size: 0.85em;
   line-height: 1em;
 }
 
 @media print {
   #profiles {
     min-width: initial;
+  }
+  #profiles * {
+    font-size: 0.85em;
+    line-height: 1.1;
+  }
+  #profiles .photo {
+    max-height: 6em;
+  }
+  #profiles .g6 * {
+    font-size: 0.8em;
+    line-height: 0.9em;
+  }
+  main {
+    padding: 0;
   }
 }

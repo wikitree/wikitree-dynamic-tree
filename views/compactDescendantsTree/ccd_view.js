@@ -1,9 +1,9 @@
 import { PeopleCache } from "../couplesTree/people_cache.js";
 import { CacheLoader } from "../couplesTree/cache_loader.js";
-import { CCTE } from "./cct_explorer.js";
+import { CCDE } from "./ccd_explorer.js";
 
-window.CCTView = class CCTView extends View {
-    static APP_ID = "CCT";
+window.CCDView = class CCDView extends View {
+    static APP_ID = "CCD";
     static #DESCRIPTION = "";
     static WANTED_PRIMARY_FIELDS = [
         "BirthDate",
@@ -34,25 +34,25 @@ window.CCTView = class CCTView extends View {
     static #peopleCache;
     constructor() {
         super();
-        if (!CCTView.#peopleCache) {
-            CCTView.#peopleCache = new PeopleCache(new CacheLoader(CCTView.APP_ID, CCTView.WANTED_PRIMARY_FIELDS));
+        if (!CCDView.#peopleCache) {
+            CCDView.#peopleCache = new PeopleCache(new CacheLoader(CCDView.APP_ID, CCDView.WANTED_PRIMARY_FIELDS));
         }
     }
 
     meta() {
         return {
-            title: "Compact Couple Ancestors",
-            description: CCTView.#DESCRIPTION,
+            title: "Compact Couple Descendants",
+            description: CCDView.#DESCRIPTION,
             docs: "",
         };
     }
 
     init(container_selector, person_id) {
         // If we need to clear the cache whenever the focus of the tree changes, uncomment the next line
-        // CCTView.#peopleCache.clear();
-        wtViewRegistry.setInfoPanel(CCTView.#DESCRIPTION);
+        //  CCDView.#peopleCache.clear();
+        wtViewRegistry.setInfoPanel(CCDView.#DESCRIPTION);
         wtViewRegistry.showInfoPanel();
-        const ccte = new CCTE(container_selector, CCTView.#peopleCache).loadAndDraw(person_id);
+        const cdte = new CCDE(container_selector, CCDView.#peopleCache).loadAndDraw(person_id);
     }
 
     close() {

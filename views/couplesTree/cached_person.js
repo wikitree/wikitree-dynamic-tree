@@ -44,29 +44,10 @@ class Richness {
 }
 
 export class CachedPerson {
-    static #peopleCache;
+    #peopleCache;
 
-    static init(peopleCache) {
-        CachedPerson.#peopleCache = peopleCache;
-    }
-
-    static get(id) {
-        return CachedPerson.#peopleCache.getIfPresent(id);
-    }
-
-    static async getWithLoad(id, mustHaveFields, additionalFields) {
-        return await CachedPerson.#peopleCache.getWithLoad(id, mustHaveFields, additionalFields);
-    }
-
-    static makePerson(data) {
-        return CachedPerson.#peopleCache.getWithData(data);
-    }
-
-    static getCache() {
-        return CachedPerson.#peopleCache;
-    }
-
-    constructor(data) {
+    constructor(data, cache) {
+        this.#peopleCache = cache;
         this.isNoSpouse = false;
         this._data = {};
         let name = data.BirthName ? data.BirthName : data.BirthNamePrivate;
@@ -83,9 +64,6 @@ export class CachedPerson {
                 // being used to control how much of an ancestor tree should be drawn
                 const ids = Object.keys(value);
                 this._data[key] = new Set(ids);
-                if (ids.length > 0) {
-                    createAndCachePeople(value);
-                }
             } else if (!["marriage_date", "marriage_location", "marriage_end_date", "bio"].includes(key)) {
                 // The above fields are only present in spouses and are handled in setSpouses.
                 // Other keys are handled here by copying them to this person object
@@ -97,12 +75,6 @@ export class CachedPerson {
         this.generations = new Map();
         this.marked = false;
         condLog(`>--New person done: for ${this.getId()} ${name} (${this.getRichness()})`, this);
-
-        function createAndCachePeople(mapOfPeopleData) {
-            for (const pData of Object.values(mapOfPeopleData)) {
-                CachedPerson.makePerson(pData);
-            }
-        }
     }
 
     //
@@ -143,19 +115,19 @@ export class CachedPerson {
     }
     getChild(id) {
         if (this._data.Children && this._data.Children.has(id)) {
-            return CachedPerson.#peopleCache.getIfPresent(id);
+            return this.#peopleCache.getIfPresent(id);
         } else {
             return undefined;
         }
     }
     getChildren() {
-        return CachedPerson.collectPeople(this._data.Children);
+        return this.collectPeople(this._data.Children);
     }
     async getChildrenWithLoad() {
-        return await Promise.all(CachedPerson.collectWithLoad(this._data.Children));
+        return await Promise.all(this.collectWithLoad(this._data.Children));
     }
     hasAChild() {
-        return this._data.HasChildren || this._data.Children?.length > 0;
+        return this._data.Children?.length > 0 || this._data.HasChildren;
     }
 
     // -----------------------------------
@@ -180,14 +152,14 @@ export class CachedPerson {
     getFather() {
         // Get the actual father person object, not their id
         const fId = this.getFatherId();
-        return fId ? CachedPerson.#peopleCache.getIfPresent(fId) : undefined;
+        return fId ? this.#peopleCache.getIfPresent(fId) : undefined;
     }
     getFatherId() {
         return this._data.Father;
     }
     async getFatherWithLoad() {
         const fId = this.getFatherId();
-        return fId ? await CachedPerson.#peopleCache.getWithLoad(fId) : CachedPerson.aPromiseFor(undefined);
+        return fId ? await this.#peopleCache.getWithLoad(fId) : CachedPerson.aPromiseFor(undefined);
     }
 
     // -----------------------------------
@@ -234,6 +206,13 @@ export class CachedPerson {
     setNrOlderGenerations(n) {
         this.nrOlderGenerations = n;
     }
+    getLowestGeneration() {
+        // Get the lowest generation this person appears in
+        if (this.generations.size == 0) {
+            return 0;
+        }
+        return Math.min(...this.generations.keys());
+    }
 
     // -----------------------------------
     // Id
@@ -248,14 +227,14 @@ export class CachedPerson {
     getMother() {
         // Get the actual mother person object, not their id
         const mId = this.getMotherId();
-        return mId ? CachedPerson.#peopleCache.getIfPresent(mId) : undefined;
+        return mId ? this.#peopleCache.getIfPresent(mId) : undefined;
     }
     getMotherId() {
         return this._data.Mother;
     }
     async getMotherWithLoad() {
         const mId = this.getMotherId();
-        return mId ? await CachedPerson.#peopleCache.getWithLoad(mId) : CachedPerson.aPromiseFor(undefined);
+        return mId ? await this.#peopleCache.getWithLoad(mId) : CachedPerson.aPromiseFor(undefined);
     }
 
     // -----------------------------------
@@ -270,9 +249,9 @@ export class CachedPerson {
         // "full-loaded"
         const pIds = [];
         let pId = this.getFatherId();
-        if (pId && CachedPerson.#peopleCache.has(pId)) pIds.push(pId);
+        if (pId && this.#peopleCache.has(pId)) pIds.push(pId);
         pId = this.getMotherId();
-        if (pId && CachedPerson.#peopleCache.has(pId)) pIds.push(pId);
+        if (pId && this.#peopleCache.has(pId)) pIds.push(pId);
         return pIds;
     }
     getParentIds() {
@@ -318,13 +297,13 @@ export class CachedPerson {
     getSpouse(id) {
         if (id) {
             if (this._data.Spouses && this._data.Spouses.has(id)) {
-                return CachedPerson.#peopleCache.getIfPresent(id) || new NotLoadedPerson(id);
+                return this.#peopleCache.getIfPresent(id) || new NotLoadedPerson(id);
             }
             return undefined;
         }
         if (this.hasSpouse()) {
             return (
-                CachedPerson.#peopleCache.getIfPresent(this._data.PreferredSpouseId) ||
+                this.#peopleCache.getIfPresent(this._data.PreferredSpouseId) ||
                 new NotLoadedPerson(this._data.PreferredSpouseId)
             );
         }
@@ -334,13 +313,13 @@ export class CachedPerson {
         return undefined;
     }
     getSpouses() {
-        return CachedPerson.collectPeople(this._data.Spouses);
+        return this.collectPeople(this._data.Spouses);
     }
     getSpouseIds() {
         return this._data.Spouses;
     }
     async getSpousesWithLoad() {
-        return await Promise.all(CachedPerson.collectWithLoad(this._data.Spouses));
+        return await Promise.all(this.collectWithLoad(this._data.Spouses));
     }
     /**
      * If id is not provided, return the preferred spouse, otherwise if id is one of the spouse Ids,
@@ -349,12 +328,12 @@ export class CachedPerson {
     async getSpouseWithLoad(id) {
         if (id) {
             if (this._data.Spouses && this._data.Spouses.has(id)) {
-                return await CachedPerson.#peopleCache.getWithLoad(id);
+                return await this.#peopleCache.getWithLoad(id);
             }
             return CachedPerson.aPromiseFor(undefined);
         }
         if (this.hasSpouse()) {
-            return await CachedPerson.#peopleCache.getWithLoad(this._data.PreferredSpouseId);
+            return await this.#peopleCache.getWithLoad(this._data.PreferredSpouseId);
         }
         if (this.hasNoSpouse() || this.isDiedYoung()) {
             return CachedPerson.aPromiseFor(NoSpouse);
@@ -362,8 +341,8 @@ export class CachedPerson {
         return CachedPerson.aPromiseFor(undefined);
     }
     // Note that !hasSpouse() is not the same as hasNoSpouse(). The former just means that the current
-    // profile does not have any spouse field(s) loaded while the latter means the profile definitely
-    // has no spouse.
+    // profile does not have any spouse field(s) loaded while the latter means the profile has no spouse
+    // data even after a full load. definitelyHasNoSpouse() also takes the noMoreSpouses flag into account.
     hasSpouse(id) {
         if (id) {
             this._data.Spouses && this._data.Spouses.has(id);
@@ -371,7 +350,10 @@ export class CachedPerson {
         return this._data.Spouses && this._data.PreferredSpouseId;
     }
     hasNoSpouse() {
-        return this._data.Spouses && this._data.noMoreSpouses && this._data.Spouses.size == 0;
+        return this._data.Spouses && this._data.Spouses.size == 0;
+    }
+    definitelyHasNoSpouse() {
+        return this.hasNoSpouse() && this._data.noMoreSpouses;
     }
     setPreferredSpouse(id) {
         if (this.hasSpouse(id)) {
@@ -408,7 +390,7 @@ export class CachedPerson {
                 marriage_end_date: spouseData.marriage_end_date || "0000-00-00",
                 marriage_location: spouseData.marriage_location || "0000-00-00",
             };
-            CachedPerson.makePerson(spouseData);
+            // CachedPerson.makePerson(spouseData);
             if (dateObj - firstMarriageDate <= 0) {
                 firstMarriageDate = dateObj;
                 firstSpouseId = spouseId;
@@ -484,21 +466,21 @@ export class CachedPerson {
         return `${this.getId()} ${this.getDisplayName()} (${this.getRichness()})`;
     }
 
-    static collectPeople(set) {
+    collectPeople(set) {
         const result = [];
         if (set) {
             for (const id of set.keys()) {
-                result.push(CachedPerson.#peopleCache.getIfPresent(id) || new NotLoadedPerson(id));
+                result.push(this.#peopleCache.getIfPresent(id) || new NotLoadedPerson(id));
             }
         }
         return result;
     }
 
-    static collectWithLoad(set) {
+    collectWithLoad(set) {
         const result = [];
         if (set) {
             for (const id of set.keys()) {
-                result.push(CachedPerson.#peopleCache.getWithLoad(id));
+                result.push(this.#peopleCache.getWithLoad(id));
             }
         }
         return result;
@@ -511,7 +493,7 @@ export class CachedPerson {
     }
 }
 
-class NullPerson extends CachedPerson {
+export class NullPerson extends CachedPerson {
     constructor() {
         super({ Id: "0000", Children: {}, DataStatus: { Spouse: "blank" } });
         this.isNoSpouse = true;
@@ -521,11 +503,12 @@ class NullPerson extends CachedPerson {
     }
 }
 
-const NoSpouse = new NullPerson();
+export const NoSpouse = new NullPerson();
 
-class NotLoadedPerson extends CachedPerson {
+export class NotLoadedPerson extends CachedPerson {
     constructor(id) {
         super({ Id: id, BirthName: "Not Loaded", Children: {}, DataStatus: { Spouse: "" } });
+        this.isNotLoaded = true;
     }
 }
 

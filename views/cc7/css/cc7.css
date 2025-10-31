@@ -77,6 +77,30 @@ div.cc7Table #tree {
 .cc7notes h2 {
   font-size: 1.2em;
 }
+
+.cc7notes .note-header {
+  display: flex;
+  justify-content: space-between; /* pushes date to the right */
+  align-items: center; /* vertically center label + select and date */
+  width: 100%; /* full width of popup */
+  margin-bottom: 0.5em;
+}
+
+.cc7notes .note-header label {
+  display: flex; /* keeps <b>Status:</b> and select together */
+  align-items: center;
+}
+
+.cc7notes .note-header select {
+  margin-left: 0.2em; /* spacing between Status label and dropdown */
+}
+
+.cc7notes .last-modified {
+  font-size: 0.75em;
+  color: #555;
+  white-space: nowrap; /* keep date on a single line */
+}
+
 .cc7Table .degree.hasNote {
   position: relative; /* Ensure the gradient respects the td's bounds */
 }
@@ -237,6 +261,13 @@ div.cc7Table .timelineTable td {
 }
 .cc7Table #ancReport {
   margin: 0 1em 1em;
+}
+.cc7Table .trueSize {
+  padding-left: 1em !important;
+  text-align: left;
+}
+.cc7Table #sizeWarn {
+  color: red;
 }
 
 .cc7Table #peopleTable.wide {
@@ -760,22 +791,6 @@ div.cc7Table .cc7filter-row th {
 #cc7Container td.relation {
   width: 3em;
 }
-#cc7Container #statsView fieldset {
-  display: block;
-  margin-inline-start: 2px;
-  margin-inline-end: 2px;
-  padding-block-start: 0.35em;
-  padding-inline-start: 0.75em;
-  padding-inline-end: 0.75em;
-  padding-block-end: 0.625em;
-  min-inline-size: min-content;
-  border-width: 2px;
-  border-style: groove;
-  border-color: rgb(192, 192, 192);
-  border-image: initial;
-  border-radius: 5px;
-  margin-bottom: 10px;
-}
 #cc7Container legend {
   font-size: 110%;
   float: none;
@@ -790,7 +805,7 @@ div.cc7Table .cc7filter-row th {
 
 #cc7Container #statsTable {
   border-collapse: collapse;
-  margin: 5px auto 10px;
+  margin: 1em auto 10px;
   border-radius: 5px 5px 0 0;
   overflow: hidden;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);

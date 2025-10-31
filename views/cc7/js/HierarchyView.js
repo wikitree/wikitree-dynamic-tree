@@ -134,6 +134,7 @@ export class HierarchyView {
             theUL.children("li[data-relation='Father']").prependTo(theUL);
         });
         $("#cc7Subset").hide();
+        $("#cc7Gender").hide();
         Utils.hideShakingTree();
     }
 

@@ -49,6 +49,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "fanchart": new FanChartView(),
         "couples": new CouplesTreeView(),
         "cctree": new CCTView(),
+        "ccdtree": new CCDView(),
         "wt-dynamic-tree": new WikiTreeDynamicTreeViewer(),
         "timeline": new TimelineView(),
         "fandoku": new FandokuView(),
@@ -57,7 +58,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "surnames": new SurnamesView(),
         "webs": new WebsView(),
         "familygroup": new FamilyView(),
-        "printer-friendly": new PrinterFriendlyView(WikiTreeAPI, 5),
+        "printer-friendly": new PrinterFriendlyView(WikiTreeAPI, 6),
         "calendar": new CalendarView(),
         "portraits": new PortraitView(),
         "nameTest": new NameTestView(),
@@ -73,6 +74,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "oneNameTrees": new OneNameTrees(),
         "ancestorsCemeteries": new AncestorsCemeteriesView(),
         "heritage": new HeritageView(),
+        "timelineTree": new TimelineTreeView(),
     };
 
     for (let key in views) {

@@ -24,16 +24,17 @@ FirstName,RealName,LastNameCurrent,LastNameAtBirth,Mother,Father,DataStatus,Bio
 Build person from WikiTree API profile object
 and determine if it can be used to check sources and style
 This method is used from an app, either on app server or tree tools
+When requesting the profile using the WikiTree API, resolveRedirect should be used
 
 #### Parameters
 
 *   `profileObj` **[Object][6]** containing the profile as returned from WikiTree APIs
-*   `mustBeOpen` **[Boolean][7]** true if profile must not have a manager
-*   `mustBeOrphan` &#x20;
+*   `mustBeOpen` **[Boolean][7]** true if profile must be open privacy
+*   `mustBeOrphan` **[Boolean][7]** true if profile must not have a manager
 *   `ignorePre1500` **[Boolean][7]** true to ignore Pre1500 profiles
-*   `userId` **[String][8]** wikiTreeId of the person running the app
+*   `userId` **[String][8]** ID number of the person running the app (not the WikiTree-Id)
 
-Returns **[Boolean][7]** true if this person can be checked
+Returns **[Boolean][7]** true if this person can be checked else false
 
 ### hasBio
 
@@ -87,6 +88,12 @@ Returns **[Boolean][7]** true if profile for a member
 Is profile an orphan
 
 Returns **[Boolean][7]** true if profile is an orphan
+
+### hasLocation
+
+Does profile have either birth or death location
+
+Returns **[Boolean][7]** true if either location present
 
 ### getPrivacy
 
@@ -191,9 +198,9 @@ Send request to load templates from WT+
 
 Returns **any** promise for use with loadTemplates
 
-### loadTemplates
+### loadPromisedTemplates
 
-load Templates - wait for load to complete
+load promised Templates - wait for load to complete
 
 #### Parameters
 
@@ -575,6 +582,39 @@ assumes the leading {{ removed and line is lower case
 *   `line` **[String][8]** to test
 
 Returns **[String][8]** status value or blank if not a research notes box
+
+### getNavBoxStatus
+
+Return status value for Nav Box
+assumes the leading {{ removed and line is lower case
+
+#### Parameters
+
+*   `line` **[String][8]** to test
+
+Returns **[String][8]** status value or blank if not a nav box
+
+### getProjectBoxStatus
+
+Return status value for Project Box
+assumes the leading {{ removed and line is lower case
+
+#### Parameters
+
+*   `line` **[String][8]** to test
+
+Returns **[String][8]** status value or blank if not a Project box
+
+### getStickerStatus
+
+Return status value for Sticker
+assumes the leading {{ removed and line is lower case
+
+#### Parameters
+
+*   `line` **[String][8]** to test
+
+Returns **[String][8]** status value or blank if not a Project box
 
 ### isProjectBox
 

@@ -9,6 +9,8 @@
         originOffsetY = 300,
         boxWidth = 200,
         boxHeight = 50,
+        halfBoxWidth = boxWidth / 2,
+        halfBoxHeight = boxHeight / 2,
         nodeWidth = boxWidth * 1.5,
         nodeHeight = boxHeight * 2;
 
@@ -27,25 +29,64 @@
         };
     };
 
-    WikiTreeDynamicTreeViewer.prototype.init = function (selector, startId) {
-        var container = document.querySelector(selector),
-            width = container.offsetWidth,
-            height = container.offsetHeight;
+    const ourContainerId = "dynamic-tree-container";
+
+    WikiTreeDynamicTreeViewer.prototype.init = function (containerSelector, startId) {
+        const viewContainer = document.querySelector(containerSelector),
+            width = viewContainer.offsetWidth,
+            height = viewContainer.offsetHeight;
+
+        // Add our own container so we can position things relative to it
+        const treeContainer = document.createElement("div");
+        treeContainer.id = "dynamic-tree-container";
+        treeContainer.style.position = "relative";
+
+        viewContainer.append(treeContainer);
 
         var self = this;
 
-        const svg = d3.select(container).append("svg").attr("width", width).attr("height", height);
+        const d3Container = d3.select(treeContainer);
+        const svg = d3Container.append("svg").attr("width", width).attr("height", height);
         const g = svg.append("g");
+
+        d3Container
+            .append("div")
+            .attr("class", "popup-layer")
+            .style("position", "absolute")
+            .style("top", "0px")
+            .style("left", "0px")
+            .style("width", 0)
+            .style("height", 0)
+            .style("pointer-events", "none") // let clicks pass through except on popup
+            .style("z-index", 9999);
+
+        const htmlLayer = d3Container
+            .append("div")
+            .attr("class", "html-layer")
+            .style("position", "absolute")
+            .style("top", 0)
+            .style("left", 0)
+            .style("width", 0)
+            .style("height", 0);
 
         // Setup zoom and pan
         const zoom = d3
             .zoom()
             .scaleExtent([0.1, 1])
             .on("zoom", function (event) {
+                // move the SVG group
                 g.attr("transform", event.transform);
+
+                // mirror transform onto HTML overlay
+                htmlLayer
+                    .style(
+                        "transform",
+                        `translate(${event.transform.x}px, ${event.transform.y}px) scale(${event.transform.k})`
+                    )
+                    .style("transform-origin", "0 0");
             });
-        svg.call(zoom);
-        svg.call(zoom.transform, d3.zoomIdentity.translate(originOffsetX, originOffsetY).scale(1));
+        d3Container.call(zoom);
+        d3Container.call(zoom.transform, d3.zoomIdentity.scale(1).translate(originOffsetX, originOffsetY));
 
         // Setup controllers for the ancestor and descendant trees
         self.ancestorTree = new AncestorTree(g);
@@ -136,28 +177,28 @@
      */
     WikiTreeDynamicTreeViewer.prototype._load = function (id) {
         return WikiTreeAPI.getPerson(APP_ID, id, [
-            "Id",
-            "Derived.BirthName",
-            "Derived.BirthNamePrivate",
-            "FirstName",
-            "MiddleInitial",
-            "LastNameAtBirth",
-            "LastNameCurrent",
-            "Suffix",
             "BirthDate",
             "BirthLocation",
+            "Children",
             "DeathDate",
             "DeathLocation",
-            "Mother",
+            "Derived.BirthName",
+            "Derived.BirthNamePrivate",
             "Father",
-            "Children",
-            "Parents",
-            "Spouses",
-            "Siblings",
-            "Photo",
-            "Name",
+            "FirstName",
             "Gender",
+            "Id",
+            "LastNameAtBirth",
+            "LastNameCurrent",
+            "MiddleInitial",
+            "Mother",
+            "Name",
+            "Parents",
+            "Photo",
             "Privacy",
+            "Siblings",
+            "Spouses",
+            "Suffix",
         ]);
     };
 
@@ -237,7 +278,6 @@
             const links = rootHierarchy.links();
             this.drawLinks(links);
             this.drawNodes(nodes);
-            this.svg.node().querySelectorAll("foreignObject").forEach((e) => { e.setAttribute("height", Math.max(0.1, e.firstElementChild.clientHeight)); });   // https://github.com/wikitree/wikitree-dynamic-tree/issues/42his.drawNodes(nodes);
         } else {
             throw new Error("Missing root");
         }
@@ -291,69 +331,80 @@
     Tree.prototype.drawNodes = function (nodes) {
         var self = this;
 
-        // Get a list of existing nodes
-        var node = this.svg.selectAll("g.person." + this.selector).data(nodes, function (d) {
-            return d.data.getId();
-        });
+        const container = d3.select(`#${ourContainerId} .html-layer`);
+        const personDivs = container
+            .selectAll("div.person." + self.selector) // get all existing person divs
+            .data(nodes, (d) => d.data.getId()) // bind data by couple ID
+            .join(
+                (enter) =>
+                    enter // ENTER: create new couple divs
+                        .append("div")
+                        .attr("class", (d) => "person " + self.selector)
+                        .attr("id", (d) => d.data.getId())
+                        .each(function (d) {
+                            const newContent = self.drawPerson(d.data);
+                            d3.select(this).node().appendChild(newContent);
+                        }),
+                (update) => update, // nothing special for UPDATEs for now
+                (exit) => exit.remove() // EXIT: remove old couple divs
+            );
 
-        // Remove old nodes
-        node.exit().remove();
-
-        // Add new nodes
-        var nodeEnter = node
-            .enter()
-            .append("g")
-            .attr("class", "person " + this.selector);
-
-        // Draw the person boxes
-        nodeEnter
-            .append("foreignObject")
-            .attrs({
-                width: boxWidth,
-                height: 0.01, // the foreignObject won't display in Firefox if it is 0 height
-                x: -boxWidth / 2,
-                y: -boxHeight / 2,
-            })
-            .style("overflow", "visible") // so the name will wrap
-            .append("xhtml:div")
-            .html((d) => {
-                const person = d.data;
-                let borderColor = "rgba(102, 204, 102, .5)";
-                if (person.getGender() == "Male") {
-                    borderColor = "rgba(102, 102, 204, .5)";
-                }
-                if (person.getGender() == "Female") {
-                    borderColor = "rgba(204, 102, 102, .5)";
-                }
-
-                return `
-				<div class="box" style="border-color: ${borderColor}">
-					<div class="name">${getShortName(person)}</div>
-					<div class="lifespan">${lifespan(person)}</div>
-				</div>
-				`;
-            });
+        personDivs
+            .style("position", "absolute")
+            .style("width", boxWidth + "px")
+            .style("height", boxHeight + "px")
+            .style("left", (d) => self.direction * d.y - halfBoxWidth + "px")
+            .style("top", (d) => d.x - halfBoxHeight - 2 + "px"); // -2px to to adjust for padding
 
         // Show info popup on click
-        nodeEnter.on("click", function (event, d) {
+        personDivs.selectAll(".person .box").on("click", function (event, d) {
             event.stopPropagation();
-            self.personPopup(d.data, d3.pointer(event, self.svg.node()));
+
+            // Compute coordinates relative to HTML popup layer
+            const popupLayer = document.querySelector(`#${ourContainerId} .popup-layer`);
+            const containerRect = popupLayer.getBoundingClientRect();
+
+            // event.clientX/Y is relative to viewport
+            const xy = [event.clientX - containerRect.left, event.clientY - containerRect.top];
+
+            const person = this.parentNode.__data__.data;
+            self.personPopup(person, xy);
         });
 
-        node = nodeEnter.merge(node);
-
         // Draw the plus icons
-        var expandable = node.filter(function (d) {
+        var expandable = personDivs.filter(function (d) {
             const person = d.data;
             return !person.getChildren() && (person.getFatherId() || person.getMotherId());
         });
 
         self.drawPlus(expandable.data());
+    };
 
-        // Position
-        node.attr("transform", function (d) {
-            return "translate(" + self.direction * d.y + "," + d.x + ")";
-        });
+    Tree.prototype.drawPerson = function (person) {
+        let borderColor = "rgba(102, 204, 102, .5)";
+        if (person.getGender() == "Male") {
+            borderColor = "rgba(102, 102, 204, .5)";
+        }
+        if (person.getGender() == "Female") {
+            borderColor = "rgba(204, 102, 102, .5)";
+        }
+
+        const shortName = getShortName(person);
+        const box = document.createElement("div");
+        box.className = "box";
+        box.style.borderColor = borderColor;
+        box.setAttribute("title", `Click to show more detail on ${shortName}`);
+
+        const nameDiv = document.createElement("div");
+        nameDiv.className = "name";
+        nameDiv.textContent = shortName;
+
+        const lifespanDiv = document.createElement("div");
+        lifespanDiv.className = "lifespan";
+        lifespanDiv.textContent = lifespan(person);
+
+        box.append(nameDiv, lifespanDiv);
+        return box;
     };
 
     /**
@@ -406,6 +457,7 @@
      */
     Tree.prototype.personPopup = function (person, xy) {
         this.removePopups();
+        const self = this;
 
         var photoUrl = person.getPhotoUrl(75);
         if (photoUrl) {
@@ -432,13 +484,20 @@
             borderColor = "rgba(204, 102, 102, .5)";
         }
 
-        popup
-            .append("foreignObject")
-            .attrs({
-                width: 400,
-                height: 300,
-            })
+        const popupLayer = d3.select(`#${ourContainerId} .popup-layer`);
+
+        const wtId = person.getName();
+        const popupDiv = popupLayer
+            .append("div")
+            .attr("class", "popup")
+            .style("position", "absolute")
+            .style("left", xy[0] + "px")
+            .style("top", xy[1] + "px")
+            .style("width", "400px")
+            .style("height", "300px")
             .style("overflow", "visible")
+            .style("z-index", 1000)
+            .style("pointer-events", "auto") // enable clicks
             .append("xhtml:div").html(`
 				<div class="popup-box" style="border-color: ${borderColor}">
 					<div class="top-info">
@@ -459,21 +518,19 @@
 				</div>
 			`);
 
-        d3.select("#view-container").on("click", function () {
-            popup.remove();
+        // Remove popup on background click
+        const container = d3.select(`#${ourContainerId}`);
+        container.on("click.popup", () => {
+            self.removePopups();
+            container.on("click.popup", null); // remove this handler after closing
         });
     };
 
     /**
-     * Remove all popups. It will also remove
-     * any popups displayed by other trees on the
-     * page which is what we want. If later we
-     * decide we don't want that then we can just
-     * add the selector class to each popup and
-     * select on it, like we do with nodes and links.
+     * Remove all popups.
      */
     Tree.prototype.removePopups = function () {
-        d3.selectAll(".popup").remove();
+        d3.selectAll(".popup-layer .popup").remove();
     };
 
     /**

@@ -49,7 +49,7 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
                     .includes(dna)
         );
 
-        this.render(containerSelector);
+        this.render(containerSelector, personID);
     }
 
     prepareTemplate(remainingGens, dna) {
@@ -73,14 +73,15 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
         if (this.people[personID].Mother) this.assignDNAToPeople(this.people[personID].Mother, `${dna}M`);
     }
 
-    render(containerSelector) {
+    render(containerSelector, personID) {
         let profiles = Object.values(this.people)
             .map((person) => this.renderPerson(person))
             .join("");
 
         let unknownProfiles = this.unknownDNA.map((dna) => this.renderUnknownDNA(dna)).join("");
 
-        document.querySelector(containerSelector).innerHTML = `<div id="profiles">${profiles}${unknownProfiles}</div>`;
+        let subject = this.renderPerson(this.people[personID], true);
+        document.querySelector(containerSelector).innerHTML = `<div id="subject">${subject}</div><div id="profiles">${profiles}${unknownProfiles}</div>`;
 
         profiles = document.querySelector(`${containerSelector} #profiles`);
 
@@ -102,13 +103,13 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
 
     renderUnknownDNA(dna) {
         return `
-            <div style="grid-area: ${dna};" class="unknown-relative">
+            <div style="grid-area: ${dna};" class="unknown-relative g${dna.length}">
                 <p>(${this.getDNARelationship(dna.slice(1))})</p>
             </div>`;
     }
 
-    renderPerson(person) {
-        if (!person.dna || person.dna.length > this.generationsCount) return "";
+    renderPerson(person, isSubject = false) {
+        if (!person.dna || person.dna.length > this.generationsCount || (person.dna.length === 1 && !isSubject)) return "";
 
         const photoUrl = person.PhotoData ? `${this.WT_DOMAIN}/${person.PhotoData.url}` : "";
         const photo = person.dna.length <= 3 ? `<img src="${photoUrl}" class="photo">` : "";
@@ -121,14 +122,24 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
 
         const born = `${person?.IsLiving ? "Born " : ""}${wtDate(person, "BirthDate")}`;
         const died = person?.IsLiving ? "" : ` - ${wtDate(person, "DeathDate")}`;
-
+        if (isSubject) {
+            if (person?.BirthLocation) {
+                locations = ` / <div class="locations">${person.BirthLocation}</div>`;
+            }
+            return `
+                ${photo}
+                    <h2>
+                        Ancestors of ${wtCompleteName(person)} 
+                        / ${born}${died} ${locations}
+                    </h2>`;
+        }
         return `
-            <div style="grid-area: ${person.dna};" class="known-relative">
+            <div style="grid-area: ${person.dna};" class="known-relative g${person.dna.length}">
                 ${photo}
                 <div>
-                    <h2>${wtCompleteName(person)}</h2>
-                    <div>${born}${died}</div>
-                    ${locations}
+                    <h3>${wtCompleteName(person)}</h3>
+                    <span>${born}${died}<br>
+                    ${locations}</span>
                 </div>
             </div>`;
     }

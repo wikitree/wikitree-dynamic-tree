@@ -1,7 +1,5 @@
-import { CachedPerson } from "./cached_person.js";
-
 export class CacheLoader {
-    static APP_ID = "CouplesTree";
+    static APP_ID = "CacheLoader";
     static DEFAULT_PRIMARY_FIELDS = [
         "BirthDate",
         "BirthLocation",
@@ -20,13 +18,13 @@ export class CacheLoader {
         "MiddleInitial",
         "Mother",
         "Name",
-        "Photo",
         "Suffix",
     ];
     static DEFAULT_VARIABLE_FIELDS = ["Parents", "Spouses", "Children"];
 
     #allFields = [...new Set([...CacheLoader.DEFAULT_PRIMARY_FIELDS, ...CacheLoader.DEFAULT_VARIABLE_FIELDS])];
 
+    #appId;
     #primaryFields;
     #variableFields;
 
@@ -38,7 +36,8 @@ export class CacheLoader {
      * @param {*} variableFields (optional) additional fields that will be retrieved by default, but the user
      *             can change these per get() call. The default value is ["Parents", "Spouses", "Children"]
      */
-    constructor(primaryFields, variableFields) {
+    constructor(appId, primaryFields, variableFields) {
+        this.#appId = appId || CacheLoader.APP_ID;
         this.#primaryFields =
             typeof primaryFields === "undefined" ? CacheLoader.DEFAULT_PRIMARY_FIELDS : [...new Set(primaryFields)];
         this.#variableFields =
@@ -56,11 +55,12 @@ export class CacheLoader {
      * @param {*} additionalFields (optional) Additional fields to be included in the retrieval.
      * @returns
      */
-    async get(id, requestedVariableFields, additionalFields) {
+    async get(id, cache, requestedVariableFields, additionalFields) {
+        let data;
         if (!additionalFields && !requestedVariableFields) {
-            return await this.getPersonViaAPI(id, this.#allFields);
+            data = await this.getPersonViaAPI(id, this.#allFields);
         } else {
-            return await this.getPersonViaAPI(id, [
+            data = await this.getPersonViaAPI(id, [
                 ...new Set([
                     ...this.#primaryFields,
                     ...(requestedVariableFields ? requestedVariableFields : CacheLoader.DEFAULT_VARIABLE_FIELDS),
@@ -68,6 +68,30 @@ export class CacheLoader {
                 ]),
             ]);
         }
+        let person = null;
+        const peopleToAdd = [data];
+        while (peopleToAdd.length > 0) {
+            const pData = peopleToAdd.shift();
+            if (!pData || !pData.Id) {
+                continue; // skip if no data or no Id
+            }
+            // const id = +data.Id;
+            // if (cache.has(id)) {
+            //     continue; // already cached
+            // }
+            // add the person to the cache
+            for (const field of ["Parents", "Spouses", "Children", "Siblings"]) {
+                const mapOfPeopleData = pData[field];
+                if (mapOfPeopleData) {
+                    for (const rData of Object.values(mapOfPeopleData)) {
+                        peopleToAdd.push(rData);
+                    }
+                }
+            }
+            const relatedPerson = cache.getWithData(pData);
+            if (!person) person = relatedPerson; // the first person is the one we are looking for
+        }
+        return person;
     }
 
     /**
@@ -88,12 +112,12 @@ export class CacheLoader {
      */
     async getPersonViaAPI(id, fields) {
         const result = await WikiTreeAPI.postToAPI({
-            appId: CacheLoader.APP_ID,
+            appId: this.#appId,
             action: "getPerson",
             key: id,
             fields: fields.join(","),
             resolveRedirect: 1,
         });
-        return new CachedPerson(result[0].person);
+        return result[0].person;
     }
 }
