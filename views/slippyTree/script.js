@@ -120,7 +120,7 @@ class SlippyTree extends View {
    <div class="slippy-focusable" data-shortcut="s" data-action="search"><em>S</em>earch...
      <div class="slippy-search-menu" class="hidden">
       <div class="slippy-search-list" class="hidden"></div>
-      <input class="slippy-search-id" type="search" size="12" spellcheck="false" writingsuggestions="off" autocorrect="off" autocomplete="off" placeholder="Search..."/>
+      <input class="slippy-search-id" type="search" size="12" spellcheck="false" writingsuggestions="off" autocorrect="off" autocomplete="off" placeholder="Windsor-1"/>
       <span class="slippy-search-family selected"></span>
      </div>
    </div>
