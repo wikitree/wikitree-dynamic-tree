@@ -2664,7 +2664,7 @@ class SlippyTree extends View {
                 "Categories",
                 "Templates",
             ],
-            appid: this.#APPID,
+            appId: this.#APPID,
         };
         for (let key in params) {
             usedparams[key] = params[key];
