@@ -705,7 +705,7 @@ Returns **[Boolean][7]** true if sticker else false
 
 ### isRecommendedTag
 
-Determine if a line starts with an HTML tag
+Determine if a line contains with an HTML tag
 that is recommended for use on WikiTree.
 Typically used for a line that starts with <
 
