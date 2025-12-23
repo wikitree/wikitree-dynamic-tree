@@ -14,8 +14,53 @@ import { CC7Notes } from "./CC7Notes.js";
 import { Settings } from "./Settings.js";
 import { CC7Utils } from "./CC7Utils.js";
 import { Utils } from "../../shared/Utils.js";
+import { CirclesView } from "./CirclesView.js";
 
-export { CC7, downloadArray };
+export { CC7, downloadArray, CC7UrlParams, CC7MLParamMap, CC7CirclesParamMap };
+
+// CC7Views-specific URL paramters
+const CC7UrlParams = [
+    "cc7View",
+    "degrees",
+    "getExtra",
+    "only",
+    "nop",
+    "onep",
+    "nonms",
+    "nonmc",
+    "nonmcnc",
+    "gender",
+    "display",
+    "fill",
+    "bnw",
+    "gray",
+];
+
+// Map between the CC7 missing family parameter selectors, the URL parameters, and the Settings names
+const CC7MLParamMap = [
+    { id: "mlNoParents", urlp: "nop", option: "missingFamily_options_noParents" },
+    { id: "mlOneParent", urlp: "onep", option: "missingFamily_options_oneParent" },
+    { id: "mlNoNoSpouses", urlp: "nonms", option: "missingFamily_options_noNoSpouses" },
+    { id: "mlNoNoChildren", urlp: "nonmc", option: "missingFamily_options_noNoChildren" },
+    { id: "mlNoChildren", urlp: "nonmcnc", option: "missingFamily_options_noChildren" },
+];
+
+// Map between the CC7 circles parameter selectors and the URL parameters
+const CC7CirclesParamMap = [
+    { id: "displayType_filled", urlp: "fill" },
+    { id: "displayType_BandW", urlp: "bnw" },
+    { id: "displayType_GrayAncs", urlp: "gray" },
+];
+
+// Which URL parameters are valid for which view
+const CC7ParamMap = {
+    table: ["only", CC7MLParamMap.map((x) => x.urlp)].flat(),
+    list: ["only", CC7MLParamMap.map((x) => x.urlp)].flat(),
+    hierarchy: [],
+    stats: ["only", "gender"],
+    ml: CC7MLParamMap.map((x) => x.urlp),
+    circles: ["display", CC7CirclesParamMap.map((x) => x.urlp)].flat(),
+};
 
 class CC7 {
     static LONG_LOAD_WARNING =
@@ -52,7 +97,7 @@ class CC7 {
         </ul>
         <h3>Views</h3>
         <p>
-            Three different views of the data are available:
+            Six different views of the data are available:
         </p>
         <ul>
             <li>
@@ -69,6 +114,11 @@ class CC7 {
                 The <b>Missing Links View</b> shows people who might be missing parents, spouses, or children.
                 Adding these missing family members will grow your CC7 and
                 possibly find a new connection to the tree.
+            </li>
+            <li>
+                The <b>Circles View</b> shows a visual of people in the CC7 in concentric rings radiating from the primary person. 
+                Each person is represented by a circle that can be customized.  
+                Clicking on a circle will show the person's popup with more information, and a link to a connection popup, showing the connection(s) to the primary person.                
             </li>
         </ul>
         <p>Below are some tips related to each view.</p>
@@ -114,11 +164,12 @@ class CC7 {
         </ul>
         <h4>Selecting Subsets</h4>
         <ul>
-            <li>Use the select option to the left of the HIERARCHY button to select which subset of the loaded profiles
-                should be displayed. This selection is also valid for the List View, but not for the Hierarchy View.
+            <li>Use the 2 select options to the left of the HIERARCHY button to select which subset of the loaded profiles
+                should be displayed/processed. This selection is also valid for the List and Statistics Views, but not for the
+                other views.
                 Note: Some of these subsets will be partial in the presence of private profiles since the latter will
-                "break" connections and the full subset then cannot be calculated.
-                You have 6 choices:
+                "break" connections and the full subset then cannot be calculated. There are 4 gender options (<b>Male</b>, <b>Female</b>,
+                <b>No Gender Provided</b>, and <b>All</b>) that can be used in combination with the following 6 options:
                 <ul>
                     <li><b>All</b> – All profiles.</li>
                     <li><b>Ancestors</b> – Only direct ancestors of the central person.</li>
@@ -233,6 +284,14 @@ class CC7 {
                 </ul>
             </li>
         </ul>
+        <h3>Circles View</h3>
+        <ul>
+            <li>Use the controls in the button bar to customize the circles.</li>
+            <li>The Legend, Person Popup and Connection Pod are all draggable, as is the Circle View itself.</li>
+            <li>Click a circle to show the person's popup with more information.</li>   
+            <li>Click the link in the popup to show the connection(s) to the primary person.</li>             
+            <li>Click the &#x1F4BE; icon in the button bar to save a PDF of the current Circles Chart.</li>             
+        </ul>
         <h3>Other points</h3>
         <ul>
             <li>Double-clicking this 'About' box, or clicking the red X in its top right corner will close it.</li>
@@ -240,7 +299,7 @@ class CC7 {
                 If you find problems with this page or have suggestions for improvements, let
                 <a style="color: navy; text-decoration: none" href="https://www.wikitree.com/wiki/Smit-641">Riël</a> or
                 <a style="color: navy; text-decoration: none" href="https://www.wikitree.com/wiki/Beacall-6">Ian</a>
-                know about it.
+                know about it.  Issues with the Circles View specifically can be addressed to <a style="color: navy; text-decoration: none" href="https://www.wikitree.com/wiki/Clarke-11007">Greg</a>.
             </li>
         </ul>`;
 
@@ -274,6 +333,7 @@ class CC7 {
         "Name",
         "Nicknames",
         "NoChildren",
+        "PhotoData",
         "Prefix",
         "Privacy",
         "RealName",
@@ -284,10 +344,20 @@ class CC7 {
         "Touched",
     ].join(",");
 
+    static VIEWS = {
+        TABLE: "table",
+        HIERARCHY: "hierarchy",
+        LIST: "list",
+        STATS: "stats",
+        MISSING_LINKS: "ml",
+        CIRCLES: "circles",
+    };
+
     static GET_PEOPLE_LIMIT = 1000;
     static MAX_DEGREE = 7;
 
     static cancelLoadController;
+    static URL_PARAMS = {};
 
     // Constants for IndexedDB
     static CONNECTION_DB_NAME = "ConnectionFinderWTE";
@@ -300,14 +370,15 @@ class CC7 {
     constructor(selector, startId, params) {
         this.startId = startId;
         this.selector = selector;
-        this.params = params;
-        PeopleTable.setParameters(params);
+        Object.assign(CC7.URL_PARAMS, params);
+
         Settings.restoreSettings();
         $(selector).html(
             `<div id="${CC7Utils.CC7_CONTAINER_ID}" class="cc7Table">
+            <div class="mt-1">
             <button
                 id="getPeopleButton"
-                class="small button"
+                class="btn btn-primary btn-sm ms-1 me-1"
                 title="Get a list of connected people up to this degree">
                 Get CC3</button
             ><select id="cc7Degree" title="Select the degree of connection">
@@ -318,45 +389,37 @@ class CC7 {
                 <option value="5">5</option>
                 <option value="6">6</option>
                 <option value="7">7</option></select
-            ><button id="getDegreeButton" class="small button" title="Get only people connected at the indicated degree">
+            ><button id="getDegreeButton" class="btn btn-secondary btn-sm ms-1 me-3"
+                title="Get only people connected at the indicated degree">
                 Get Degree 3 Only</button
-            ><button id="cancelLoad" title="Cancel the current loading of profiles." class="small button">
+            ><button id="cancelLoad" class="btn btn-primary btn-sm"
+                title="Cancel the current loading of profiles.">
                 Cancel</button
-            ><button id="savePeople" title="Save this data to a file for faster loading next time." class="small button">
+            ><button id="savePeople" class="btn btn-secondary btn-sm ms-1"
+                title="Save this data to a file for faster loading next time.">
                 Save</button
-            ><button id="loadButton" class="small button" title="Load a previously saved data file.">Load A File</button
-            ><input
+            ><button id="loadButton" class="btn btn-secondary btn-sm ms-1"
+                title="Load a previously saved data file.">
+                Load A File</button
+            ><input class="form-check-input ms-2"
               id="getExtraDegrees"
               type="checkbox"
               title="Retrieve extra degrees (in addition to those requested) when a GET button is clicked, to ensure the counts of relatives are more accurate." />
-            <label
+            <label class="form-check-label"
               for="getExtraDegrees"
-              title="Retrieve extra degrees (in addition to those requested) when a GET button is clicked, to ensure the counts of relatives are more accurate."
-              class="right">
+              title="Retrieve extra degrees (in addition to those requested) when a GET button is clicked, to ensure the counts of relatives are more accurate.">
               Improve count accuracy</label
             ><input type="file" id="fileInput" style="display: none"/>
             <input type="file" id="noteFileInput" style="display: none"/>
             <span id="adminButtons">
-            <span id="settingsButton" title="Settings"><img src="./views/cc7/images/setting-icon.png" /></span>
-            <span id="help" title="About this">?</span>
+              <span id="settingsButton" title="Settings"><img src="./views/cc7/images/setting-icon.png" /></span>
+              <span id="help" title="About this">?</span>
             </span>
             ${Settings.getSettingsDiv()}
             <div id="explanation" class="pop-up">${CC7.#helpText}</div>
+            </div>
             </div>`
         );
-
-        // handle "degrees" parameter
-        if (params["degrees"]) {
-            const cc7Degree = Number(params["degrees"]);
-            if (cc7Degree && cc7Degree > 0 && cc7Degree <= CC7.MAX_DEGREE) {
-                CC7.handleDegreeChange(cc7Degree);
-            }
-        } else {
-            const cc7Degree = Utils.getCookie("w_cc7Degree");
-            if (cc7Degree && cc7Degree > 0 && cc7Degree <= CC7.MAX_DEGREE) {
-                CC7.handleDegreeChange(cc7Degree);
-            }
-        }
 
         $("#cc7Degree")
             .off("change")
@@ -369,6 +432,7 @@ class CC7 {
             .on("change", function () {
                 const theDegree = $("#cc7Degree").val();
                 CC7.updateButtonLabels(theDegree);
+                CC7.updateURL();
             });
         $("#getPeopleButton").off("click").on("click", CC7.getConnectionsAction);
 
@@ -387,10 +451,10 @@ class CC7 {
         $("#settingsButton").off("click").on("click", CC7.toggleSettings);
         $("#saveSettingsChanges")
             .html("Apply Changes")
-            .addClass("small button")
+            .addClass("btn-sm")
             .off("click")
             .on("click", CC7.settingsChanged);
-        $("#settingsDIV").addClass("pop-up").css("width", "300");
+        $("#settingsDIV").addClass("pop-up").css("width", "400");
 
         $("#cc7Container")
             .off("dblclick", ".pop-up")
@@ -414,24 +478,27 @@ class CC7 {
         Settings.renderSettings();
         CC7.setInfoPanelMessage();
 
-        // These 2 buttons are defined in Settings, but I could not get the setting's onClick function definition
+        // These 3 buttons are defined in Settings.js, but I could not get the setting's onClick function definition
         // to work so I am just forcing the issue here
         $("#notes_functions_backupNotes")
-            .addClass("small button")
+            .removeClass("btn-primary")
+            .addClass("btn-secondary btn-sm mb-1")
             .off("click")
             .on("click", function (e) {
                 e.preventDefault();
                 CC7Notes.backupNotes();
             });
         $("#notes_functions_deleteNotes")
-            .addClass("small button")
+            .removeClass("btn-primary")
+            .addClass("btn-secondary btn-sm mb-1")
             .off("click")
             .on("click", function (e) {
                 e.preventDefault();
                 CC7Notes.deleteAllNotes();
             });
         $("#notes_functions_restoreNotes")
-            .addClass("small button")
+            .removeClass("btn-primary")
+            .addClass("btn-secondary btn-sm mb-1")
             .off("click")
             .on("click", function (e) {
                 e.preventDefault();
@@ -465,6 +532,28 @@ class CC7 {
                 CC7.handleFileUpload(e);
                 this.value = "";
             });
+
+        // handle "degrees" parameter
+        if (params["degrees"]) {
+            const cc7Degree = Number(params["degrees"]);
+            if (cc7Degree && cc7Degree > 0 && cc7Degree <= CC7.MAX_DEGREE) {
+                CC7.handleDegreeChange(cc7Degree, false);
+            }
+        } else {
+            const cc7Degree = Utils.getCookie("w_cc7Degree");
+            if (cc7Degree && cc7Degree > 0 && cc7Degree <= CC7.MAX_DEGREE) {
+                CC7.handleDegreeChange(cc7Degree, false);
+            }
+        }
+
+        // Handle "getExtra" parameter
+        const getExtra = params["getExtra"];
+        if (typeof getExtra !== "undefined" && getExtra !== "0") {
+            $("#getExtraDegrees").prop("checked", true);
+            CC7.updateButtonLabels($("#cc7Degree").val());
+        }
+
+        // Start loading the people data
         $("#getPeopleButton").trigger("click");
         $(document).off("keyup", CC7.closeTopPopup).on("keyup", CC7.closeTopPopup);
     }
@@ -553,7 +642,7 @@ class CC7 {
         $("#getDegreeButton").text(`Get Degree ${degree}${getExtra ? "±1" : ""} Only`);
     }
 
-    static handleDegreeChange(wantedDegree) {
+    static handleDegreeChange(wantedDegree, withURLChange = true) {
         const newDegree = Math.min(CC7.MAX_DEGREE, wantedDegree);
         CC7.updateButtonLabels(newDegree);
         if (newDegree > 3) {
@@ -576,6 +665,114 @@ class CC7 {
         if (newDegree != theDegree) {
             Utils.setCookie("w_cc7Degree", newDegree, { expires: 365 });
         }
+        if (withURLChange) CC7.updateURL();
+    }
+
+    static updateURL() {
+        const url = new URL(window.location.href);
+        const usp = new URLSearchParams(url.hash.slice(1));
+        const oldHash = usp.toString();
+        const wtId = wtViewRegistry.getCurrentWtId();
+
+        // console.log(`UpdateURL, actView=${PeopleTable.ACTIVE_VIEW}, oldHash=${oldHash}`, CC7.URL_PARAMS);
+        function setUrlParam(param, value) {
+            usp.set(param, value);
+            CC7.URL_PARAMS[param] = value;
+        }
+        function clearUrlParam(param) {
+            usp.delete(param);
+            delete CC7.URL_PARAMS[param];
+        }
+
+        if (!PeopleTable.ACTIVE_VIEW) PeopleTable.ACTIVE_VIEW = CC7.VIEWS.TABLE;
+
+        // Remove all current cc7-specific parameters that don't belong to this view
+        const viewParams = CC7ParamMap[PeopleTable.ACTIVE_VIEW];
+        for (const param of CC7UrlParams) {
+            if (viewParams.includes(param)) continue;
+            clearUrlParam(param);
+        }
+        //
+        // Set parameters common to all the cc7 views
+        //
+        // This is not cc7 specific, but we set it, in case the user changed it
+        usp.set("name", wtId);
+
+        if (PeopleTable.ACTIVE_VIEW != CC7.VIEWS.TABLE) {
+            setUrlParam("cc7View", PeopleTable.ACTIVE_VIEW);
+        }
+        usp.set("degrees", $("#cc7Degree").val());
+        CC7.URL_PARAMS["degrees"] = $("#cc7Degree").val();
+
+        if ($("#getExtraDegrees").prop("checked")) {
+            setUrlParam("getExtra", "1");
+        }
+
+        //
+        // Set parameters specific to the current view
+        //
+
+        function setMissingLinksParams() {
+            for (const pm of CC7MLParamMap) {
+                Settings.current[pm.option] ? setUrlParam(pm.urlp, "1") : clearUrlParam(pm.urlp);
+            }
+        }
+        function clearMissingLinksParams() {
+            for (const pm of CC7MLParamMap) {
+                clearUrlParam(pm.urlp);
+            }
+        }
+
+        function setOnlyParams() {
+            clearUrlParam("only");
+            clearMissingLinksParams();
+            const subset = $("#cc7Subset").val();
+            if (subset && subset != "all") {
+                setUrlParam("only", subset);
+                if (subset == "missing-links") {
+                    setMissingLinksParams();
+                }
+            }
+            const gender = $("#cc7Gender").val();
+            gender && gender != "all" ? setUrlParam("gender", gender[0]) : clearUrlParam("gender");
+        }
+
+        switch (PeopleTable.ACTIVE_VIEW) {
+            case CC7.VIEWS.TABLE:
+            case CC7.VIEWS.LIST:
+            case CC7.VIEWS.STATS:
+                setOnlyParams();
+                break;
+
+            case CC7.VIEWS.MISSING_LINKS:
+                setMissingLinksParams();
+                break;
+
+            case CC7.VIEWS.CIRCLES:
+                if ($("#circlesBtnBar").length) {
+                    const displayType = $('input[name="circlesDisplayType"]:checked').val();
+                    setUrlParam("display", displayType);
+                    for (const pm of CC7CirclesParamMap) {
+                        if ($(`#${pm.id}`).prop("checked")) {
+                            setUrlParam(pm.urlp, "1");
+                        } else {
+                            clearUrlParam(pm.urlp);
+                        }
+                    }
+                }
+                break;
+            case CC7.VIEWS.HIERARCHY:
+                break;
+            default:
+                console.error(`Unknown view: ${PeopleTable.ACTIVE_VIEW}`);
+                break;
+        }
+
+        const newHash = usp.toString();
+        if (newHash != oldHash) {
+            window.history.pushState(null, null, "#" + newHash);
+        }
+        // console.log(`..done, actView=${PeopleTable.ACTIVE_VIEW}, oldHash=${newHash}`, CC7.URL_PARAMS);
     }
 
     static closeTopPopup(e) {
@@ -699,9 +896,16 @@ class CC7 {
             const reason = resultByKey[wtId]?.status || status;
             wtViewRegistry.showError(`Could not retrieve relatives for ${wtId}. Reason: ${reason}`);
         }
-        console.log(
-            `Received ${profiles.length} degree ${theDegree - 1} to ${theDegree + 1} profiles for start:${start}`
-        );
+        const getExtra = document.getElementById("getExtraDegrees").checked;
+        if (getExtra) {
+            console.log(
+                `Received ${profiles.length} degree ${theDegree - 1} to ${theDegree + 1} profiles for start:${start}`
+            );
+        } else {
+            console.log(
+                `Retrieving getPeople result page ${callNr}. key:${wtId}, nuclear:${theDegree}, minGen:${theDegree}, start:${start}, limit:${limit}`
+            );
+        }
         let resultByKeyReturned = {};
         let profileCount = 0;
 
@@ -717,9 +921,17 @@ class CC7 {
             // We have more paged profiles to fetch
             ++callNr;
             start += limit;
-            console.log(
-                `Retrieving getPeople result page ${callNr}. key:${wtId}, nuclear:${theDegree}, start:${start}, limit:${limit}`
-            );
+            if (getExtra) {
+                console.log(
+                    `Retrieving getPeople result page ${callNr}. key:${wtId}, nuclear:${theDegree + 1}, minGen:${
+                        theDegree - 1
+                    }, start:${start}, limit:${limit}`
+                );
+            } else {
+                console.log(
+                    `Retrieving getPeople result page ${callNr}. key:${wtId}, nuclear:${theDegree}, minGen:${theDegree}, start:${start}, limit:${limit}`
+                );
+            }
             const [sstatus, , ancestorJson] = await CC7.getPeopleForNthDegree(wtId, theDegree, start, limit);
             if (sstatus == "aborted") {
                 return [sstatus, 0, false];
@@ -730,9 +942,15 @@ class CC7 {
                 isPartial = true;
             }
             profiles = ancestorJson ? Object.values(ancestorJson) : [];
-            console.log(
-                `Received ${profiles.length} degree ${theDegree - 1} to ${theDegree + 1} profiles for start:${start}`
-            );
+            if (getExtra) {
+                console.log(
+                    `Received ${profiles.length} degree ${theDegree - 1} to ${
+                        theDegree + 1
+                    } profiles for start:${start}`
+                );
+            } else {
+                console.log(`Received ${profiles.length} degree ${theDegree} profiles for start:${start}`);
+            }
         }
         console.log(
             `Retrieved ${profileCount} degree ${theDegree} profiles with ${callNr} API call(s) in ${
@@ -776,7 +994,6 @@ class CC7 {
     }
 
     static addPeople(profiles, degreeCounts, minDegree, maxDegree) {
-        const userWTuserID = window.wtViewRegistry.session.lm.user.name;
         let nrAdded = 0;
         let maxDegreeFound = -1;
         for (const person of profiles) {
@@ -815,7 +1032,7 @@ class CC7 {
 
                 if (Settings.current["biocheck_options_biocheckOn"]) {
                     const bioPerson = new BioCheckPerson();
-                    if (bioPerson.canUse(person, false, true, userWTuserID)) {
+                    if (bioPerson.canUse(person, false, false, false, wtViewRegistry.session.lm.user.id)) {
                         const biography = new Biography(theSourceRules);
                         biography.parse(bioPerson.getBio(), bioPerson, "");
                         biography.validate();
@@ -1123,6 +1340,9 @@ class CC7 {
             })
             .then(() => {
                 console.log("Data added to RelationshipFinderWTE.");
+                if (CirclesView.firstDegreeCirclesToRevise.length > 0) {
+                    CirclesView.checkForDegree1CirclesToRevise();
+                }
             })
             .catch((error) => {
                 console.error("Error:", error);
@@ -1141,6 +1361,9 @@ class CC7 {
             })
             .then(() => {
                 console.log("Data added to ConnectionFinderWTE.");
+                if (CirclesView.firstDegreeCirclesToRevise.length > 0) {
+                    CirclesView.checkForDegree1CirclesToRevise();
+                }
             })
             .catch((error) => {
                 console.error("Error:", error);
@@ -1574,11 +1797,13 @@ class CC7 {
                 "#peopleTable",
                 "#statsView",
                 "#missingLinksTable",
+                "#circlesDisplay",
                 "#tooBig",
                 ".viewButton",
                 "#wideTableButton",
                 "#clearTableFiltersButton",
                 "#cc7Subset",
+                "#cc7Gender",
                 "#tableButtons",
                 "#mlButtons",
             ].join(",")
@@ -1727,6 +1952,15 @@ class CC7 {
         }
     }
 
+    static getCC7Total() {
+        // We retrieve the actual CC7 Total from the "My WikiTree/Connections" menu item, present when the user is logged in
+        // and on any WT page except G2G (and also not on the apps server).
+        const connText = $('nav[aria-label="My WikiTree Navigation"] a[href*="Special:MyConnections"]').text();
+        if (!connText) return null;
+        const m = connText.match(/\d+/);
+        return m ? +m[0] : null;
+    }
+
     static buildDegreeTableData(degreeCounts, fromDegree) {
         function addTableCol(i, degreeSum) {
             $("#trDeg").append($(`<td>${i}</td>`));
@@ -1744,6 +1978,23 @@ class CC7 {
             degreeSum = degreeSum + degreeCounts[-1];
             addTableCol(-1, degreeSum);
         }
+        const loggedInUser = window.wtViewRegistry.session.lm.user.name;
+        const currentId = wtViewRegistry.getCurrentWtId();
+        const trueSize = currentId == loggedInUser ? CC7.getCC7Total() : "";
+        const showWarn = window.people.size > 9500 && (!trueSize || trueSize >= 10000);
+        const rowSpan = $("#trTot").length == 0 ? 2 : 3;
+        let msgHtml = `True CC7 size for ${currentId} = ${trueSize ? trueSize : "[not available]"}</br>`;
+        if (showWarn) {
+            msgHtml +=
+                "<span id='sizeWarn'>This CC7 has reached such a size that we can no longer retrieve all items to display. " +
+                "What we do retrieve typically includes the latest additions, but at the cost of other, " +
+                "usually unchanged profiles still in your CC7 which are not being returned by the server.</span";
+        } else {
+            msgHtml +=
+                "We might not have retrieved all the requested connections if there are profiles with Privacy " +
+                "settings that prevent them from being loaded.";
+        }
+        $("#trDeg").append($(`<td rowspan="${rowSpan}" class='trueSize'>${msgHtml}</td>`));
     }
 }
 const downloadArray = CC7.downloadArray;

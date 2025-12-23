@@ -21,7 +21,7 @@ If you haven't already, the first thing you should do is sign up at [WikiTree](h
 
 We're using [GitHub](https://github.com/wikitree/wikitree-dynamic-tree/) to collaborate on the dynamic tree viewer application. In order to create your own fork and submit pull requests to merge your contributions into the shared application, you'll need to create an account.
 
-You may also want to request a login for the WikiTree Apps server. This provides hosted space on apps.wikitree.com for your application, whether it's a new view for the dynamic tree viewer, or something completely new. We have a copy of the [dynamic tree](https://apps.wikitree.com/apps/wikitree-dynamic-tree]) running on Apps, as well as examples of the [WikiTree API](https://apps.wikitree.com/apps/wikitree-api-examples/) (which we use to gather data for the dynamic tree viewer). You can develop your code locally or in your own hosted space, but you'll have to deal with [CORS issues](#dealing-with-cors).
+You may also want to request a login for the WikiTree Apps server. This provides hosted space on apps.wikitree.com for your application, whether it's a new view for the dynamic tree viewer, or something completely new. We have a copy of the [dynamic tree](https://apps.wikitree.com/apps/wikitree-dynamic-tree) running on Apps, as well as examples of the [WikiTree API](https://apps.wikitree.com/apps/wikitree-api-examples/) (which we use to gather data for the dynamic tree viewer). You can develop your code locally or in your own hosted space, but you'll have to deal with [CORS issues](#dealing-with-cors).
 
 ### Get the code
 
@@ -169,7 +169,6 @@ If you haven't installed Prettier or are using the VS Code extension, you may be
 ## Other potentially useful tools
 
 -   [WikiTree API](https://github.com/wikitree/wikitree-api) - documentation of available API functions
--   [WikiTree JS](https://github.com/PeWu/wikitree-js) - JavaScript to access the API
 -   [Markdown viewer](https://chrome.google.com/webstore/detail/markdown-viewer/ckkdlimhmcjmikdlpkmbgfkaikojcbjk) - Chrome extension to view Markdown (.md files in project documentation)
 -   [JSON viewer](https://chrome.google.com/webstore/detail/json-viewer/gbmdgpbipfallnflgajpaliibnhdgobh) - Chrome extension to view JSON, like the output from the WikiTree API
--   [WikiTree Styles](https://www.wikitree.com/css/examples.html) - Some examples of CSS styles/colors/etc. for wikitree.com
+-   [WikiTree Styles](https://www.wikitree.com/css/guide/index.html) - WikiTree Developer Style Guide

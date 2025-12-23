@@ -1,0 +1,240 @@
+/*
+* 2024 Buttons
+*/
+
+.btn,
+span.TAG,
+.jump--links .showHideTree,
+.jump--links #showHideDescendants,
+.cat--links a {
+  border: none;
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-size: 1rem;
+  font-style: normal;
+  padding: 0.375rem 0.75rem;
+  text-decoration: none !important;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn.mx-auto {
+  display: block;
+}
+
+.btn-primary,
+a.btn-primary:link {
+  background-color: #FCB815;
+  color: #393A3C !important;
+  padding: 10px 24px;
+}
+
+  .btn-primary:hover {
+    background-color: #ffe270 !important;
+    color: #393A3C !important;
+  }
+
+.btn-secondary,
+.btn-secondary:visited {
+  background-color: #25422d;
+  color: #fff !important;
+  font-size: 1rem;
+  padding: 8px 20px;
+}
+
+  .btn-secondary:hover,
+  .btn-secondary:visited:hover {
+    background-color: #008000;
+    color: #fff !important;
+  }
+
+.btn-cancel {
+  background-color: #fff;
+  border: 2px solid #393A3C;
+  color: #393A3C;
+  padding: 8px 22px;
+}
+
+  .btn-cancel:hover {
+    background-color: #393A3C;
+    color: #fff;
+  }
+
+.btn-sm {
+  font-size: 0.875rem;
+  letter-spacing: 0.025rem;
+  line-height: 1rem;
+  padding: 6px 12px;
+}
+
+form .btn-sm {
+  padding: 11px 12px;
+}
+
+.btn-pill,
+a.btn-pill:link,
+a.btn-pill:visited,
+.cat--links a:link {
+  background-color: #fff;
+  border: 2px solid #25422d;
+  border-radius: 18px;
+  color: #25422d !important;
+  font-size: 1rem;
+}
+
+  .btn-pill:hover,
+  a.btn-pill:hover,
+  .cat--links a:hover,
+  .btn-pill:visited:hover,
+  a.btn-pill:visited:hover,
+  .cat--links a:visited:hover {
+    background-color: #008000;
+    border: 2px solid #008000;
+    color: #fff !important;
+  }
+
+  .btn-pill:hover .icon--upload,
+  a.btn-pill:hover .icon--upload,
+  .cat--links a:hover .icon--upload {
+    background-image: url('/images/icons/icon-upload-white.svg');
+  }
+
+.btn-pill-sm,
+a.btn-pill-sm:link,
+a.btn-pill-sm:visited,
+.jump--links .showHideTree,
+.jump--links #showHideDescendants {
+  background-color: #fff;
+  border: 2px solid #008000;
+  border-radius: 18px;
+  color: #008000;
+  font-size: 0.875rem;
+}
+
+  .jump--links .showHideTree:hover,
+  .jump--links #showHideDescendants:hover {
+    background-color: #008000;
+    border: 2px solid #008000;
+    color: #fff;
+    cursor: pointer;
+  }
+
+.btn-tag,
+a.btn-tag:link,
+a.btn-tag:visited,
+span.TAG {
+  background-color: #E1F0B4;
+  border: none;
+  border-radius: 6px;
+  color: #25422d;
+  font-size: 0.75rem;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+  .btn-tag:hover,
+  a.btn-tag:hover,
+  span.TAG:hover {
+    background-color: #CBDD98;
+  }
+
+  .btn-pill-sm:visited,
+  a.btn-pill-sm:visited {
+    color: #008000 !important;
+  }
+
+  .btn-pill-sm:hover,
+  a.btn-pill-sm:hover,
+  .btn-pill-sm:visited:hover,
+  a.btn-pill-sm:visited:hover {
+    background-color: #e1f0b4;
+    color: #008000 !important;
+  }
+
+  .btn-pill-sm [class*="icon--"] {
+    position: relative;
+    top: 2px;
+  }
+
+.btn-med {
+  padding-bottom: 6px;
+  padding-top: 6px;
+}
+
+.copy--buttons {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+  .copy--buttons li {
+    display: inline;
+    margin: 0;
+    padding: 0;
+  }
+
+  .copy--buttons li img {
+    height: 18px;
+    width: auto;
+  }
+
+  .copy--buttons button,
+  .copy--buttons a {
+    appearance: none;
+    background-color: transparent;
+    border: none;
+    color: #008000;
+    font-size: 0.875rem;
+    text-decoration: underline;
+    text-transform: uppercase;
+    margin: 0;
+    padding: 0;
+  }
+
+.copy--buttons li.lifespan {
+  font-family: "Roboto", sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  font-style: normal;
+  margin-right: 10px;
+}
+
+.btn-utility {
+  border-bottom: 1px solid #008000;
+  border-radius: 0;
+  color: #008000;
+  font-size: 14px !important;
+  line-height: 14px !important;
+  margin: 0 10px 0 0;
+  padding: 0;
+}
+
+  .btn-utility:hover {
+    background: transparent !important;
+    border: none;
+    color: #008000 !important;
+  }
+
+  a.btn-utility:visited {
+    border-color: #800080;
+    color: #800080;
+  }
+
+.btn-icon {
+  padding: 0;
+}
+
+/* disabled */
+.btn:disabled {
+  background-color: #dedecb;
+  color: #25422d;
+  cursor: not-allowed;
+  pointer-events: all !important;
+}
+
+  .btn:disabled:hover {
+    background-color: #dedecb !important;
+  }

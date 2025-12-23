@@ -6,18 +6,18 @@ window.CalendarView = class CalendarView extends View {
             title: "Family Calendar",
             description: `Discover your ancestral legacy with the WikiTree Family Calendar, showcasing birth and death anniversaries of ten generations of your ancestors.`,
             docs: "",
-            params: ["month", "viewMode"]  // Include month and viewMode as accepted parameters
+            params: ["month", "viewMode"], // Include month and viewMode as accepted parameters
         };
     }
 
     close() {
         // Another view is about to be activated, remove the display options
-        $('#view-options').remove();
+        $("#view-options").remove();
     }
 
     init(selector, person_id, params) {
-        if ($('#view-options').length) {
-            $('#view-options').remove();
+        if ($("#view-options").length) {
+            $("#view-options").remove();
         }
         const displayOptionsHTML = `
             <div id="view-options">
@@ -29,37 +29,39 @@ window.CalendarView = class CalendarView extends View {
             </div>
         `;
 
-        $('main').append(displayOptionsHTML);
+        $("main").append(displayOptionsHTML);
 
         // If 'month' parameter exists, store it (default to current month if not present)
-        const selectedMonth = isNaN(params.month) ? (new Date(Date.parse(params.month + " 1")).getMonth() + 1) : parseInt(params.month) || new Date().getMonth() + 1;
+        const selectedMonth = isNaN(params.month)
+            ? new Date(Date.parse(params.month + " 1")).getMonth() + 1
+            : parseInt(params.month) || new Date().getMonth() + 1;
 
         // Use 'viewMode' to set the default display mode
         const selectedViewMode = params.viewMode || "list"; // default to list view
 
-        if (selectedViewMode === 'modern') {
-            $('#display-mode').val('modern');
+        if (selectedViewMode === "modern") {
+            $("#display-mode").val("modern");
             modernCalendar(selector, person_id, selectedMonth);
-            $('#watchCalendar').hide();
-            $('#ancCalendar').show();
+            $("#watchCalendar").hide();
+            $("#ancCalendar").show();
         } else {
-            $('#display-mode').val('list');
+            $("#display-mode").val("list");
             listAnniversaries(selector, person_id, selectedMonth);
-            $('#watchCalendar').show();
-            $('#ancCalendar').hide();
+            $("#watchCalendar").show();
+            $("#ancCalendar").hide();
         }
 
         // Handle view mode switching
-        $('#display-mode').on('change', function () {
+        $("#display-mode").on("change", function () {
             const selectedMode = $(this).val();
-            if (selectedMode === 'modern') {
+            if (selectedMode === "modern") {
                 modernCalendar(selector, person_id, selectedMonth);
-                $('#watchCalendar').hide();
-                $('#ancCalendar').show();
-            } else if (selectedMode === 'list') {
+                $("#watchCalendar").hide();
+                $("#ancCalendar").show();
+            } else if (selectedMode === "list") {
                 listAnniversaries(selector, person_id, selectedMonth);
-                $('#watchCalendar').show();
-                $('#ancCalendar').hide();
+                $("#watchCalendar").show();
+                $("#ancCalendar").hide();
             }
         });
 
@@ -116,19 +118,23 @@ window.CalendarView = class CalendarView extends View {
                 $(selector).append(`
                     <div id="watchCalendar" class="watchCalendar">
                         <div class="fourteen columns center">
-                            ${MONTHS.map((month) => `<span id="month-${month.slice(0, 3)}">${month}&#8203</span>`).join("")}
+                            ${MONTHS.map((month) => `<span id="month-${month.slice(0, 3)}">${month}&#8203</span>`).join(
+                                ""
+                            )}
                         </div>
                         <div class="loader">
                             <image class="loaderIMG" src="https://www.wikitree.com/photo.php/8/81/WikiTree_Images_New-7.png" />
                         </div>
                         <div class="calendar">
-                            ${MONTHS.map((month) => `<div id="${month.slice(0, 3)}" class="content"><h2>${month}</h2></div>`).join("")}
+                            ${MONTHS.map(
+                                (month) => `<div id="${month.slice(0, 3)}" class="content"><h2>${month}</h2></div>`
+                            ).join("")}
                         </div>
                     </div>
                 `);
             }
 
-            WikiTreeAPI.getWatchlist('Calendar', 5000, 1, 0, [
+            WikiTreeAPI.getWatchlist("Calendar", 5000, 1, 0, [
                 "Derived.ShortName",
                 "BirthDate",
                 "DeathDate",
@@ -138,33 +144,34 @@ window.CalendarView = class CalendarView extends View {
                 processData(watchlist);
             });
 
-            function processData(x) {
+            function processData(watchlist) {
+                let index = 0;
                 // For each profile
-                for (var i = 0; i < x.length; i++) {
+                for (const profile of watchlist) {
                     // Log the Birth Event
-                    if (getMonth(x[i].BirthDate) === MONTHS[selectedMonth - 1]) {
-                        pushEvents(x[i], x[i].BirthDate, " was born", "", "");
+                    if (getMonth(profile.BirthDate)) {
+                        pushEvents(profile, profile.BirthDate, " was born", "", "");
                     }
                     // Log the Death Event
-                    if (getMonth(x[i].DeathDate) === MONTHS[selectedMonth - 1]) {
-                        pushEvents(x[i], x[i].DeathDate, " died", "", "");
+                    if (getMonth(profile.DeathDate)) {
+                        pushEvents(profile, profile.DeathDate, " died", "", "");
                     }
                     // Log Marriage Events
-                    if (x[i].Spouses.length != 0) {
-                        var spouseIDs = Object.keys(x[i].Spouses);
-                        for (var j = 0; j < spouseIDs.length; j++) {
-                            if (getMonth(x[i].Spouses[spouseIDs[j]].marriage_date) === MONTHS[selectedMonth - 1]) {
+                    if (profile.Spouses.length != 0) {
+                        const spouseIDs = Object.keys(profile.Spouses);
+                        for (const spouseID of spouseIDs) {
+                            if (getMonth(profile.Spouses[spouseID].marriage_date)) {
                                 pushEvents(
-                                    x[i],
-                                    x[i].Spouses[spouseIDs[j]].marriage_date,
+                                    profile,
+                                    profile.Spouses[spouseID].marriage_date,
                                     " marriage to ",
-                                    x[i].Spouses[spouseIDs[j]].Name,
-                                    x[i].Spouses[spouseIDs[j]].ShortName
+                                    profile.Spouses[spouseID].Name,
+                                    profile.Spouses[spouseID].ShortName
                                 );
                             }
                         }
                     }
-                    if (i == x.length - 1) {
+                    if (index == watchlist.length - 1) {
                         // Hide Loader when finished iterating through profile
                         $(".loader").hide();
                         $(".calendar").css("display", "block");
@@ -174,11 +181,12 @@ window.CalendarView = class CalendarView extends View {
                             .addClass("box rounded orange")
                             .css("display", "block");
                     }
+                    index++;
                 }
 
                 // Now we can sort our content for the calendar, by day and then by year.
-                for (var i = 0; i < 12; i++) {
-                    var array = Object.keys(AllMonths)[i];
+                for (var month = 0; month < 12; month++) {
+                    var array = Object.keys(AllMonths)[month];
                     AllMonths[array].sort((a, b) => {
                         if (a.day === b.day) {
                             return a.year < b.year ? -1 : 1;
@@ -193,6 +201,12 @@ window.CalendarView = class CalendarView extends View {
                     // loop over all months
                     const shortName = monthName.slice(0, 3);
                     let events = AllMonths[shortName];
+
+                    // Clear existing content before adding new events
+                    $(`#${shortName}`)
+                        .empty()
+                        .append("<h2>" + monthName + "</h2>");
+
                     $(`#${shortName}`).append(
                         events
                             .map(
@@ -201,7 +215,8 @@ window.CalendarView = class CalendarView extends View {
                                     ${event.day} ${getMonth(event.date)} ${event.year}
                                     <a href="https://www.wikitree.com/wiki/${event.id}">${event.name}</a>
                                     ${event.text} ${event.marriage}
-                                    [<span class="small"><a href="https://www.wikitree.com/treewidget/${event.id
+                                    [<span class="small"><a href="https://www.wikitree.com/treewidget/${
+                                        event.id
                                     }/6">share tree image</a>
                                     </span>]
                                 </div>`
@@ -210,6 +225,12 @@ window.CalendarView = class CalendarView extends View {
                     );
                 }
             }
+
+            // Clear all month displays and show only the selected month
+            $(".calendar").children().removeClass("box rounded orange").css("display", "none").hide();
+            $(`#${MONTHS[selectedMonth - 1].slice(0, 3)}`)
+                .addClass("box rounded orange")
+                .css("display", "block");
 
             // Set our view handler
             $("span[id^='month-']").click(function (e) {
@@ -258,7 +279,7 @@ window.CalendarView = class CalendarView extends View {
 
                 $(selector).append(ancCalendar);
 
-                $('#ancCalendar').fullCalendar().fullCalendar('destroy');
+                $("#ancCalendar").fullCalendar().fullCalendar("destroy");
                 // Define an error message for permission denial
                 const errorMessage = "Ancestor/Descendant permission denied.";
 
@@ -277,7 +298,7 @@ window.CalendarView = class CalendarView extends View {
                     wtViewRegistry.showError(err);
                     wtViewRegistry.hideInfoPanel();
                 } else {
-                    const wtIdTextValue = $('#wt-id-text').val();
+                    const wtIdTextValue = $("#wt-id-text").val();
                     // Extract the people data from the API response
                     const peopleData = data[0].people;
                     // Create an array to store all events
@@ -286,7 +307,7 @@ window.CalendarView = class CalendarView extends View {
                     // Loop through the people data and create events for birth dates
                     for (const [id, person] of Object.entries(peopleData)) {
                         // Skip persons with missing birth date
-                        if (!person.BirthDate || person.BirthDate === '0000-00-00') {
+                        if (!person.BirthDate || person.BirthDate === "0000-00-00") {
                             continue;
                         }
 
@@ -295,20 +316,21 @@ window.CalendarView = class CalendarView extends View {
                         const eventBirth = {
                             title: `${person.ShortName} - Birth ${birthyear}`,
                             start: person.BirthDate,
-                            url: `https://www.wikitree.com/index.php?title=Special:Relationship&action=calculate&person1Name=${wtIdTextValue}&person2Name=${person.Name}`
+                            url: `https://www.wikitree.com/index.php?title=Special:Relationship&action=calculate&person1Name=${wtIdTextValue}&person2Name=${person.Name}`,
                         };
 
                         // Push the event object to the events array
                         allEvents.push(eventBirth);
 
                         // Check if DeathDate exists and is not "0000-00-00", then create event for death date
-                        if (person.DeathDate && person.DeathDate !== '0000-00-00') {
+                        if (person.DeathDate && person.DeathDate !== "0000-00-00") {
                             var deathyear = new Date(person.DeathDate).getFullYear();
                             const eventDeath = {
                                 title: `${person.ShortName} - Death ${deathyear}`,
                                 start: person.DeathDate,
-                                url: `https://www.wikitree.com/index.php?title=Special:Relationship&action=calculate&person1Name=${wtIdTextValue}&person2Name=${person.Name}`
+                                url: `https://www.wikitree.com/index.php?title=Special:Relationship&action=calculate&person1Name=${wtIdTextValue}&person2Name=${person.Name}`,
                             };
+
                             allEvents.push(eventDeath);
                         }
                     }
@@ -318,26 +340,26 @@ window.CalendarView = class CalendarView extends View {
                     var currentMonth;
                     var currentYear;
                     // Initialize FullCalendar inside the .then() block
-                    $('#ancCalendar').fullCalendar({
+                    $("#ancCalendar").fullCalendar({
                         defaultDate: moment().month(selectedMonth - 1), // Set the default month
                         events: allEvents,
                         eventRender: function (event, element) {
-                            element.on('mouseenter', function () {
-                                $(this).css('background-color', '#25422d');
+                            element.on("mouseenter", function () {
+                                $(this).css("background-color", "#25422d");
                             });
-                            element.on('mouseleave', function () {
-                                $(this).css('background-color', '');
+                            element.on("mouseleave", function () {
+                                $(this).css("background-color", "");
                             });
                         },
                         showNonCurrentDates: false,
                         fixedWeekCount: false,
                         aspectRatio: 2,
-                        eventTextColor: '#FFFFFF',
+                        eventTextColor: "#FFFFFF",
                         viewRender: function (view, element) {
                             const startDate = view.start;
                             const endDate = view.end;
-                            var currentDate = $('#ancCalendar').fullCalendar('getDate');
-                            currentMonth = currentDate.format('MMM');
+                            var currentDate = $("#ancCalendar").fullCalendar("getDate");
+                            currentMonth = currentDate.format("MMM");
                             currentYear = currentDate.year();
 
                             const eventsToShow = [];
@@ -349,63 +371,63 @@ window.CalendarView = class CalendarView extends View {
                                 for (let year = startDate.year(); year <= endDate.year(); year++) {
                                     const newEvent = {
                                         ...event,
-                                        start: eventDate.year(year).format('YYYY-MM-DD')
+                                        start: eventDate.year(year).format("YYYY-MM-DD"),
                                     };
                                     eventsToShow.push(newEvent);
                                 }
                             }
 
                             // Clear the existing events on the calendar
-                            $('#ancCalendar').fullCalendar('removeEvents');
+                            $("#ancCalendar").fullCalendar("removeEvents");
 
                             // Add the events for the current view to the calendar
-                            $('#ancCalendar').fullCalendar('addEventSource', eventsToShow);
+                            $("#ancCalendar").fullCalendar("addEventSource", eventsToShow);
                         },
                         customButtons: {
                             printCalendar: {
-                                text: 'Print Calendar',
+                                text: "Print Calendar",
                                 click: function () {
-                                    var calendarContainer = document.getElementById('ancCalendar');
-                                    var originalHeaderLeft = calendarContainer.getElementsByClassName('fc-left')[0];
-                                    var originalHeaderRight = calendarContainer.getElementsByClassName('fc-right')[0];
-                                    originalHeaderLeft.style.display = 'none';
-                                    originalHeaderRight.style.display = 'none';
+                                    var calendarContainer = document.getElementById("ancCalendar");
+                                    var originalHeaderLeft = calendarContainer.getElementsByClassName("fc-left")[0];
+                                    var originalHeaderRight = calendarContainer.getElementsByClassName("fc-right")[0];
+                                    originalHeaderLeft.style.display = "none";
+                                    originalHeaderRight.style.display = "none";
 
                                     html2canvas(calendarContainer).then(function (canvas) {
-                                        var link = document.createElement('a');
+                                        var link = document.createElement("a");
                                         link.download = `${currentMonth}_${currentYear}.png`;
                                         link.href = canvas.toDataURL();
                                         link.click();
 
-                                        originalHeaderLeft.style.display = '';
-                                        originalHeaderRight.style.display = '';
+                                        originalHeaderLeft.style.display = "";
+                                        originalHeaderRight.style.display = "";
                                     });
-                                }
+                                },
                             },
                             listDay: {
-                                text: 'day',
+                                text: "day",
                                 click: function () {
-                                    $('#ancCalendar').fullCalendar('changeView', 'listDay');
-                                }
+                                    $("#ancCalendar").fullCalendar("changeView", "listDay");
+                                },
                             },
                             listWeek: {
-                                text: 'week',
+                                text: "week",
                                 click: function () {
-                                    $('#ancCalendar').fullCalendar('changeView', 'listWeek');
-                                }
+                                    $("#ancCalendar").fullCalendar("changeView", "listWeek");
+                                },
                             },
                             defaultView: {
-                                text: 'month',
+                                text: "month",
                                 click: function () {
-                                    $('#ancCalendar').fullCalendar('changeView', 'month');
-                                }
-                            }
+                                    $("#ancCalendar").fullCalendar("changeView", "month");
+                                },
+                            },
                         },
                         header: {
-                            left: 'defaultView,listWeek,listDay',
-                            center: 'title',
-                            right: 'today prev,next printCalendar',
-                        }
+                            left: "defaultView,listWeek,listDay",
+                            center: "title",
+                            right: "today prev,next printCalendar",
+                        },
                     });
 
                     $(document).ready(function () {

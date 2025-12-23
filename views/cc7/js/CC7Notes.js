@@ -36,6 +36,7 @@ export class CC7Notes {
         }
 
         $notes = await CC7Notes.getNoteDisplay(person);
+        CC7Notes.attachChangeTracking($notes, person.Id);
         $notes.attr("id", noteId);
         showTable(jqClicked, $notes, 30, 30);
     }
@@ -43,20 +44,28 @@ export class CC7Notes {
     static async getNoteDisplay(person) {
         const noteDiv = $(
             `<div class="cc7notes pop-up" data-wtid="${person.Name}" data-id="${person.Id}">
-                <h2>Notes for ${person.BirthNamePrivate} (${person.Name} - ${person.Id})</h2><x>[ x ]</x>
-                <label><b>Status:</b>
-                <select id="cc7status${person.Id}">
-                    <option value="" selected>None</option>
-                    <option value="ToDo">To Do</option>
-                    <option value="InProgress">In Progress</option>
-                    <option value="Parked">Parked</option>
-                    <option value="Done">Done</option>
-                </select>
-                </label>
+                <h2>Notes for ${person.BirthNamePrivate} (${person.Name} - ${person.Id})</h2>
+                <x>[ x ]</x>
+
+                <!-- Status + Last Modified -->
+                <div class="note-header">
+                    <label>
+                    <b>Status:</b>
+                    <select id="cc7status${person.Id}">
+                        <option value="" selected>None</option>
+                        <option value="ToDo">To Do</option>
+                        <option value="InProgress">In Progress</option>
+                        <option value="Parked">Parked</option>
+                        <option value="Done">Done</option>
+                    </select>
+                    </label>
+                    <span id="mod${person.Id}" class="last-modified"></span>
+                </div>
+
                 <textarea id="noteBox${person.Id}"></textarea>
-                <button class="deleteNoteBtn small button" title="Delete the note.">Delete</button>
-                <button class="cancelNoteBtn small button" title="Close and discard any changes.">Cancel</button>
-                <span> Changes are saved automatically</span
+                <button class="deleteNoteBtn btn btn-secondary btn-sm" title="Delete the note.">Delete</button>
+                <button class="cancelNoteBtn btn btn-secondary btn-sm" title="Close and discard any changes.">Cancel</button>
+                <span>Changes are saved automatically</span>
             </div>`
         );
 
@@ -68,12 +77,55 @@ export class CC7Notes {
                 noteDiv.find(`#cc7status${person.Id}`).val(note.status);
                 noteDiv.find(`#noteBox${person.Id}`).val(note.note);
                 noteDiv.addClass("instore");
+                if (note.date) {
+                    const dateStr = CC7Notes.formatDate(note.date);
+                    noteDiv.find(`#mod${person.Id}`).text(dateStr);
+                }
+                noteDiv.data("oldDate", note.date || null);
             }
         } catch (error) {
             console.error(`getNoteDisplay (${person?.Name}) failed:`, error);
         }
 
         return noteDiv;
+    }
+
+    static attachChangeTracking(noteDiv, personId) {
+        let hasChanges = false;
+
+        // Watch for changes in the status dropdown
+        noteDiv.find(`#cc7status${personId}`).on("change", function () {
+            hasChanges = true;
+        });
+
+        // Watch for changes in the textarea
+        noteDiv.find(`#noteBox${personId}`).on("input", function () {
+            hasChanges = true;
+        });
+
+        // Helper: check if changes were made
+        noteDiv.data("hasChanges", () => hasChanges);
+
+        // Optional: reset tracking flage (only needed if we reopen a popup, but currently we delete them on close)
+        // noteDiv.data("resetChanges", () => {
+        //     hasChanges = false;
+        // });
+    }
+
+    static formatDate(timestamp) {
+        const d = new Date(timestamp);
+
+        const pad = (n) => String(n).padStart(2, "0");
+
+        const year = d.getFullYear();
+        const month = pad(d.getMonth() + 1); // months are 0-based
+        const day = pad(d.getDate());
+
+        const hours = pad(d.getHours()); // 24-hour format
+        const minutes = pad(d.getMinutes());
+        const seconds = pad(d.getSeconds());
+
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     }
 
     static async saveNote(jqDiv) {
@@ -85,14 +137,16 @@ export class CC7Notes {
         const status = jqDiv.find(`#cc7status${person.Id}`).val();
         const noteTxt = jqDiv.find(`#noteBox${person.Id}`).val();
 
-        // We do not store empty, status=none notes
+        // We do not store empty, status=none notes not already in the DB
         if (status != "" || noteTxt != "" || jqDiv.hasClass("instore")) {
+            const hasChanges = jqDiv.data("hasChanges")();
             const note = {
                 theKey: `${person.Id}:${loggedInUserWtId}`,
                 id: person.Id,
                 wtId: person.Name,
                 status: status,
                 note: noteTxt,
+                date: hasChanges ? Date.now() : jqDiv.data("oldDate"),
             };
             const dbh = await CC7Notes.initializeDatabase();
             dbh.putData(CC7Notes.dbStore, note);

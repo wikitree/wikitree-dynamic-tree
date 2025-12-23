@@ -21,6 +21,7 @@
   text-align: center;
   padding: 5px;
   background-color: #fff;
+  margin: 0;
 }
 
 .cvtc .box[data-gender="male"],
@@ -85,12 +86,13 @@
 
 .cvtc .drop-button {
   font-size: 14px;
+  line-height: 0;
   margin: 0;
   text-transform: none;
   padding: 1px 2px;
   color: green;
   background-color: transparent;
-  border-color: rgba(0, 0, 0, 0.2);
+  border-color: transparent;
 }
 
 .cvtc .select-spouse-button {
@@ -125,7 +127,13 @@
   text-align: left;
   --content-padding: 0;
 }
-
+.cvtc .spouse-list li,
+.cvtc .children-list li {
+  margin: 6px;
+}
+.cvtc .children-list-wrapper {
+  z-index: 500 !important;
+}
 .cvtc .children-list-wrapper h4 {
   margin: 12px;
   background: #f9f9f9;
@@ -136,6 +144,7 @@
 }
 
 .cvtc .children-list {
+  font-size: 14px;
   border-radius: 5px;
   border: solid rgba(102, 204, 102, 0.5);
   background: #f9f9f9;
@@ -153,7 +162,7 @@
 }
 
 .cvtc #ct-help-button {
-  background: #393a3c;
+  background: #25422d;
   color: #fff;
   font-size: 0.8em;
   padding: 0.1em 0.5em;
@@ -200,6 +209,13 @@
   cursor: grabbing;
 }
 
+.cvtc .rotated-180 {
+  display: inline-block;
+  transform: rotate(180deg);
+}
+/* .cvtc foreignObject * {
+  position: static !important;
+} */
 @media only screen and (max-width: 767px) {
   #couples-view-container .ui-draggable-handle {
     -ms-touch-action: auto !important;

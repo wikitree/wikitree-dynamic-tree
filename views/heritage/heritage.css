@@ -185,6 +185,6 @@ div.heritage select {
   display: none;
 }
 
-.center {
+#heritageContainer .center {
   text-align: center;
 }

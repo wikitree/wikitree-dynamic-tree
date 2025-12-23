@@ -1,8 +1,9 @@
 import { CC7Utils } from "./CC7Utils.js";
 import { Utils } from "../../shared/Utils.js";
+import { CC7 } from "./cc7.js";
 
 export class StatsView {
-    static async build(gender = "") {
+    static async build() {
         $("#peopleTable").hide();
         if (["missing-links", "complete"].includes($("#cc7Subset").val())) {
             $("#cc7Subset").val("all").prop("selected", true).trigger("change");
@@ -10,23 +11,13 @@ export class StatsView {
         $("#cc7Subset option[value='missing-links']").prop("disabled", true);
         $("#cc7Subset option[value='complete']").prop("disabled", true);
         const subset = $("#cc7Subset").val();
-        let subsetWord = CC7Utils.subsetWord();
+        const gender = $("#cc7Gender").val();
+        let subsetWord = CC7Utils.subsetWords();
         if (subsetWord !== "") subsetWord = subsetWord + " ";
-        const caption = "Statistics for " + CC7Utils.tableCaptionWithSubset();
+        const caption = "Statistics for " + CC7Utils.tableCaption();
         const genNames = fillGenNames(subset);
         const statsView = $(`
-            <div id='statsView' class="subsetable ${subset}">
-                <fieldset id="statsFieldset">
-                    <legend>Options:</legend>
-                    <label for="gender"
-                        title="The genders to search and report on">Genders to search
-                        <select id="gender" title="The genders to search and report on">
-                            <option value="">all</option>
-                            <option value="Male">males only</option>
-                            <option value="Female">females only</option>
-                        </select>
-                    </label>
-                </fieldset>
+            <div id='statsView' class="cc7ViewTab subsetable ${subset} ${CC7Utils.genderClass(gender)}">
                 <table id="statsTable">
                     <caption>${caption}</caption>
                     <thead>
@@ -67,12 +58,7 @@ export class StatsView {
         }
         $("#statsTable > tbody").html(""); // Clear away any previous stats
         $("#resultsContainer").html(""); // Clear away any previous results
-        $("#gender").val(gender);
-        $("#gender")
-            .off("change")
-            .on("change", function () {
-                StatsView.build($(this).val());
-            });
+        $("#cc7Gender").val(gender);
         const familyMembers = getSubset();
 
         function getSubset() {
@@ -128,7 +114,7 @@ export class StatsView {
             // for each family member
             for (const familyMember of familyMembers.values()) {
                 const generation = familyMember["Meta"]["Degrees"];
-                const gender = familyMember["Gender"];
+                const profileGender = familyMember["Gender"];
                 const birthYear = parseInt(familyMember.adjustedBirth.date.substring(0, 4));
                 const annotatedAgeAtDeath = Utils.ageAtDeath(familyMember);
                 const adjustedMarriage = Utils.getTheDate(familyMember, "Marriage");
@@ -169,13 +155,13 @@ export class StatsView {
                         oldestPerson = personRef;
                     }
 
-                    if ((gender == "Male") & (sortingAge > sortingOldestMaleAge)) {
+                    if ((profileGender == "Male") & (sortingAge > sortingOldestMaleAge)) {
                         sortingOldestMaleAge = sortingAge;
                         oldestMaleAnnotatedAge = annotatedAgeAtDeath;
                         oldestMalePerson = personRef;
                     }
 
-                    if (gender == "Female" && sortingAge > sortingOldestFemaleAge) {
+                    if (profileGender == "Female" && sortingAge > sortingOldestFemaleAge) {
                         sortingOldestFemaleAge = sortingAge;
                         oldestFemaleAnnotatedAge = annotatedAgeAtDeath;
                         oldestFemalePerson = personRef;

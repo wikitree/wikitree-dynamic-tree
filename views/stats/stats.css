@@ -21,6 +21,7 @@
   border-top: 1px solid forestgreen;
   border-left: 1px solid forestgreen;
   border-right: 1px solid forestgreen;
+  caption-side: top;
 }
 
 #stats-table thead tr {

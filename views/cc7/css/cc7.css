@@ -1,17 +1,3 @@
-/* Default link styling */
-a:link {
-  color: #0271fb;
-}
-a:visited {
-  color: #bd02fb;
-}
-a:hover,
-a:focus {
-  color: #000;
-}
-a:active {
-  color: #fb0e02;
-}
 div.cc7Table {
   --content-padding: 0;
 }
@@ -47,9 +33,11 @@ div.cc7Table button[disabled] {
 }
 
 img.familyHome,
-img.privacyImage,
 img.timelineButton {
   height: 15px;
+}
+img.privacyImage {
+  height: 18px;
 }
 .cc7Table .bioIssue,
 img.familyHome,
@@ -89,6 +77,30 @@ div.cc7Table #tree {
 .cc7notes h2 {
   font-size: 1.2em;
 }
+
+.cc7notes .note-header {
+  display: flex;
+  justify-content: space-between; /* pushes date to the right */
+  align-items: center; /* vertically center label + select and date */
+  width: 100%; /* full width of popup */
+  margin-bottom: 0.5em;
+}
+
+.cc7notes .note-header label {
+  display: flex; /* keeps <b>Status:</b> and select together */
+  align-items: center;
+}
+
+.cc7notes .note-header select {
+  margin-left: 0.2em; /* spacing between Status label and dropdown */
+}
+
+.cc7notes .last-modified {
+  font-size: 0.75em;
+  color: #555;
+  white-space: nowrap; /* keep date on a single line */
+}
+
 .cc7Table .degree.hasNote {
   position: relative; /* Ensure the gradient respects the td's bounds */
 }
@@ -236,6 +248,7 @@ div.cc7Table .timelineTable td {
   background: white;
   border-top: 1px solid forestgreen;
   border-bottom: 1px solid forestgreen;
+  caption-side: top;
 }
 
 .cc7Table #degreesTable {
@@ -248,6 +261,13 @@ div.cc7Table .timelineTable td {
 }
 .cc7Table #ancReport {
   margin: 0 1em 1em;
+}
+.cc7Table .trueSize {
+  padding-left: 1em !important;
+  text-align: left;
+}
+.cc7Table #sizeWarn {
+  color: red;
 }
 
 .cc7Table #peopleTable.wide {
@@ -408,40 +428,18 @@ span.missingText {
 .cc7Table .relationCell {
   white-space: nowrap;
 }
-#getPeopleButton {
-  width: 7em;
-  text-align: center;
-  margin-left: 1em;
-  margin-right: 0.5em;
-  white-space: nowrap;
-  margin-bottom: 1em;
-}
 #cc7Degree {
-  width: 2.5em;
-  min-width: 2.5em;
-  margin-right: 0.5em;
+  width: 3em;
+  min-width: 3em;
 }
 #cc7Degree option {
   text-align: center;
 }
-#getDegreeButton {
-  margin-right: 20px;
-}
 
-div.cc7Table select,
-div.cc7Table input {
-  padding: 0.3em;
-  width: auto;
-  padding-right: 1em;
-  background-size: 1em 2em;
-}
 #cc7Subset {
   margin-left: 1em;
   min-width: 3em;
   padding-right: 1.5em;
-}
-#cc7PBFilter {
-  min-width: 1em;
 }
 #cc7DegFilter {
   min-width: 1em;
@@ -498,6 +496,14 @@ div.cc7Table #settingsDIV input[type="radio"] {
 }
 .cc7ImgKey span.none {
   height: 1.3em;
+}
+
+.cc7Table #mlButtons {
+  margin-top: 0.75em;
+  margin-left: 1em;
+}
+.cc7Table #mlButtons label {
+  margin-right: 0.5em;
 }
 
 td.degree {
@@ -621,7 +627,7 @@ div.cc7Table th[id] {
 }
 
 button.viewButton {
-  background: #25422d;
+  /* background: #25422d;
   border: 0;
   outline: none;
   cursor: pointer;
@@ -637,7 +643,8 @@ button.viewButton {
   font-weight: normal;
   text-decoration: none !important;
   cursor: pointer;
-  line-height: normal;
+  line-height: normal; */
+  margin-left: 1em;
   transition: all 0.1s ease-in-out;
   box-shadow: 0px 2px 4px 0px gray;
 }
@@ -647,7 +654,7 @@ button.viewButton.active {
   color: #25422d;
   font-weight: bold;
   transform: translateY(2px);
-  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.1);
 }
 
 div.degreeView #hierarchyViewButton {
@@ -721,7 +728,10 @@ div.cc7Table #savePeople {
   font-size: 0.8em;
 }
 
-table tr.cc7filter-row input[type="text"] {
+div.cc7Table .cc7filter-row th {
+  padding: 0;
+}
+#cc7Container table tr.cc7filter-row input[type="text"] {
   width: 100%;
   box-sizing: border-box;
   padding: 0.1em;
@@ -759,32 +769,34 @@ table tr.cc7filter-row input[type="text"] {
   width: 100%;
 }
 
-#cc7Container li.select2-results__option {
-  height: 0.8em;
-  margin-bottom: 0;
+#cc7Container ul.select2-results__options {
+  margin: 0;
+  padding: 0 0 0 6px;
 }
-#cc7Container .select2-dropdown {
-  width: 40px !important;
+#cc7Container li.select2-results__option {
+  min-height: 18px;
+  padding: 0;
+  margin-bottom: 0 !important;
+}
+÷#cc7Container .select2-dropdown {
+  width: 45px !important;
+}
+#cc7Container.cc7Table span.select2-selection__rendered {
+  min-width: 2.5em;
+}
+#cc7Container.cc7Table span.select2-results ul {
+  margin-left: 0;
 }
 #cc7Container #relation,
 #cc7Container td.relation {
   width: 3em;
 }
-#cc7Container #statsView fieldset {
-  display: block;
-  margin-inline-start: 2px;
-  margin-inline-end: 2px;
-  padding-block-start: 0.35em;
-  padding-inline-start: 0.75em;
-  padding-inline-end: 0.75em;
-  padding-block-end: 0.625em;
-  min-inline-size: min-content;
-  border-width: 2px;
-  border-style: groove;
-  border-color: rgb(192, 192, 192);
-  border-image: initial;
-  border-radius: 5px;
-  margin-bottom: 10px;
+#cc7Container legend {
+  font-size: 110%;
+  float: none;
+  width: auto;
+  display: table;
+  margin-bottom: 0;
 }
 #cc7Container #statsView #resultsContainer {
   margin: 25px auto;
@@ -793,7 +805,7 @@ table tr.cc7filter-row input[type="text"] {
 
 #cc7Container #statsTable {
   border-collapse: collapse;
-  margin: 5px auto 10px;
+  margin: 1em auto 10px;
   border-radius: 5px 5px 0 0;
   overflow: hidden;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
@@ -804,6 +816,7 @@ table tr.cc7filter-row input[type="text"] {
   border-top: 1px solid forestgreen;
   border-left: 1px solid forestgreen;
   border-right: 1px solid forestgreen;
+  caption-side: top;
 }
 
 #cc7Container #statsTable thead tr {
@@ -868,45 +881,47 @@ table tr.cc7filter-row input[type="text"] {
    Print styles
    ---------------------------------------------------------*/
 @media print {
-  * {
-    color: #000 !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
-    /* background:transparent !important;*/
-  }
-  html {
-    background-color: #fff;
-  }
-  /* Hide navigation */
-  nav {
-    display: none;
-  }
+  :root:has(#cc7Container) {
+    * {
+      color: #000 !important;
+      box-shadow: none !important;
+      text-shadow: none !important;
+      /* background:transparent !important;*/
+    }
+    html {
+      background-color: #fff;
+    }
+    /* Hide navigation */
+    nav {
+      display: none;
+    }
 
-  /* Show link destinations in brackets after the link text */
-  /* a[href]:after { content: " (" attr(href) ") "; }*/
-  a[href] {
-    font-weight: bold;
-    text-decoration: underline;
-    color: #06c;
-    border: none;
-  }
-  /* Don't show link destinations for JavaScript or internal links */
-  a[href^="javascript:"]:after,
-  a[href^="#"]:after {
-    content: "";
-  }
+    /* Show link destinations in brackets after the link text */
+    /* a[href]:after { content: " (" attr(href) ") "; }*/
+    a[href] {
+      font-weight: bold;
+      text-decoration: underline;
+      color: #06c;
+      border: none;
+    }
+    /* Don't show link destinations for JavaScript or internal links */
+    a[href^="javascript:"]:after,
+    a[href^="#"]:after {
+      content: "";
+    }
 
-  /* Show abbr title value in brackets after the text */
-  abbr[title]:after {
-    content: " (" attr(title) ")";
-  }
+    /* Show abbr title value in brackets after the text */
+    abbr[title]:after {
+      content: " (" attr(title) ")";
+    }
 
-  figure {
-    margin-bottom: 1em;
-    overflow: hidden;
-  }
+    figure {
+      margin-bottom: 1em;
+      overflow: hidden;
+    }
 
-  figure img {
-    border: 1px solid #000;
+    figure img {
+      border: 1px solid #000;
+    }
   }
 }

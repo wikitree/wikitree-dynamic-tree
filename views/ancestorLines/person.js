@@ -2,6 +2,9 @@ import { theSourceRules } from "../../lib/biocheck-api/src/SourceRules.js";
 import { BioCheckPerson } from "../../lib/biocheck-api/src/BioCheckPerson.js";
 import { Biography } from "../../lib/biocheck-api/src/Biography.js";
 
+// ancestor_lines_explorer.js --> add HTML for PopupDIV and ConnectionsDIV and draggable();
+// display.js --> add call to .on ("click", function(e,d) { d.data.handleClick();
+
 export class Person {
     constructor(data, fromFile = false) {
         let name = data.BirthName ? data.BirthName : data.BirthNamePrivate;
@@ -10,7 +13,7 @@ export class Person {
         } else {
             if ("bio" in data && data.Name) {
                 const bioPerson = new BioCheckPerson();
-                if (bioPerson.canUse(data, false, true, data.Name)) {
+                if (bioPerson.canUse(data, false, false, false, window.wtViewRegistry.session.lm.user.id)) {
                     const biography = new Biography(theSourceRules);
                     biography.parse(bioPerson.getBio(), bioPerson, "");
                     biography.validate();
@@ -95,6 +98,9 @@ export class Person {
     }
     getParentIds() {
         return [this._data.Father, this._data.Mother];
+    }
+    getName() {
+        return this._data.Name;
     }
     getDisplayName() {
         return this._data.BirthName ? this._data.BirthName : this._data.BirthNamePrivate;
@@ -181,6 +187,21 @@ export class Person {
 
     toString() {
         return `${this.getWtId()} (${this.getId()}) ${this.getDisplayName()}`;
+    }
+
+    handleClick() {
+        console.log("Gday Mate!");
+        personPopup.popupHTML(
+            this,
+            {
+                type: "Ahn",
+                ahNum: 1,
+                primaryPerson: this,
+                myAhnentafel: FractalView.myAhnentafel,
+            },
+            AboutAppIcon,
+            "fractal"
+        );
     }
 
     static getReportLines(biography, isPre1700) {

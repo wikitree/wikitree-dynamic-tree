@@ -1,0 +1,309 @@
+/* Normalise buttons */
+.ccd button {
+  font-weight: normal;
+  font-size: 14px !important;
+  min-width: auto !important;
+  padding: 0.5em !important;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+}
+
+.ccd {
+  --a-colour: rgba(102, 102, 204, 0.6);
+  --b-colour: rgba(204, 102, 102, 0.6);
+  --o-colour: rgba(102, 204, 102, 0.6);
+  --a-full: rgba(102, 102, 204, 1);
+  --b-full: rgba(204, 102, 102, 1);
+  --o-full: rgba(102, 204, 102, 1);
+}
+
+#ccdContainer h4 {
+  font-size: 14px;
+  margin-left: 7px;
+  margin-bottom: 0.05em;
+}
+
+.ccd #ccdContainer {
+  padding: 0.3em;
+}
+.ccd #theSvg {
+  overflow-x: auto;
+  width: 100%;
+}
+.ccd table {
+  margin-bottom: 0;
+}
+.ccd td {
+  padding: 0;
+}
+
+.ccd #ccdOptions {
+  cursor: pointer;
+}
+.ccd legend {
+  font-size: 110%;
+  float: none;
+  width: auto;
+  display: table;
+  margin-bottom: 0;
+}
+
+.ccd fieldset {
+  font-size: 90%;
+  /* line-height: 1; */
+  display: block;
+  margin-inline-start: 2px;
+  margin-inline-end: 2px;
+  padding-block-start: 0.35em;
+  padding-inline-start: 0.75em;
+  padding-inline-end: 0.75em;
+  padding-block-end: 0;
+  min-inline-size: min-content;
+  border-width: 2px;
+  border-style: groove;
+  border-color: rgb(192, 192, 192);
+  border-image: initial;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+.ccd fieldset input {
+  margin: 0;
+}
+.ccd fieldset label {
+  margin-right: 0;
+}
+.ccd fieldset label.left {
+  margin-left: 10px;
+}
+.ccd fieldset label.right {
+  margin-right: 10px;
+}
+
+.ccd path.node {
+  fill: #fff;
+  stroke-width: 3px;
+}
+
+.ccd polygon.node {
+  cursor: pointer;
+}
+
+.ccd path.node.male {
+  stroke: var(--a-colour);
+}
+.ccd path.node.male.birthPlaced {
+  stroke: var(--a-full);
+}
+
+.ccd path.node.female {
+  stroke: var(--b-colour);
+}
+.ccd path.node.female.birthPlaced {
+  stroke: var(--b-full);
+}
+
+.ccd path.node.other {
+  stroke: var(--o-colour);
+}
+.ccd path.node.other.birthPlaced {
+  stroke: var(--o-full);
+}
+
+.ccd path.node.ofinterest {
+  stroke: coral;
+}
+
+.ccd path.node.end {
+  stroke: red;
+}
+
+.ccd .node rect.dup.marked {
+  stroke-width: 3px;
+  stroke: black;
+}
+
+.ccd .treeHeader,
+.ccd .children-list,
+.ccd .alt-spouse-list-wrapper,
+.ccd .node text {
+  font: 12px sans-serif;
+}
+
+.ccd text.marked {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.ccd .ccdlink {
+  fill: none;
+  stroke-width: 2px;
+}
+
+.ccd .ccdlink.ofinterest {
+  stroke: lightcoral;
+}
+
+.ccd .ccdlink.marked {
+  stroke: green;
+}
+
+.ccd .links line {
+  stroke: #999;
+  stroke-opacity: 0.6;
+}
+
+.ccd .nodes circle {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.ccd #ccdBrickWallColour,
+.ccd #ccdLinkLineColour {
+  width: 2em;
+  padding: 2px;
+}
+
+.ccd #edgeFactor,
+.ccd #ccdTHFactor {
+  width: 4em;
+}
+
+.ccd #help-text {
+  display: none;
+  border: 3px solid forestgreen;
+  border-radius: 1em;
+  padding: 0.3em 1em;
+  margin: 1em auto;
+  position: absolute;
+  top: 20px;
+  right: 100px;
+  width: 50em;
+  background: white;
+  box-shadow: 1em 1em 1em grey;
+  z-index: 11000;
+}
+
+.ccd xx {
+  position: absolute;
+  top: 0.2em;
+  right: 0.6em;
+  font-size: 1em;
+  cursor: pointer;
+  font-weight: bold;
+  color: red;
+}
+.ccd x {
+  position: absolute;
+  top: 0em;
+  left: 0.5em;
+  /* font-size: 1em; */
+  cursor: pointer;
+  font-weight: bold;
+  color: red;
+}
+
+.ccd .pop-up:hover {
+  cursor: grab;
+}
+.ccd .pop-up:active {
+  cursor: grabbing;
+}
+.ccd #help-text h3 {
+  font-size: 1.3em;
+  margin-bottom: 0.5em;
+}
+
+.ccd .spouse-list ol,
+.ccd .children-list ol {
+  border: none;
+  margin: 6px;
+  padding-top: 0px;
+  padding-left: 20px;
+  text-align: left;
+  --content-padding: 0;
+}
+.ccd .spouse-list li,
+.ccd .children-list li {
+  margin-bottom: 0;
+}
+.ccd .children-list,
+.ccd .alt-spouse-list-wrapper {
+  background: white;
+  border-radius: 1em;
+  border: 3px solid forestgreen;
+  box-shadow: 0.5em 0.5em 0.5em 0.5em #ccc;
+  display: none;
+  position: absolute;
+  padding: 1.5em 1em 1em;
+  /* white-space: nowrap; */
+  z-index: 10000;
+}
+
+.ccd .select-spouse-button {
+  font-size: 2em !important;
+  margin: 0;
+  vertical-align: text-bottom;
+  text-transform: none;
+  padding: 0px 2px !important;
+  color: green;
+  background-color: transparent;
+}
+
+.ccd .select-spouse-button:hover {
+  cursor: pointer;
+  /* color: #fc7171; */
+}
+
+.ccd .a-radio {
+  background-color: var(--a-colour);
+  border: 2px solid var(--a-colour);
+}
+
+.ccd .b-radio {
+  background-color: var(--b-colour);
+  border: 2px solid var(--b-colour);
+}
+
+.ccd .gray-radio {
+  background-color: darkgray;
+  border: 2px solid darkgray;
+}
+
+.ccd input[type="radio"][class$="-radio"] {
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background-color: white;
+  opacity: 1;
+  &:checked::before {
+    content: "";
+    display: block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background-color: currentColor;
+    position: relative;
+    transform: translate(50%, 50%);
+  }
+}
+
+@media print {
+  .ccd-not-printable {
+    display: none;
+  }
+}
+
+@media only screen and (max-width: 767px) {
+  #ccdContainer .ui-draggable-handle {
+    -ms-touch-action: auto !important;
+    touch-action: auto !important;
+  }
+  #ccdContainer #ct-help-text {
+    position: relative !important;
+    width: 70% !important;
+    margin: auto !important;
+    top: auto;
+    right: auto;
+  }
+}
