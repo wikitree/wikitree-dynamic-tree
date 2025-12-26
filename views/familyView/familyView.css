@@ -6,11 +6,13 @@
   clear: both;
 }
 
-#family_group h2, #children_list h2 {
+#family_group h2,
+#children_list h2 {
   text-indent: 5%;
 }
 
-#family_group h3, #children_list h3 {
+#family_group h3,
+#children_list h3 {
   font-size: 90%;
   text-indent: 8%;
 }
@@ -84,11 +86,14 @@
       font-size: 80%;
     }
 
-    .icon {
+    .icon,
+    .familyViewOptions {
       display: none;
     }
 
-    a:link, a:visited, a {
+    a:link,
+    a:visited,
+    a {
       color: black;
       text-decoration: none;
     }
@@ -100,19 +105,22 @@
     margin: 0 !important;
   }
 
-  #family_group h2, #children_list h2 {
+  #family_group h2,
+  #children_list h2 {
     text-indent: 0;
     font-size: 100%;
     margin-bottom: 0;
   }
 
-  #family_group h3, #children_list h3 {
+  #family_group h3,
+  #children_list h3 {
     text-indent: 0;
     font-size: 90%;
     margin-bottom: 0;
   }
 
-  .fv_familyBlock, .fv_Bio {
+  .fv_familyBlock,
+  .fv_Bio {
     page-break-inside: avoid;
   }
 
@@ -122,8 +130,29 @@
     margin: 0 !important;
   }
 
-  .fv_Parents, .fv_Children {
+  .fv_Parents,
+  .fv_Children {
     font-size: 80%;
   }
+}
 
+.familyViewOptions {
+  background-color: #f7f7f7;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 10px;
+  margin: 10px auto;
+  width: 95%;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.familyViewOptions label {
+  font-weight: bold;
+}
+
+.wt-id {
+  font-size: 0.8em;
+  color: #666;
 }
