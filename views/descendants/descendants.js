@@ -121,25 +121,31 @@ window.DescendantsView = class DescendantsView extends View {
 
         $(`<div id='descendantsButtons'>
         <fieldset id="helpEtc">
+        <span id="viewSwitcher">
+            <button class='small active' id='viewTree' title="Switch to Tree View">Tree View</button>
+            <button class='small' id='viewReport' title="Switch to Report View">Report View</button>
+        </span>
         <button class='small download' id='downloadCSV' title="Download data as CSV">CSV</button>
         <button class='small download' id='excelOut' title="Download data as Excel">Excel</button>
+        <button class='small' id='printReport' title="Print the current view">Print</button>
         <button class='small' id='showHelp' title="Show help">?</button>
         </fieldset>
 
-        <button class='small' id='remove' style='display:none' title="Remove selected item"></button>
-        <button class='small dna off' id='xButton' title="Toggle people with a possible X chromosome from the primary person">X</button>
-        <button class='small dna off' id='yButton' title="Toggle people with a Y chromosome from the primary person">Y</button>
-        <button class='small dna off' id='mtButton' title="Click to show only descendants with mtDNA from the primary person">MT</button>
-        <select id="generationSelect" title="Select generation"></select>
-        <label title="Show spouses"><input type="checkbox" id="showSpouses">Spouses</label>
-        <label title="Show childless"><input type="checkbox" id="showChildless">Childless</label>
-        <fieldset id="showHide">
+        <fieldset id="treeViewControls">
+            <button class='small' id='remove' style='display:none' title="Remove selected item"></button>
+            <button class='small dna off' id='xButton' title="Toggle people with a possible X chromosome from the primary person">X</button>
+            <button class='small dna off' id='yButton' title="Toggle people with a Y chromosome from the primary person">Y</button>
+            <button class='small dna off' id='mtButton' title="Click to show only descendants with mtDNA from the primary person">MT</button>
+            <select id="generationSelect" title="Select generation"></select>
+            <label title="Show spouses"><input type="checkbox" id="showSpouses">Spouses</label>
+            <label title="Show childless"><input type="checkbox" id="showChildless">Childless</label>
             <label title="Show birth and death places"><input type="checkbox" id="showPlaces">Places</label>
             <label title="Show WikiTree IDs"><input type="checkbox" id="showWTID">WT ID</label>
             <label title="Show Aboville numbers"><input type="checkbox" id="showAboville">Aboville #</label>
+            <label title="Show biographies" id="showBiosLabel"><input type="checkbox" id="showBios"><span id="checkboxIndicator"></span>Biographies</label>
         </fieldset>
         <fieldset id="dateFormat">
-        <label><input type="checkbox" id="showDates" title="Show dates">Dates:</label>
+            <label><input type="checkbox" id="showDates" title="Show dates">Show:</label>
             <select id="dateDataStatusSelect" title="Select date data status format">
                 <option value="abbreviations">bef., aft., abt.</option>
                 <option value="words">before, after, about</option>
@@ -153,9 +159,24 @@ window.DescendantsView = class DescendantsView extends View {
                 <option value="Y">1859</option>
             </select>
         </fieldset>
-        <label title="Show biographies" id="showBiosLabel"><input type="checkbox" id="showBios"><span id="checkboxIndicator"></span>Biographies</label>
+        <fieldset id="reportControls">
+            <select id="reportGenerationSelect" title="Max generations for report"></select>
+            <button class='small' id='buildReport' title="Generate a Family Tree Maker–style report">Build report</button>
+            <button class='small' id='cancelReport' disabled title="Cancel report generation">Cancel</button>
+            <label id="reportPhotosLabel" title="Include profile photos in report"><input type="checkbox" id="reportPhotos">Photos</label>
+            <span id='reportStatusText'></span>
+        </fieldset>
 
         </div>`).appendTo($(container_selector));
+
+        // Ensure the report wrapper lives immediately after the toolbar so it doesn't sit above controls
+        if ($("#descendantsReportWrapper").length === 0) {
+            $(
+                "<div id='descendantsReportWrapper' class='hidden'><div id='descendantsReportStatus'></div><div id='descendantsReport'></div></div>"
+            ).insertAfter("#descendantsButtons");
+        } else {
+            $("#descendantsReportWrapper").insertAfter("#descendantsButtons");
+        }
 
         //Set up the checkboxes
         const settings = [
@@ -255,6 +276,37 @@ window.DescendantsView = class DescendantsView extends View {
         }
         toggleDateVisibility();
 
+        // View Switcher Handlers
+        $(container_selector).off("click", "#viewTree");
+        $(container_selector).on("click", "#viewTree", function (e) {
+            e.preventDefault();
+            if ($("body").hasClass("report-mode")) {
+                $("body").removeClass("report-mode");
+                $("#viewTree").addClass("active");
+                $("#viewReport").removeClass("active");
+                $("#descendantsReportWrapper").hide();
+                $("#descendants").show();
+            }
+        });
+
+        $(container_selector).off("click", "#viewReport");
+        $(container_selector).on("click", "#viewReport", function (e) {
+            e.preventDefault();
+            if (!$("body").hasClass("report-mode")) {
+                $("body").addClass("report-mode");
+                $("#viewReport").addClass("active");
+                $("#viewTree").removeClass("active");
+                $("#descendantsReportWrapper").show();
+                $("#descendants").hide();
+
+                // Build report if empty (first run)
+                // Use a check length to ensure we don't rebuild if satisfied.
+                if ($("#descendantsReport").is(":empty")) {
+                    $("#buildReport").click();
+                }
+            }
+        });
+
         $(container_selector).off("click", "#showHelp,#closeHelp");
         $(container_selector).on("click", "#showHelp,#closeHelp", function (e) {
             $("#descendantsHelp").toggle();
@@ -296,6 +348,38 @@ window.DescendantsView = class DescendantsView extends View {
         $(container_selector).off("change click", "#generationSelect");
         $(container_selector).on("change click", "#generationSelect", function (e) {
             showUpToGeneration();
+        });
+
+        $(container_selector).off("click", "#reportModeToggle");
+        $(container_selector).on("click", "#reportModeToggle", function () {
+            const isOn = $(this).prop("checked");
+            $("body").toggleClass("report-mode", isOn);
+            $("#descendantsReportWrapper").toggleClass("hidden", !isOn);
+            $("#descendants").toggleClass("hidden", isOn); // Hide tree when report is on
+            $("#printReport").prop("disabled", !isOn);
+        });
+
+        $(container_selector).off("change", "#reportPhotos");
+        $(container_selector).on("change", "#reportPhotos", function () {
+            $("#descendantsReportWrapper").toggleClass("show-photos", $(this).prop("checked"));
+        });
+
+        $(container_selector).off("click", "#buildReport");
+        $(container_selector).on("click", "#buildReport", function (e) {
+            e.preventDefault();
+            startReportBuild();
+        });
+
+        $(container_selector).off("click", "#cancelReport");
+        $(container_selector).on("click", "#cancelReport", function (e) {
+            e.preventDefault();
+            cancelReportBuild();
+        });
+
+        $(container_selector).off("click", "#printReport");
+        $(container_selector).on("click", "#printReport", function (e) {
+            e.preventDefault();
+            window.print();
         });
 
         $(container_selector).off("click", "#excelOut");
@@ -695,6 +779,8 @@ const fields = [
     "Suffix",
     "Spouses",
 ];
+
+const reportFields = [...fields, "Bio", "PhotoData", "Photo", "BurialLocation", "Occupation"];
 
 // Parent template
 function createParentTemplate(parentData) {
@@ -1115,11 +1201,17 @@ function displayPerson(id, people, generation) {
 
         const collapseButton = `<button title="Hide this person and their descendants" class='collapse small'></button>`;
         const newItem = $(
-            `<li data-id='${person.Id}' data-father="${person.Father}" data-mother="${person.Mother}" data-name="${person.Name}" 
+            `<li data-id='${person.Id}' data-father="${person.Father}" data-mother="${person.Mother}" data-name="${
+                person.Name
+            }" 
             data-birth-year="${birthYear}"  data-death-year="${deathYear}" data-birth-date="${person.BirthDate}" 
             data-birth-date-status="${person?.DataStatus?.BirthDate}" data-death-date="${person.DeathDate}" 
-            data-death-date-status="${person?.DataStatus?.DeathDate}" data-gender='${person.Gender}' 
-            data-x='0' data-ydna='0' data-mtdna='0' class='${theGender} person' data-haschildren="${person.HasChildren}">
+            data-death-date-status="${person?.DataStatus?.DeathDate}" data-birth-place="${
+                person.BirthLocation || ""
+            }" data-death-place="${person.DeathLocation || ""}" data-gender='${person.Gender}' 
+            data-x='0' data-ydna='0' data-mtdna='0' class='${theGender} person' data-haschildren="${
+                person.HasChildren
+            }">
             ${childIndicator} ${listItemContent}<ul data-generation='${generation}' class='${ulState} personList'>
             </ul>${collapseButton}</li>`
         );
@@ -1261,6 +1353,22 @@ function fillUpToGenerationSelect() {
             $(this).remove();
         }
     });
+
+    fillReportGenerationSelect(highestGeneration);
+}
+
+function fillReportGenerationSelect(highestGeneration) {
+    const reportSelect = $("#reportGenerationSelect");
+    if (reportSelect.length === 0) {
+        return;
+    }
+    reportSelect.empty();
+    const maxGen = Math.max(1, highestGeneration || 1);
+    const defaultMax = Math.min(3, maxGen);
+    for (let i = 1; i <= maxGen; i++) {
+        reportSelect.append(`<option value='${i}'>Report up to Generation ${i}</option>`);
+    }
+    reportSelect.val(defaultMax);
 }
 
 async function getMoreDetails(wtid) {
@@ -1836,11 +1944,22 @@ function extractSpouseData(spouses) {
     if (spouses.length > 0) {
         let spouseText = ``;
         spouses?.forEach((spouse) => {
-            let name = spouse.querySelector("dd")?.dataset.fullname;
-            let wtid = spouse.querySelector("dd")?.dataset.name;
-            let dates = spouse.querySelector("dd")?.dataset.dates;
-            let marriageDate = spouse.querySelector("dt.marriageDate")?.textContent.trim() || "";
-            spouseText += `${name} (${wtid}) ${dates}` + (marriageDate ? `, (m. ${marriageDate})` : ``) + `; `;
+            const dt = spouse.querySelector("dt.marriageDate");
+            const dd = spouse.querySelector("dd");
+            if (!dd) return;
+
+            const name = dd.dataset.fullname;
+            const wtid = dd.dataset.name;
+            const dates = dd.dataset.dates;
+            const marriageDate = dt?.textContent.trim() || "";
+            const marriageLoc = dt?.dataset.marriageLocation || "";
+
+            spouseText += `${name} (${wtid}) ${dates}`;
+            if (marriageDate || marriageLoc) {
+                spouseText += `, m. ${marriageDate}`;
+                if (marriageLoc) spouseText += ` in ${marriageLoc}`;
+            }
+            spouseText += `; `;
         });
         return spouseText;
     } else {
@@ -2056,4 +2175,588 @@ function updateShowBiosState() {
     } else {
         $mainCheckbox.addClass("half-checked");
     }
+}
+
+// ---------------------
+// Report mode helpers
+// ---------------------
+
+const REPORT_LIMITS = {
+    batchSize: 6,
+    perBioChars: 400000,
+    totalChars: 3000000,
+};
+
+let reportState = {
+    running: false,
+    cancel: false,
+    total: 0,
+    done: 0,
+    skipped: 0,
+    errors: 0,
+    bytes: 0,
+};
+
+window.descendantsReportCache = window.descendantsReportCache || {};
+
+function resetReportState() {
+    window.descendantsReportCache = {}; // Clear cache to ensure new logic (spouses, etc) is applied
+    reportState = {
+        running: false,
+        cancel: false,
+        total: 0,
+        done: 0,
+        skipped: 0,
+        errors: 0,
+        bytes: 0,
+        lastReportNumber: 0,
+        reportNumberMap: new Map(),
+        currentGeneration: 0,
+    };
+}
+
+function getRomanNumeral(num) {
+    if (num <= 0) return "";
+    const romanLookup = [
+        { v: 1000, r: "m" },
+        { v: 900, r: "cm" },
+        { v: 500, r: "d" },
+        { v: 400, r: "cd" },
+        { v: 100, r: "c" },
+        { v: 90, r: "xc" },
+        { v: 50, r: "l" },
+        { v: 40, r: "xl" },
+        { v: 10, r: "x" },
+        { v: 9, r: "ix" },
+        { v: 5, r: "v" },
+        { v: 4, r: "iv" },
+        { v: 1, r: "i" },
+    ];
+    let result = "";
+    for (const { v, r } of romanLookup) {
+        while (num >= v) {
+            result += r;
+            num -= v;
+        }
+    }
+    return result;
+}
+
+function setReportUiState({ busy }) {
+    $("#buildReport").prop("disabled", busy);
+    $("#cancelReport").prop("disabled", !busy);
+    $("#printReport").prop("disabled", busy);
+}
+
+function startReportBuild() {
+    if (reportState.running) {
+        return;
+    }
+
+    const maxGeneration = parseInt($("#reportGenerationSelect").val() || 1);
+    const people = collectReportPeople(maxGeneration);
+    if (people.length === 0) {
+        updateReportStatus("No people are loaded for the selected generations.");
+        return;
+    }
+
+    $("#reportModeToggle").prop("checked", true);
+    $("#reportModeToggleLabel").show();
+    $("body").addClass("report-mode");
+    $("#descendantsReportWrapper").removeClass("hidden");
+    $("#descendantsReportWrapper").toggleClass("show-photos", $("#reportPhotos").prop("checked"));
+    $("#descendants").addClass("hidden"); // Hide tree when report starts
+    $("#printReport").prop("disabled", true);
+
+    resetReportState();
+    reportState.running = true;
+    reportState.total = people.length;
+    updateReportStatus(`Initializing report for ${people.length} profiles...`);
+    setReportUiState({ busy: true });
+
+    buildReportShell(people[0]);
+    processReportQueue(people).catch((error) => {
+        console.error("Report build failed", error);
+        updateReportStatus("Report build failed. See console for details.");
+        finishReportBuild();
+    });
+}
+
+function cancelReportBuild() {
+    if (!reportState.running) {
+        return;
+    }
+    reportState.cancel = true;
+    updateReportStatus("Cancelling...");
+}
+
+function finishReportBuild() {
+    setReportUiState({ busy: false });
+    reportState.running = false;
+
+    let doneMsg = `Report ready: ${reportState.done}/${reportState.total} profiles`;
+    if (reportState.cancel) doneMsg = `Report cancelled: ${reportState.done} profiles ready`;
+
+    const skippedMsg = reportState.skipped ? `, skipped ${reportState.skipped}` : "";
+    const errorMsg = reportState.errors ? `, errors ${reportState.errors}` : "";
+    updateReportStatus(doneMsg + skippedMsg + errorMsg);
+
+    // Ensure print is enabled at the end even if partial
+    $("#printReport").prop("disabled", false);
+}
+
+function buildReportShell(rootPerson) {
+    const $report = $("#descendantsReport");
+    $report.empty();
+
+    if (rootPerson && rootPerson.$el) {
+        const name = rootPerson.$el.find("a.profileLink").first().text().trim();
+        // Spouses in the tree use .spouseProfileLink
+        const $spouses = rootPerson.$el.find("dl.spouse a");
+        let spouseName = "";
+        if ($spouses.length > 0) {
+            spouseName = " and " + $($spouses[0]).text().trim();
+        }
+        if (name) {
+            $report.append(`<h1 class="report-main-title">Descendants of ${name}${spouseName}</h1>`);
+        }
+    }
+}
+
+function collectReportPeople(maxGeneration) {
+    const people = [];
+    $("#descendants li.person").each(function () {
+        const $li = $(this);
+        const generation = parseInt($li.closest("ul.personList").data("generation")) || 0;
+        if (generation <= maxGeneration) {
+            people.push({
+                id: $li.data("id"),
+                wtid: $li.data("name"),
+                aboville: $li.data("aboville"),
+                $el: $li,
+                generation: generation,
+            });
+        }
+    });
+    // Keep existing order (as displayed) which is already breadth-first
+    return people;
+}
+
+async function processReportQueue(queue) {
+    reportState.expandedSet = new Set(queue.map((p) => String(p.id)));
+    // Root person is always #1
+    if (queue.length > 0) {
+        reportState.lastReportNumber = 1;
+        reportState.reportNumberMap.set(String(queue[0].id), 1);
+    }
+
+    while (queue.length && !reportState.cancel) {
+        const batch = queue.splice(0, REPORT_LIMITS.batchSize);
+
+        // Update status with what we are doing
+        const wtidList = batch.map((p) => p.wtid).join(", ");
+        updateReportStatus(`Fetching bios for: ${wtidList}...`);
+
+        const batchMap = await fetchReportBatch(batch);
+
+        // Fetch spouses for this batch to get their vitals and parents
+        const spouseIds = new Set();
+        Object.values(batchMap).forEach((p) => {
+            if (p.Spouses) {
+                Object.values(p.Spouses).forEach((s) => {
+                    if (s.Id) spouseIds.add(s.Id);
+                });
+            }
+        });
+
+        let spouseMap = {};
+        if (spouseIds.size > 0) {
+            updateReportStatus(`Fetching spouse details for: ${wtidList}...`);
+            const spouseIdList = Array.from(spouseIds).join(",");
+            const [, , spouses] = await WikiTreeAPI.getPeople("TA_DescReportSpouses", spouseIdList, reportFields, {
+                resolveRedirect: 1,
+            });
+            spouseMap = spouses || {};
+        }
+
+        batch.forEach((person) => {
+            if (reportState.cancel) return;
+            const apiPerson = batchMap[String(person.id)] || batchMap[person.wtid];
+            const data = processReportPersonData(apiPerson, person, spouseMap);
+            renderReportPerson(person, data);
+        });
+
+        if (reportState.bytes >= REPORT_LIMITS.totalChars) {
+            updateReportStatus(`Stopped: reached size cap (${Math.round(reportState.bytes / 1000)} KB).`);
+            break;
+        }
+    }
+
+    finishReportBuild();
+}
+
+async function fetchReportBatch(batch) {
+    const keys = batch.map((p) => p.id).filter(Boolean);
+    if (!keys.length) {
+        return {};
+    }
+    try {
+        const [, , people] = await WikiTreeAPI.getPeople("TA_DescReport", keys, reportFields, {
+            bioFormat: "html",
+            resolveRedirect: 1,
+            getRelatives: 1, // Fallback to ensure Spouses are always fetched
+        });
+        return people || {};
+    } catch (error) {
+        console.error("getPeople batch failed", error);
+        reportState.errors += batch.length;
+        return {};
+    }
+}
+
+function processReportPersonData(apiPerson, person, spouseMap) {
+    const cacheKey = person.id || person.wtid;
+    const cached = window.descendantsReportCache[cacheKey];
+    if (cached) {
+        reportState.done++;
+        reportState.bytes += cached.bioHtml?.length || 0;
+        return cached;
+    }
+
+    if (!apiPerson) {
+        reportState.skipped++;
+        return { bioHtml: "", endnotes: [], skipped: true };
+    }
+
+    const bioHtml = apiPerson?.bioHTML || apiPerson?.Bio;
+    if (!bioHtml) {
+        reportState.skipped++;
+        return { bioHtml: "", endnotes: [], skipped: true };
+    }
+
+    if (bioHtml.length > REPORT_LIMITS.perBioChars) {
+        reportState.skipped++;
+        return { bioHtml: "", endnotes: [], skipped: true, reason: "bio too large" };
+    }
+
+    const sanitized = sanitizeBioHtml(bioHtml);
+    const processed = extractEndnotesFromBio(sanitized, person.id);
+
+    const totalSize = reportState.bytes + processed.bioHtml.length;
+    if (totalSize > REPORT_LIMITS.totalChars) {
+        reportState.cancel = true;
+        reportState.skipped++;
+        return { bioHtml: processed.bioHtml, endnotes: processed.endnotes, partial: true };
+    }
+
+    reportState.done++;
+    reportState.bytes += processed.bioHtml.length;
+    processed.photoUrl = apiPerson?.PhotoData?.url || apiPerson?.Photo;
+
+    // Attach rich spouse data
+    processed.spouses = [];
+    if (apiPerson.Spouses) {
+        Object.values(apiPerson.Spouses).forEach((sRef) => {
+            const sFull = spouseMap[String(sRef.Id)];
+            // Merge reference (marriage date/loc) with full profile (vitals/parents)
+            const merged = sFull ? Object.assign({}, sRef, sFull) : sRef;
+            processed.spouses.push(merged);
+        });
+    }
+
+    window.descendantsReportCache[cacheKey] = processed;
+    return processed;
+}
+
+function sanitizeBioHtml(bioHtml) {
+    const $wrapper = $("<div></div>").append(bioHtml);
+    $wrapper.find("img,table,script,style").remove();
+    $wrapper.find(".aContents,.status,.sticker").remove();
+    // Only open external links in new tabs
+    $wrapper.find("a").each(function () {
+        if (!$(this).attr("href")?.startsWith("#")) {
+            $(this).attr("target", "_blank");
+        }
+    });
+
+    // Strip empty paragraphs, paragraphs containing only <br>, or containing only whitespace
+    $wrapper.find("p").each(function () {
+        const text = $(this).text().trim();
+        const hasBr = $(this).find("br").length > 0;
+        const hasOtherStuff = $(this).children().not("br").length > 0;
+        if (!text && !hasOtherStuff) {
+            $(this).remove();
+        }
+    });
+
+    // Remove bare <br> tags that are direct children of wrapper (often cluttering the end/start)
+    $wrapper.children("br").remove();
+
+    // Ensure paragraphs exist for readability; wrap bare text nodes in paragraphs
+    $wrapper
+        .contents()
+        .filter(function () {
+            return this.nodeType === 3 && this.textContent.trim().length > 0;
+        })
+        .each(function () {
+            const $p = $("<p></p>").text(this.textContent);
+            $(this).replaceWith($p);
+        });
+    return $wrapper;
+}
+
+function extractEndnotesFromBio($wrapper, personId) {
+    const notes = [];
+
+    $wrapper.find("sup.reference").each(function () {
+        const $sup = $(this);
+        const href = $sup.find("a").attr("href") || "";
+        const num = notes.length + 1;
+        let noteHtml = "";
+        if (href.startsWith("#")) {
+            const target = $wrapper.find(href);
+            if (target.length) {
+                noteHtml = target.html();
+                target.remove();
+            }
+        }
+        if (!noteHtml) {
+            noteHtml = $sup.text() || "Citation";
+        }
+        notes.push(noteHtml);
+        $sup.replaceWith(`<sup class="report-citation">[${num}]</sup>`);
+    });
+
+    return { bioHtml: $wrapper.html(), endnotes: notes };
+}
+
+function getAncestryTrace($personLi) {
+    const ancestors = [];
+    let $current = $personLi.parents("li.person").first();
+    while ($current.length) {
+        const nameText = $current.find("a.profileLink").first().text().trim();
+        const firstName = nameText.split(" ")[0] || nameText;
+        const parentGen = (parseInt($current.closest("ul.personList").data("generation")) || 0) + 1;
+        ancestors.push(`${firstName}<sup>${parentGen}</sup>`);
+        $current = $current.parents("li.person").first();
+    }
+    if (ancestors.length === 0) return "";
+    return `<span class="report-ancestry-trace">(${ancestors.join(", ")})</span>`;
+}
+
+function formatSpouseNarrative(spouses, personGender) {
+    if (!spouses || spouses.length === 0) return "";
+
+    const results = spouses.map((s) => {
+        const name = s.FullName ? s.FullName.toUpperCase() : s.Name ? s.Name.toUpperCase() : "UNKNOWN";
+        const mDate = formatDateForReport(s.MarriageDate || s.marriage_date);
+        const mLoc = formatPlaceForReport(s.MarriageLocation || s.marriage_location);
+        const bDate = formatDateForReport(s.BirthDate);
+        const bLoc = formatPlaceForReport(s.BirthLocation);
+        const dDate = formatDateForReport(s.DeathDate);
+        const dLoc = formatPlaceForReport(s.DeathLocation);
+
+        let parentStr = "";
+        const father = s.Father ? s.Father.FullName || s.Father.Name : "";
+        const mother = s.Mother ? s.Mother.FullName || s.Mother.Name : "";
+        if (father || mother) {
+            const rel = s.Gender === "Male" ? "son" : s.Gender === "Female" ? "daughter" : "child";
+            parentStr = `, ${rel} of ${father || "unknown"}${father && mother ? " and " : ""}${mother || ""}`;
+        }
+
+        let vitalsStr = "";
+        if (bDate || bLoc || dDate || dLoc) {
+            const subj = s.Gender === "Male" ? "He" : s.Gender === "Female" ? "She" : "They";
+            vitalsStr = ` ${subj} was born ${bDate || ""}${bLoc ? " in " + bLoc : ""}${
+                dDate ? " and died " + dDate + (dLoc ? " in " + dLoc : "") : ""
+            }.`;
+        }
+
+        const g = personGender ? personGender.toLowerCase() : "";
+        const action =
+            g === "male" || g === "m" ? "He married" : g === "female" || g === "f" ? "She married" : "They married";
+        return `${action} ${name}${mDate ? " " + mDate : ""}${mLoc ? " in " + mLoc : ""}${parentStr}.${vitalsStr}`;
+    });
+
+    return results.join(" ");
+}
+
+function renderReportPerson(person, data) {
+    const $el = person.$el;
+    const wtid = person.wtid || "";
+    const name = $el.find("a.profileLink").first().text() || wtid;
+    const { birthDate, birthPlace, deathDate, deathPlace } = getReportVitalData($el);
+    const personGender = $el.data("gender");
+    // Register reports always show spouses regardless of tree view toggle
+    const spousesNarrative = formatSpouseNarrative(data.spouses, personGender);
+    const { listHtml: childrenList, count: childrenCount } = buildChildrenList($el);
+
+    const reportNumber = reportState.reportNumberMap.get(String(person.id)) || "";
+    const generation = person.generation + 1;
+
+    // Generation Header
+    if (generation > reportState.currentGeneration) {
+        reportState.currentGeneration = generation;
+        $("#descendantsReport").append(`<h2 class="report-generation-header">Generation No. ${generation}</h2>`);
+    }
+
+    const ancestryTrace = getAncestryTrace($el);
+
+    const endnoteList = data?.endnotes?.length
+        ? `<ol class="report-endnotes">${data.endnotes.map((n) => `<li>${n}</li>`).join("")}</ol>`
+        : "";
+
+    const bioHtml = data?.bioHtml ? data.bioHtml : "<em>Biography not loaded or skipped for this profile.</em>";
+
+    let photoHtml = "";
+    if (data?.photoUrl) {
+        photoHtml = `<img class="report-photo" src="https://www.wikitree.com${data.photoUrl}" alt="${name}">`;
+    }
+
+    let birthHtml = "";
+    if (birthDate || birthPlace) {
+        birthHtml = `<div class="report-vital-line">b. ${birthDate}${
+            birthDate && birthPlace ? ", " : ""
+        }${birthPlace}</div>`;
+    }
+
+    let deathHtml = "";
+    if (deathDate || deathPlace) {
+        deathHtml = `<div class="report-vital-line">d. ${deathDate}${
+            deathDate && deathPlace ? ", " : ""
+        }${deathPlace}</div>`;
+    }
+
+    const nameDisplay = name.toUpperCase();
+
+    // Extract sections from bio
+    const $tempBio = $("<div></div>").append(bioHtml);
+    let notesHtml = "";
+    $tempBio.find("h2").each(function () {
+        const $h2 = $(this);
+        if ($h2.text().toLowerCase().includes("research notes")) {
+            const $notes = $h2.nextUntil("h2");
+            notesHtml = `<div class="report-notes"><span class="report-section-label">Notes for ${nameDisplay}:</span>${$tempBio
+                .find("<div>")
+                .append($notes.clone())
+                .html()}</div>`;
+            $h2.remove();
+            $notes.remove();
+        }
+    });
+    const finalBioHtml = $tempBio.html();
+
+    const reportBlock = $(`
+        <article class="report-person" data-wtid="${wtid}">
+            <header class="report-person-header">
+                <div class="report-person-title">
+                    <span class="report-id-num">${reportNumber ? reportNumber + ". " : ""}</span>
+                    <span class="report-name">${nameDisplay}<sup>${generation}</sup></span>
+                    ${ancestryTrace}
+                </div>
+                ${photoHtml}
+                <div class="report-vitals">
+                    <span class="report-name-inline">${nameDisplay}</span> was born ${birthDate}${
+        birthPlace ? " in " + birthPlace : ""
+    }${deathDate ? " and died " + deathDate + (deathPlace ? " in " + deathPlace : "") : ""}. ${spousesNarrative}
+                </div>
+            </header>
+            
+            <div class="report-bio">${finalBioHtml}</div>
+            
+            ${notesHtml}
+
+            ${
+                childrenList
+                    ? `<div class="report-children"><span class="report-section-label">Children of ${nameDisplay} are:</span>${childrenList}</div>`
+                    : ""
+            }
+            ${endnoteList}
+        </article>
+    `);
+
+    $("#descendantsReport").append(reportBlock);
+}
+
+function formatPlaceForReport(place) {
+    if (!place) return "";
+    const parts = place
+        .split(",")
+        .map((p) => p.trim())
+        .filter(Boolean);
+    return parts.slice(0, 3).join(", ");
+}
+
+function formatDateForReport(rawDate, status) {
+    if (!rawDate) return "";
+    const converted = convertDate(rawDate, window.descendantsSettings.dateFormat, status || "");
+    return converted ? converted.trim() : "";
+}
+
+function getReportVitalData($el) {
+    const birthDate = formatDateForReport($el.data("birth-date"), $el.data("birth-date-status"));
+    const deathDate = formatDateForReport($el.data("death-date"), $el.data("death-date-status"));
+
+    let birthPlace = "";
+    let deathPlace = "";
+
+    if (window.descendantsSettings.showPlaces) {
+        const birthDom = $el.find(":scope > .birthDeathDetails .birthPlace").first().text().trim();
+        const deathDom = $el.find(":scope > .birthDeathDetails .deathPlace").first().text().trim();
+        const birthData = ($el.data("birth-place") || "").toString().trim();
+        const deathData = ($el.data("death-place") || "").toString().trim();
+        birthPlace = formatPlaceForReport(birthDom || birthData);
+        deathPlace = formatPlaceForReport(deathDom || deathData);
+    }
+
+    return { birthDate, birthPlace, deathDate, deathPlace };
+}
+
+function buildChildrenList($li) {
+    const children = $li.children("ul.personList").children("li.person");
+    if (!children.length) {
+        return { listHtml: "", count: 0 };
+    }
+    const items = [];
+    let childIndex = 1;
+    children.each(function () {
+        const $child = $(this);
+        const childId = String($child.data("id"));
+        const name = $child.find("a.profileLink").first().text() || $child.data("name");
+        const birthDate = formatDateForReport($child.data("birth-date"), $child.data("birth-date-status"));
+        const deathDate = formatDateForReport($child.data("death-date"), $child.data("death-date-status"));
+        const birthPlace = $child.find(".birthPlace").first().text().trim();
+
+        const roman = getRomanNumeral(childIndex++);
+        let arabic = "";
+
+        // If this child is in the expanded set, assign them the next report number
+        if (reportState.expandedSet && reportState.expandedSet.has(childId)) {
+            if (!reportState.reportNumberMap.has(childId)) {
+                reportState.lastReportNumber++;
+                reportState.reportNumberMap.set(childId, reportState.lastReportNumber);
+            }
+            arabic = reportState.reportNumberMap.get(childId) + ".";
+        }
+
+        let dates = "";
+        if (birthDate || deathDate) {
+            const separator = birthDate && deathDate ? " – " : "";
+            dates = ` (${birthDate || ""}${separator}${deathDate || ""})`;
+        }
+
+        let place = "";
+        if (birthPlace) {
+            place = `, b. ${formatPlaceForReport(birthPlace)}`;
+        }
+
+        items.push(
+            `<li><span class="report-child-prefix"><span class="report-arabic-num">${arabic}</span><span class="report-roman-num">${roman}.</span></span><span class="report-child-content">${name}${dates}${place}</span></li>`
+        );
+    });
+    return { listHtml: `<ul class="report-children-list">${items.join("")}</ul>`, count: children.length };
+}
+
+function updateReportStatus(message) {
+    $("#reportStatusText").text(message);
 }
