@@ -36,6 +36,7 @@ img.familyHome,
 img.timelineButton {
   height: 15px;
 }
+img.bioIssueImg,
 img.privacyImage {
   height: 18px;
 }
@@ -323,7 +324,7 @@ div.cc7Table .timelineTable td {
   position: relative;
   top: -0.4em;
 }
-.cc7Table #peopleTable td.privBio {
+.cc7Table #peopleTable td.cc7privacy {
   text-align: center;
   vertical-align: middle;
 }

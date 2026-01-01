@@ -56,7 +56,7 @@ class PeopleTable {
 
         const rootFirstName = rootPerson?.FirstName || window.rootId; // Get first name of root person
         const sortTitle = "title='Click to sort'";
-        const degreeTH = `<th id='degree' ${sortTitle}>°</th>`;
+        const degreeTH = `<th id='degree' title="Distance. Click to sort.">°</th>`;
         const relationTH = `<th id="relation" title="Relation between ${rootFirstName} and each person">Rel.</th>`;
         const createdTH = `<th id='created' ${sortTitle} data-order='asc'>Created</th>`;
         const touchedTH = `<th id='touched' ${sortTitle} data-order='asc'>Modified</th>`;
@@ -74,15 +74,18 @@ class PeopleTable {
         const aTable = $(
             `<table id='peopleTable' class='cc7ViewTab subsetable peopleTable'>` +
                 `<caption></caption>` +
-                `<thead><tr><th title='Privacy${bioCheck ? "/BioCheck" : ""}'>P${
-                    bioCheck ? "/B" : ""
-                }</th><th></th><th></th>` +
+                "<thead><tr>" +
+                "<th title='Privacy'>Priv</th>" +
+                "<th></th><th></th>" +
                 degreeTH +
                 relationTH +
                 parentsNum +
                 siblingsNum +
                 spousesNum +
                 childrenNum +
+                (bioCheck
+                    ? "<th id='bioscore' title='Bio Check scores & issues. Click to sort.' data-order='desc'>BCS</th>"
+                    : "") +
                 `<th data-order='' id='firstname' ${sortTitle}>Given Name(s)</th>` +
                 `<th data-order='' id='lnab' ${sortTitle}>Last Name at Birth</th>` +
                 `<th data-order='' id='lnc' ${sortTitle}>Current Last Name</th>` +
@@ -207,11 +210,11 @@ class PeopleTable {
             const privacyDetail = PeopleTable.PRIVACY_LEVELS.get(privacyLevel);
             let privacyImg = null;
             let privacyTitle = "";
-            let dprivacy = "";
+            let dPrivacy = "";
             if (privacyDetail) {
                 privacyTitle = privacyDetail.title;
                 privacyImg = privacyDetail.img;
-                dprivacy = "data-privacy='" + privacyLevel + "'";
+                dPrivacy = "data-cc7privacy='" + privacyLevel + "'";
             }
 
             let firstName = mPerson.FirstName;
@@ -264,10 +267,11 @@ class PeopleTable {
             let relationCell = "";
             let touched = "";
             let created = "";
-            let ddegree = "";
-            let drelation = "";
-            let dtouched = "";
-            let dcreated = "";
+            let dDegree = "";
+            let dRelation = "";
+            let dBioScore = "";
+            let dTouched = "";
+            let dCreated = "";
             let ageAtDeathCell = "";
             let dAgeAtDeath = "";
             let diedYoung = false;
@@ -296,14 +300,16 @@ class PeopleTable {
                 relationCell = `<td class='relation' title="${mPerson.Relationship?.full || ""}">${
                     mPerson.Relationship?.abbr || ""
                 }</td>`;
-                ddegree = "data-degree='" + mPerson.Meta.Degrees + "'";
-                drelation = `data-relation="${mPerson.Relationship?.abbr || ""}"`;
+                dDegree = "data-degree='" + mPerson.Meta.Degrees + "'";
+                dRelation = `data-relation="${mPerson.Relationship?.abbr || ""}"`;
+                dBioScore = bioCheck ? ` data-bioscore="${mPerson.bioScore || ""}"` : "";
+
                 if (mPerson.Created) {
                     created =
                         "<td class='created aDate'>" +
                         mPerson.Created.replace(/([0-9]{4})([0-9]{2})([0-9]{2}).*/, "$1-$2-$3") +
                         "</td>";
-                    dcreated = "data-created='" + mPerson.Created + "'";
+                    dCreated = "data-created='" + mPerson.Created + "'";
                 } else {
                     created = "<td class='created aDate'></td>";
                 }
@@ -332,10 +338,10 @@ class PeopleTable {
                             mPerson.Touched.replace(/([0-9]{4})([0-9]{2})([0-9]{2}).*/, "$1-$2-$3")
                         ) +
                         "</td>";
-                    dtouched = "data-touched='" + mPerson.Touched + "'";
+                    dTouched = "data-touched='" + mPerson.Touched + "'";
                 } else {
                     touched = "<td class='touched aDate'></td>";
-                    dtouched = "data-touched=''";
+                    dTouched = "data-touched=''";
                 }
 
                 relNums = {};
@@ -404,17 +410,17 @@ class PeopleTable {
 
             const aLine = $(
                 "<tr " +
-                    dprivacy +
+                    dPrivacy +
                     " " +
-                    ddegree +
+                    dDegree +
                     " " +
-                    drelation +
+                    dRelation +
                     " " +
                     dAgeAtDeath +
                     " " +
-                    dtouched +
+                    dTouched +
                     " " +
-                    dcreated +
+                    dCreated +
                     " " +
                     relNums["Parent_data"] +
                     " " +
@@ -423,6 +429,7 @@ class PeopleTable {
                     relNums["Spouse_data"] +
                     " " +
                     relNums["Child_data"] +
+                    dBioScore +
                     " data-id='" +
                     mPerson.Id +
                     "' data-name='" +
@@ -449,13 +456,11 @@ class PeopleTable {
                     dManager +
                     "' class='" +
                     gender +
-                    `'><td ${
-                        mPerson.hasBioIssues
-                            ? Settings.mustHighlight(mPerson.bioCheckReport)
-                                ? "class='privBio bioIssue' title='Click to see Bio Check Report'"
-                                : "class='privBio bioIssue2' title='Click to see Bio Check Report'"
-                            : "class='privBio'"
-                    }>` +
+                    "'>" +
+                    //
+                    // Start of column elements (td-s)
+                    //
+                    "<td class='cc7privacy'>" +
                     (privacyImg
                         ? "<img class='privacyImage' src='" + privacyImg + "' title='" + privacyTitle + "'>"
                         : "<span title='Unknown'>?</span>") +
@@ -467,6 +472,15 @@ class PeopleTable {
                     relNums["Sibling_cell"] +
                     relNums["Spouse_cell"] +
                     relNums["Child_cell"] +
+                    (bioCheck
+                        ? `<td ${
+                              mPerson.hasBioIssues
+                                  ? Settings.mustHighlight(mPerson.bioCheckReport)
+                                      ? "class='bioScore number bioIssue' title='Click to see Bio Check Report'"
+                                      : "class='bioScore number bioIssue2' title='Click to see Bio Check Report'"
+                                  : "class='bioScore number'"
+                          }>${mPerson.bioScore || ""}</td>`
+                        : "") +
                     "<td class='connectionsName' >" +
                     oLink +
                     "</td><td class='lnab'>" +
@@ -477,7 +491,7 @@ class PeopleTable {
                           "'>" +
                           mPerson.LastNameAtBirth +
                           "</a>") +
-                    "</td><td class='lnc'><a   target='_blank' href='https://www.wikitree.com/index.php?title=Special:Surname&order=name&layout=table&s=" +
+                    "</td><td class='lnc'><a target='_blank' href='https://www.wikitree.com/index.php?title=Special:Surname&order=name&layout=table&s=" +
                     CC7Utils.htmlEntities(mPerson.LastNameCurrent) +
                     "'>" +
                     mPerson.LastNameCurrent +
@@ -1090,7 +1104,6 @@ class PeopleTable {
             : table.querySelector("tr:first-child");
 
         let headerCells = headerRow.querySelectorAll("th");
-        const originalHeaderCells = headerCells;
         const isFirstRowHeader = headerCells.length > 0;
         if (!isFirstRowHeader) {
             const firstRowCells = headerRow.querySelectorAll("td");
@@ -1112,35 +1125,21 @@ class PeopleTable {
                 filterCell.title = "Select a column value to which to limit the rows";
                 filterRow.appendChild(filterCell);
                 // $(
-                // "<select id='cc7PBFilter' title='Select which Privacy/BioCheck rows should be displayed'>"
+                // "<select id='cc7PrivFilter' title='Select which Privacy rows should be displayed'>"
                 // <option value='all' title="Everything" selected>&nbsp;</option>"
-                // <option value='bioBad' title="With Bio Check Issues">./views/cc7/images/checkbox-cross-red-icon.png</option>"
-                // <option value='bioOK' title="No Bio Check Issues">./views/cc7/images/checkmark-box-green-icon.png</option>"
                 // <option value='60' title='Privacy: Open'>./views/cc7/images/privacy_open.png</option>" +
                 // <option value='50' title='Public'>./views/cc7/images/privacy_public.png</option>" +
                 // <option value='40' title='Private with Public Bio and Tree'>./views/cc7/images/privacy_public-tree.png</option>"
                 // etc.
                 // );
                 const filterSelect = document.createElement("select");
-                filterSelect.id = "cc7PBFilter";
-                filterSelect.title = "Select which Privacy/BioCheck rows should be displayed";
+                filterSelect.id = "cc7PrivFilter";
+                filterSelect.title = "Select which Privacy rows should be displayed";
                 let filterOption = document.createElement("option");
                 filterOption.value = "all";
                 filterOption.title = "Everything";
                 filterOption.text = " ";
                 filterSelect.appendChild(filterOption);
-                if (Settings.current["biocheck_options_biocheckOn"]) {
-                    filterOption = document.createElement("option");
-                    filterOption.value = "bioBad";
-                    filterOption.title = "With Bio Check Issues";
-                    filterOption.text = "./views/cc7/images/checkbox-cross-red-icon.png";
-                    filterSelect.appendChild(filterOption);
-                    filterOption = document.createElement("option");
-                    filterOption.value = "bioOK";
-                    filterOption.title = "No Bio Check Issue";
-                    filterOption.text = "./views/cc7/images/checkmark-box-green-icon.png";
-                    filterSelect.appendChild(filterOption);
-                }
                 for (const privLevel of PeopleTable.PRIVACY_LEVELS.keys()) {
                     const privacy = PeopleTable.PRIVACY_LEVELS.get(privLevel);
                     filterOption = document.createElement("option");
@@ -1156,68 +1155,89 @@ class PeopleTable {
                 filterCell.style.textAlign = "right";
                 filterCell.innerHTML = "Filters";
                 filterCell.title =
-                    "Show only rows with these column values. > and < may be used for numerical columns.";
+                    "Use the filters in this row to show only rows with the enterd column values. > and < may be used for numerical columns.";
                 filterRow.appendChild(filterCell);
                 return;
             } else if (i == 2) {
                 return;
             } else if (i == 3) {
-                $(filterCell).append($("<select id='cc7DegFilter' title=''></select>"));
+                $(filterCell).append(
+                    $(
+                        "<select id='cc7DegFilter' title='Enter a degree (> and < prefixes are allowed) or select a Notes filter'></select>"
+                    )
+                );
                 $(filterRow).append(filterCell);
                 return;
-            }
-            const headerCellText = headerCell.textContent.trim();
-            const originalHeaderCellText = originalHeaderCells[i].textContent.trim();
-            if (!["Pos.", "P/B"].includes(headerCellText) && !["Pos.", "P/B", ""].includes(originalHeaderCellText)) {
-                // console.log(headerCellText);
-                filterCell.title = "Enter a column value to which to limit the rows";
-                const filterInput = document.createElement("input");
-                filterInput.type = "text";
-                filterInput.classList.add("filter-input");
+            } else if (i == 9 && Settings.current["biocheck_options_biocheckOn"]) {
+                const filterSelect = document.createElement("select");
+                filterSelect.id = "cc7BCSFilter";
+                filterSelect.title =
+                    "Enter a Bio Check score (> and < prefixes are allowed) or select an issue filter.";
 
-                // Check the the text in the first 50 cells of the column to determine its type
-                const rows = hasTbody ? table.querySelectorAll("tbody tr") : table.querySelectorAll("tr");
-                let isNumeric = 0;
-                let isDate = 0;
-                let isText = 0;
-                for (let j = 1; j < Math.min(50, rows.length); j++) {
-                    if (rows[j]) {
-                        const cellText = rows[j].children[i].textContent.trim();
-                        const cellTextStripped = cellText.replace(/[<>~]?(\d+)°?/g, "$1");
-                        const dateMatch = cellText.match(/(\d{4})(-(\d{2})-(\d{2}))?/);
-                        if (dateMatch) {
-                            isDate++;
-                        } else if (CC7Utils.isNumeric(cellTextStripped)) {
-                            isNumeric++;
-                        } else if (cellText !== "") {
-                            isText++;
-                        }
+                // Clear filter
+                let filterOption = new Option("", "");
+                filterOption.title = "Clear filter";
+                filterSelect.appendChild(filterOption);
+
+                // BioCheck issues
+                filterOption = new Option("./views/cc7/images/checkbox-cross-red-icon.png", "bioBad");
+                filterOption.title = "With Bio Check Issues";
+                filterSelect.appendChild(filterOption);
+
+                // No BioCheck Issues
+                filterOption = new Option("./views/cc7/images/checkmark-box-green-icon.png", "bioOK");
+                filterOption.title = "No Bio Check Issue";
+                filterSelect.appendChild(filterOption);
+                filterCell.appendChild(filterSelect);
+                filterRow.appendChild(filterCell);
+                return;
+            }
+
+            filterCell.title = "Enter a column value to which to limit the rows";
+            const filterInput = document.createElement("input");
+            filterInput.type = "text";
+            filterInput.classList.add("filter-input");
+
+            // Check the the text in the first 50 cells of the column to determine its type
+            const rows = hasTbody ? table.querySelectorAll("tbody tr") : table.querySelectorAll("tr");
+            let isNumeric = 0;
+            let isDate = 0;
+            let isText = 0;
+            for (let j = 1; j < Math.min(50, rows.length); j++) {
+                if (rows[j]) {
+                    const cellText = rows[j].children[i].textContent.trim();
+                    const cellTextStripped = cellText.replace(/[<>~]?(\d+)°?/g, "$1");
+                    const dateMatch = cellText.match(/(\d{4})(-(\d{2})-(\d{2}))?/);
+                    if (dateMatch) {
+                        isDate++;
+                    } else if (CC7Utils.isNumeric(cellTextStripped)) {
+                        isNumeric++;
+                    } else if (cellText !== "") {
+                        isText++;
                     }
                 }
-
-                let maxVal;
-                if (isNumeric > isDate && isNumeric > isText) {
-                    maxVal = "isNumeric";
-                } else if (isDate > isNumeric && isDate > isText) {
-                    maxVal = "isDate";
-                } else {
-                    maxVal = "isText";
-                }
-
-                if (maxVal == "isNumeric") {
-                    filterInput.classList.add("numeric-input");
-                } else if (maxVal == "isDate") {
-                    filterInput.classList.add("date-input");
-                } else {
-                    filterInput.classList.add("text-input");
-                    filterInput.addEventListener("input", PeopleTable.stripLtGt);
-                }
-
-                filterCell.appendChild(filterInput);
             }
-            if (i > 2) {
-                filterRow.appendChild(filterCell);
+
+            let maxVal;
+            if (isNumeric > isDate && isNumeric > isText) {
+                maxVal = "isNumeric";
+            } else if (isDate > isNumeric && isDate > isText) {
+                maxVal = "isDate";
+            } else {
+                maxVal = "isText";
             }
+
+            if (maxVal == "isNumeric") {
+                filterInput.classList.add("numeric-input");
+            } else if (maxVal == "isDate") {
+                filterInput.classList.add("date-input");
+            } else {
+                filterInput.classList.add("text-input");
+                filterInput.addEventListener("input", PeopleTable.stripLtGt);
+            }
+
+            filterCell.appendChild(filterInput);
+            filterRow.appendChild(filterCell);
         });
 
         if (isFirstRowHeader) {
@@ -1238,12 +1258,12 @@ class PeopleTable {
             }
             return $(`<img class="privacyImage" src="./${option.text}"/>`);
         }
-        $("#cc7PBFilter").select2({
+        $("#cc7PrivFilter").select2({
             templateResult: formatPBOption,
             templateSelection: formatPBOption,
             dropdownParent: $("#cc7Container"),
             minimumResultsForSearch: Infinity,
-            width: "100%",
+            width: "2.5em",
         });
 
         const shapeOptions = new Map([
@@ -1325,7 +1345,6 @@ class PeopleTable {
         }
 
         $("#cc7DegFilter").select2({
-            placeholder: "Type a number or select a symbol",
             tags: true, // Allow custom input
             data: [...shapeOptions.entries()].map((opt) => ({ id: opt[0], title: opt[1].title })),
             templateResult: formatDegOption,
@@ -1335,7 +1354,24 @@ class PeopleTable {
                 return markup;
             }, // Allow custom HTML
             // multiple: true,
-            width: "3em",
+            width: "2.5em",
+        });
+
+        function formatBCOption(option) {
+            if (!option.id || option.newTag || !option.element || !option.text.startsWith("./views")) {
+                return option.text;
+            }
+            // Image-backed predefined options
+            const title = option.element.title || "";
+            return $(`<img class="bioIssueImg" src="./${option.text}" title="${title}"/>`);
+        }
+
+        $("#cc7BCSFilter").select2({
+            tags: true,
+            templateResult: formatBCOption,
+            templateSelection: formatBCOption,
+            dropdownParent: $("#cc7Container"),
+            width: "2.5em",
         });
 
         document.getElementById("view-container").addEventListener("input", function (event) {
@@ -1345,8 +1381,9 @@ class PeopleTable {
             }
         });
 
-        $("#cc7PBFilter").off("select2:select").on("select2:select", PeopleTable.filterListener);
+        $("#cc7PrivFilter").off("select2:select").on("select2:select", PeopleTable.filterListener);
         $("#cc7DegFilter").off("select2:select").on("select2:select", PeopleTable.filterListener);
+        $("#cc7BCSFilter").off("select2:select").on("select2:select", PeopleTable.filterListener);
 
         // Add Clear Filters button
         $("#clearTableFiltersButton").remove();
@@ -1369,8 +1406,9 @@ class PeopleTable {
         document.querySelectorAll(".filter-input").forEach((input) => {
             input.value = "";
         });
-        $("#cc7PBFilter").val("all").trigger("change");
+        $("#cc7PrivFilter").val("all").trigger("change");
         $("#cc7DegFilter").val("none").trigger("change");
+        $("#cc7BCSFilter").val("").trigger("change");
         PeopleTable.filterFunction();
         PeopleTable.updateClearFiltersButtonVisibility();
     }
@@ -1398,9 +1436,10 @@ class PeopleTable {
             });
         });
 
-        // Get the filter values for the privacy and degree filters
-        const reqPrivacy = $("#cc7PBFilter").select2("data")[0].id;
+        // Get the filter values for the privacy, degree and BioCheck filters
+        const reqPrivacy = $("#cc7PrivFilter").select2("data")[0].id;
         const reqDegree = $("#cc7DegFilter").val();
+        const reqBioCheck = $("#cc7BCSFilter").val();
 
         rows.forEach((row, rowIndex) => {
             // Skip first row only if there's no 'thead'
@@ -1414,8 +1453,6 @@ class PeopleTable {
             }
 
             // Perform the filter action for each of the found filters
-            let displayRow = true;
-            // filters.forEach((filter, inputIndex) => {
             for (const filter of filters) {
                 let cellText = row.children[filter.colIndex].textContent.toLowerCase();
                 if (!shouldKeepRow(cellText, filter.text, filter.isNumericCol, filter.isDateCol)) {
@@ -1425,23 +1462,17 @@ class PeopleTable {
                 }
             }
 
-            // Check the Privacy/BioCheck filter
+            // Check the Privacy filter
             if (reqPrivacy != "all") {
-                if (reqPrivacy == "bioOK") {
-                    if (row.children[0].classList.contains("bioIssue")) displayRow = false;
-                } else if (reqPrivacy == "bioBad") {
-                    if (!row.children[0].classList.contains("bioIssue")) displayRow = false;
-                } else {
-                    const rowPrivacy = row.getAttribute("data-privacy");
-                    if (rowPrivacy != reqPrivacy) displayRow = false;
+                const rowPrivacy = row.getAttribute("data-cc7privacy");
+                if (rowPrivacy != reqPrivacy) {
+                    row.style.display = "none";
+                    return;
                 }
-            }
-            if (!displayRow) {
-                row.style.display = "none";
-                return;
             }
 
             // Check the degree filter
+            let displayRow = true;
             if (reqDegree != "none") {
                 const $cell = $(row.children[3]);
                 if (reqDegree == "all") {
@@ -1461,6 +1492,22 @@ class PeopleTable {
                 } else {
                     // Treat it as a numeric filter
                     displayRow = shouldKeepRow($cell.text(), reqDegree, true, false);
+                }
+            }
+            if (!displayRow) {
+                row.style.display = "none";
+                return;
+            }
+
+            // Check the BioCheck filter
+            if (reqBioCheck && reqBioCheck !== "") {
+                const $cell = $(row.children[9]);
+                if (reqBioCheck == "bioOK") {
+                    displayRow = !$cell.hasClass("bioIssue");
+                } else if (reqBioCheck == "bioBad") {
+                    displayRow = $cell.hasClass("bioIssue");
+                } else {
+                    displayRow = shouldKeepRow($cell.text(), reqBioCheck, true, false);
                 }
             }
 
@@ -1533,8 +1580,9 @@ class PeopleTable {
     static anyFilterActive() {
         return (
             Array.from(document.querySelectorAll(".filter-input")).some((input) => input.value.trim() !== "") ||
-            $("#cc7PBFilter").select2("data")[0].id != "all" ||
-            $("#cc7DegFilter").val() != "none"
+            $("#cc7PrivFilter").select2("data")[0].id != "all" ||
+            $("#cc7DegFilter").val() != "none" ||
+            ($("#cc7BCSFilter").length && $("#cc7BCSFilter").val() !== "")
         );
     }
 
@@ -2310,7 +2358,7 @@ class PeopleTable {
         ];
         if (bioCheck) {
             // Add biocheck column
-            headings.splice(1, 0, "Bio Issue");
+            headings.splice(1, 0, "Bio Score");
         }
 
         ws_data.push(headings, []);
@@ -2318,10 +2366,11 @@ class PeopleTable {
             const row = $(this);
             if (!row.is(":visible")) return;
             const tds = row.find("td");
-            let birthdate, birthplace, deathdate, deathplace, deathAge, created, touched, bioIssue;
+            let birthdate, birthplace, deathdate, deathplace, deathAge, created, touched, bioIssue, bioScore;
             tds.each(function () {
-                if ($(this).hasClass("privBio")) {
+                if ($(this).hasClass("bioScore")) {
                     bioIssue = $(this).hasClass("bioIssue");
+                    bioScore = $(this).text();
                 }
                 if ($(this).hasClass("birthdate")) {
                     birthdate = $(this).text();
@@ -2366,7 +2415,7 @@ class PeopleTable {
             ];
             if (bioCheck) {
                 // Add biocheck column and create id lookup table
-                pData.splice(1, 0, bioIssue);
+                pData.splice(1, 0, bioScore);
                 if (bioIssue) idMap.set(row.data("name"), row.data("id"));
             }
             ws_data.push(pData);
@@ -2375,17 +2424,17 @@ class PeopleTable {
         const ws = XLSX.utils.aoa_to_sheet(ws_data);
         Object.getOwnPropertyNames(ws)
             .filter((k) => k.startsWith("A"))
-            .forEach((aCell) => {
+            .forEach((aCell, i) => {
                 const bCell = `B${aCell.substring(1)}`;
-                const wtId = ws[aCell].v;
-                if (wtId?.match(/.+\-.+/)) {
+                const wtId = String(ws[aCell].v).trim();
+                if (wtId?.match(/^(?:.+\-\d+|\d+)$/)) {
                     // Add a hyperlink to the WtId cell
                     ws[aCell].l = { Target: `https://www.wikitree.com/wiki/${wtId}` };
                 }
-                if (bioCheck && ws[bCell].v === true) {
-                    // Add a BioCeck column with the BioCheck report as comment
+                if (bioCheck && i > 0) {
+                    // Add the BioCheck report as a comment to the BioCheck score
                     const id = idMap.get(wtId);
-                    const person = window.people.get(id);
+                    const person = id ? window.people.get(id) : null;
                     if (person?.bioCheckReport) {
                         ws[bCell].c = [{ a: "WT", t: formCommentFromReport(person.bioCheckReport) }];
                     }

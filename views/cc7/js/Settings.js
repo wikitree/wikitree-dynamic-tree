@@ -166,7 +166,9 @@ export class Settings {
                 options: [
                     {
                         optionName: "bioComment",
-                        comment: "Enabling Bio Check only comes into effect at subsequent GET button clicks.",
+                        comment:
+                            "You MUST click 'Apply Changes' way down at the bottom for any changes to these settings " +
+                            "to be applied. Enabling Bio Check only comes into effect at subsequent GET button clicks.",
                         type: "br",
                     },
                     {
