@@ -517,7 +517,7 @@ window.DescendantsView = class DescendantsView extends View {
 
         $("#view-container").css("overflow", "inherit");
     }
-}
+};
 
 function turnOffOtherButtons() {
     $("#xButton").addClass("off");
@@ -1280,6 +1280,7 @@ async function getMoreDetails(wtid) {
                 format: "json",
                 fields: `${fields.join(",")},Bio,PhotoData,Photo`,
                 bioFormat: "html",
+                appId: "TA_Descendants",
             },
             success: function (data) {
                 // console.log(data);
