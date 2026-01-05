@@ -164,6 +164,11 @@ window.DescendantsView = class DescendantsView extends View {
             <button class='small' id='buildReport' title="Generate a Family Tree Maker–style report">Build report</button>
             <button class='small' id='cancelReport' disabled title="Cancel report generation">Cancel</button>
             <label id="reportPhotosLabel" title="Include profile photos in report"><input type="checkbox" id="reportPhotos">Photos</label>
+            <label id="reportSpouseFilterLabel" title="Limit report to descendants with one spouse">Spouse filter:
+                <select id="reportSpouseFilter">
+                    <option value="all">All spouses</option>
+                </select>
+            </label>
             <span id='reportStatusText'></span>
         </fieldset>
 
@@ -376,9 +381,27 @@ window.DescendantsView = class DescendantsView extends View {
             cancelReportBuild();
         });
 
+        $(container_selector).off("change", "#reportSpouseFilter");
+        $(container_selector).on("change", "#reportSpouseFilter", function () {
+            const restart = () => startReportBuild();
+            if (reportState.running) {
+                updateReportStatus("Restarting report with spouse filter...");
+                reportState.cancel = true;
+                const interval = setInterval(() => {
+                    if (!reportState.running) {
+                        clearInterval(interval);
+                        restart();
+                    }
+                }, 150);
+            } else {
+                restart();
+            }
+        });
+
         $(container_selector).off("click", "#printReport");
         $(container_selector).on("click", "#printReport", function (e) {
             e.preventDefault();
+                refreshReportSpouseFilterOptions();
             window.print();
         });
 
@@ -988,7 +1011,7 @@ async function mergeSpouseDetails(people, fields) {
 
 async function fetchDescendants(person_id, generation) {
     const people = await WikiTreeAPI.getPeople("test", person_id, fields, {
-        descendants: 4,
+        descendants: 10,
         resolveRedirect: 1,
     });
 
@@ -1363,7 +1386,7 @@ function fillReportGenerationSelect(highestGeneration) {
         return;
     }
     reportSelect.empty();
-    const maxGen = Math.max(1, highestGeneration || 1);
+    const maxGen = Math.max(10, Math.max(1, highestGeneration || 1));
     const defaultMax = Math.min(3, maxGen);
     for (let i = 1; i <= maxGen; i++) {
         reportSelect.append(`<option value='${i}'>Report up to Generation ${i}</option>`);
@@ -2182,9 +2205,15 @@ function updateShowBiosState() {
 // ---------------------
 
 const REPORT_LIMITS = {
-    batchSize: 6,
+    batchSize: 100, // API allows up to ~100 with relatives; maximize per-call payload
+    batchDelayMs: 400,
     perBioChars: 400000,
     totalChars: 3000000,
+};
+
+const API_RETRY = {
+    retries: 3,
+    baseDelayMs: 800,
 };
 
 let reportState = {
@@ -2200,7 +2229,7 @@ let reportState = {
 window.descendantsReportCache = window.descendantsReportCache || {};
 
 function resetReportState() {
-    window.descendantsReportCache = {}; // Clear cache to ensure new logic (spouses, etc) is applied
+    // Keep descendantsReportCache so report rebuilds (e.g., spouse filter changes) can reuse fetched data
     reportState = {
         running: false,
         cancel: false,
@@ -2213,6 +2242,98 @@ function resetReportState() {
         reportNumberMap: new Map(),
         currentGeneration: 0,
     };
+}
+
+async function callWithRetry(fn) {
+    let attempt = 0;
+    while (true) {
+        try {
+            return await fn();
+        } catch (err) {
+            attempt++;
+            const status = err?.response?.status || err?.status;
+            const shouldRetry = status === 429 || status >= 500;
+            if (!shouldRetry || attempt > API_RETRY.retries) {
+                throw err;
+            }
+            const jitter = Math.random() * 200;
+            const delay = API_RETRY.baseDelayMs * attempt + jitter;
+            await new Promise((res) => setTimeout(res, delay));
+        }
+    }
+}
+
+function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function joinWithAnd(parts) {
+    if (!parts || parts.length === 0) return "";
+    if (parts.length === 1) return parts[0];
+    if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
+    return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+}
+
+function getPreferredName(person = {}, { uppercase = false } = {}) {
+    if (!person) return uppercase ? "UNKNOWN" : "Unknown";
+    const primary = person.FullName || person.RealName || person.LongName;
+
+    const rawBirthName = person.Derived?.BirthName || person.BirthName || person.BirthNamePrivate || "";
+    const parseLastToken = (str) => {
+        if (!str) return "";
+        const parts = str.trim().split(/\s+/);
+        return parts.length ? parts[parts.length - 1] : "";
+    };
+
+    const fn = person.FirstName || (rawBirthName || "").split(/\s+/)[0] || "";
+    const mn = person.MiddleName || "";
+    const lnBirth = person.LastNameAtBirth || parseLastToken(rawBirthName) || "";
+    const ln = lnBirth;
+
+    const fallbackName = person.Name || "";
+    const combined = [fn, mn, ln].filter(Boolean).join(" ") || primary || fallbackName;
+    const trimmed = (combined || "").trim();
+    if (!trimmed) return uppercase ? "UNKNOWN" : "Unknown";
+    return uppercase ? trimmed.toUpperCase() : trimmed;
+}
+
+function refreshReportSpouseFilterOptions() {
+    const $filter = $("#reportSpouseFilter");
+    if ($filter.length === 0) return;
+
+    const previous = $filter.val();
+    $filter.empty();
+    $filter.append('<option value="all">All spouses</option>');
+
+    const $root = $("#descendants > li.person").first();
+    const seen = new Set();
+    if ($root.length) {
+        $root.children("dl.spouse").find("dd").each(function () {
+            const $dd = $(this);
+            const id = $dd.data("id");
+            const name =
+                ($dd.data("fullname") ||
+                    $dd
+                        .find("a")
+                        .filter(function () {
+                            return !$(this).hasClass("switch");
+                        })
+                        .first()
+                        .text() ||
+                    "")
+                    .trim();
+            if (!id || seen.has(id)) return;
+            seen.add(id);
+            $filter.append(`<option value="${id}">${name || id}</option>`);
+        });
+    }
+
+    if (previous && $filter.find(`option[value='${previous}']`).length) {
+        $filter.val(previous);
+    }
+
+    const shouldShow = seen.size > 0;
+    $("#reportSpouseFilterLabel").toggle(shouldShow);
 }
 
 function getRomanNumeral(num) {
@@ -2253,8 +2374,11 @@ function startReportBuild() {
         return;
     }
 
+    refreshReportSpouseFilterOptions();
+    const spouseFilterId = $("#reportSpouseFilter").val() || "all";
+
     const maxGeneration = parseInt($("#reportGenerationSelect").val() || 1);
-    const people = collectReportPeople(maxGeneration);
+    const people = collectReportPeople(maxGeneration, spouseFilterId);
     if (people.length === 0) {
         updateReportStatus("No people are loaded for the selected generations.");
         return;
@@ -2274,7 +2398,7 @@ function startReportBuild() {
     updateReportStatus(`Initializing report for ${people.length} profiles...`);
     setReportUiState({ busy: true });
 
-    buildReportShell(people[0]);
+    buildReportShell(people[0], spouseFilterId);
     processReportQueue(people).catch((error) => {
         console.error("Report build failed", error);
         updateReportStatus("Report build failed. See console for details.");
@@ -2305,28 +2429,90 @@ function finishReportBuild() {
     $("#printReport").prop("disabled", false);
 }
 
-function buildReportShell(rootPerson) {
+function buildReportShell(rootPerson, spouseFilterId = "all") {
     const $report = $("#descendantsReport");
     $report.empty();
 
     if (rootPerson && rootPerson.$el) {
         const name = rootPerson.$el.find("a.profileLink").first().text().trim();
-        // Spouses in the tree use .spouseProfileLink
-        const $spouses = rootPerson.$el.find("dl.spouse a");
-        let spouseName = "";
-        if ($spouses.length > 0) {
-            spouseName = " and " + $($spouses[0]).text().trim();
+        // Spouses in the tree use .spouseProfileLink (exclude switch links)
+        let $spouses = rootPerson.$el
+            .children("dl.spouse")
+            .find("a")
+            .filter(function () {
+                return !$(this).hasClass("switch");
+            });
+
+        if (spouseFilterId && spouseFilterId !== "all") {
+            const filtered = $spouses.filter(function () {
+                const $dd = $(this).closest("dd");
+                return String($dd.data("id")) === String(spouseFilterId);
+            });
+            if (filtered.length) {
+                $spouses = filtered;
+            }
         }
+
+        const spouseNames = $spouses
+            .map(function () {
+                return $(this).text().trim();
+            })
+            .get()
+            .filter(Boolean);
+
+        const spouseName = spouseNames.length ? " and " + joinWithAnd(spouseNames) : "";
         if (name) {
             $report.append(`<h1 class="report-main-title">Descendants of ${name}${spouseName}</h1>`);
         }
     }
 }
 
-function collectReportPeople(maxGeneration) {
+function collectReportPeople(maxGeneration, spouseFilterId = "all") {
+    const spouseFilter = spouseFilterId && spouseFilterId !== "all" ? String(spouseFilterId) : null;
+    let allowedIds = null;
+    if (spouseFilter) {
+        const $root = $("#descendants > li.person").first();
+        if ($root.length) {
+            const rootId = String($root.data("id"));
+            allowedIds = new Set([rootId]);
+            const stack = [];
+
+            $root
+                .children("ul.personList")
+                .children("li.person")
+                .each(function () {
+                    const $child = $(this);
+                    const fatherId = $child.data("father") ? String($child.data("father")) : "";
+                    const motherId = $child.data("mother") ? String($child.data("mother")) : "";
+                    const otherParentId = fatherId === rootId ? motherId : motherId === rootId ? fatherId : "";
+                    if (otherParentId && otherParentId === spouseFilter) {
+                        stack.push($child);
+                    }
+                });
+
+            while (stack.length) {
+                const $node = stack.pop();
+                const nodeId = String($node.data("id"));
+                if (nodeId && !allowedIds.has(nodeId)) {
+                    allowedIds.add(nodeId);
+                    $node
+                        .children("ul.personList")
+                        .children("li.person")
+                        .each(function () {
+                            stack.push($(this));
+                        });
+                }
+            }
+        }
+    }
+
     const people = [];
     $("#descendants li.person").each(function () {
         const $li = $(this);
+        const personIdStr = String($li.data("id"));
+        if (allowedIds && !allowedIds.has(personIdStr)) {
+            return; // Skip branches not matching the spouse filter
+        }
         const generation = parseInt($li.closest("ul.personList").data("generation")) || 0;
         if (generation <= maxGeneration) {
             people.push({
@@ -2353,11 +2539,25 @@ async function processReportQueue(queue) {
     while (queue.length && !reportState.cancel) {
         const batch = queue.splice(0, REPORT_LIMITS.batchSize);
 
+        const cachedPeople = batch.filter((p) => window.descendantsReportCache[p.id] || window.descendantsReportCache[p.wtid]);
+        const toFetch = batch.filter((p) => !cachedPeople.includes(p));
+
+        // Render cached items immediately without refetching
+        cachedPeople.forEach((person) => {
+            if (reportState.cancel) return;
+            const data = processReportPersonData(null, person, {});
+            renderReportPerson(person, data);
+        });
+
+        if (!toFetch.length) {
+            continue;
+        }
+
         // Update status with what we are doing
-        const wtidList = batch.map((p) => p.wtid).join(", ");
+        const wtidList = toFetch.map((p) => p.wtid).join(", ");
         updateReportStatus(`Fetching bios for: ${wtidList}...`);
 
-        const batchMap = await fetchReportBatch(batch);
+        const batchMap = await fetchReportBatch(toFetch);
 
         // Fetch spouses for this batch to get their vitals and parents
         const spouseIds = new Set();
@@ -2373,18 +2573,23 @@ async function processReportQueue(queue) {
         if (spouseIds.size > 0) {
             updateReportStatus(`Fetching spouse details for: ${wtidList}...`);
             const spouseIdList = Array.from(spouseIds).join(",");
-            const [, , spouses] = await WikiTreeAPI.getPeople("TA_DescReportSpouses", spouseIdList, reportFields, {
-                resolveRedirect: 1,
-            });
+            const [, , spouses] =
+                (await callWithRetry(() =>
+                    WikiTreeAPI.getPeople("TA_DescReportSpouses", spouseIdList, reportFields, { resolveRedirect: 1 })
+                )) || [];
             spouseMap = spouses || {};
         }
 
-        batch.forEach((person) => {
+        toFetch.forEach((person) => {
             if (reportState.cancel) return;
             const apiPerson = batchMap[String(person.id)] || batchMap[person.wtid];
             const data = processReportPersonData(apiPerson, person, spouseMap);
             renderReportPerson(person, data);
         });
+
+        if (!reportState.cancel && REPORT_LIMITS.batchDelayMs > 0 && queue.length > 0) {
+            await wait(REPORT_LIMITS.batchDelayMs);
+        }
 
         if (reportState.bytes >= REPORT_LIMITS.totalChars) {
             updateReportStatus(`Stopped: reached size cap (${Math.round(reportState.bytes / 1000)} KB).`);
@@ -2401,11 +2606,14 @@ async function fetchReportBatch(batch) {
         return {};
     }
     try {
-        const [, , people] = await WikiTreeAPI.getPeople("TA_DescReport", keys, reportFields, {
-            bioFormat: "html",
-            resolveRedirect: 1,
-            getRelatives: 1, // Fallback to ensure Spouses are always fetched
-        });
+        const [, , people] =
+            (await callWithRetry(() =>
+                WikiTreeAPI.getPeople("TA_DescReport", keys, reportFields, {
+                    bioFormat: "html",
+                    resolveRedirect: 1,
+                    getRelatives: 1, // Fallback to ensure Spouses are always fetched
+                })
+            )) || [];
         return people || {};
     } catch (error) {
         console.error("getPeople batch failed", error);
@@ -2548,7 +2756,7 @@ function formatSpouseNarrative(spouses, personGender) {
     if (!spouses || spouses.length === 0) return "";
 
     const results = spouses.map((s) => {
-        const name = s.FullName ? s.FullName.toUpperCase() : s.Name ? s.Name.toUpperCase() : "UNKNOWN";
+        const name = getPreferredName(s, { uppercase: true });
         const mDate = formatDateForReport(s.MarriageDate || s.marriage_date);
         const mLoc = formatPlaceForReport(s.MarriageLocation || s.marriage_location);
         const bDate = formatDateForReport(s.BirthDate);
@@ -2589,7 +2797,7 @@ function renderReportPerson(person, data) {
     const personGender = $el.data("gender");
     // Register reports always show spouses regardless of tree view toggle
     const spousesNarrative = formatSpouseNarrative(data.spouses, personGender);
-    const { listHtml: childrenList, count: childrenCount } = buildChildrenList($el);
+    const { listHtml: childrenList, count: childrenCount } = buildChildrenList($el, data.spouses, person.id);
 
     const reportNumber = reportState.reportNumberMap.get(String(person.id)) || "";
     const generation = person.generation + 1;
@@ -2636,10 +2844,8 @@ function renderReportPerson(person, data) {
         const $h2 = $(this);
         if ($h2.text().toLowerCase().includes("research notes")) {
             const $notes = $h2.nextUntil("h2");
-            notesHtml = `<div class="report-notes"><span class="report-section-label">Notes for ${nameDisplay}:</span>${$tempBio
-                .find("<div>")
-                .append($notes.clone())
-                .html()}</div>`;
+            const $notesWrapper = $("<div></div>").append($notes.clone());
+            notesHtml = `<div class="report-notes"><span class="report-section-label">Notes for ${nameDisplay}:</span>${$notesWrapper.html()}</div>`;
             $h2.remove();
             $notes.remove();
         }
@@ -2712,11 +2918,40 @@ function getReportVitalData($el) {
     return { birthDate, birthPlace, deathDate, deathPlace };
 }
 
-function buildChildrenList($li) {
+function buildChildrenList($li, spouses = [], personId) {
     const children = $li.children("ul.personList").children("li.person");
     if (!children.length) {
         return { listHtml: "", count: 0 };
     }
+    const personIdStr = personId ? String(personId) : String($li.data("id"));
+
+    const spouseById = new Map();
+    spouses.forEach((s) => {
+        if (s?.Id) {
+            spouseById.set(String(s.Id), s);
+        }
+    });
+
+    const lookupSpouseNameFromDom = (spouseId) => {
+        if (!spouseId) return "";
+        const $dd = $li.children("dl.spouse").find(`dd[data-id='${spouseId}']`).first();
+        const domName =
+            ($dd.data("fullname") ||
+                $dd
+                    .find("a")
+                    .filter(function () {
+                        return !$(this).hasClass("switch");
+                    })
+                    .first()
+                    .text() ||
+                $dd.text() ||
+                ""
+            ).trim();
+        return domName;
+    };
+
+    const grouped = new Map();
+    const groupOrder = [];
     const items = [];
     let childIndex = 1;
     children.each(function () {
@@ -2750,11 +2985,46 @@ function buildChildrenList($li) {
             place = `, b. ${formatPlaceForReport(birthPlace)}`;
         }
 
-        items.push(
-            `<li><span class="report-child-prefix"><span class="report-arabic-num">${arabic}</span><span class="report-roman-num">${roman}.</span></span><span class="report-child-content">${name}${dates}${place}</span></li>`
-        );
+        const fatherId = $child.data("father") ? String($child.data("father")) : "";
+        const motherId = $child.data("mother") ? String($child.data("mother")) : "";
+        let otherParentId = "";
+        if (fatherId && fatherId === personIdStr) {
+            otherParentId = motherId;
+        } else if (motherId && motherId === personIdStr) {
+            otherParentId = fatherId;
+        }
+
+        const groupKey = otherParentId || "unknown";
+        if (!grouped.has(groupKey)) {
+            grouped.set(groupKey, { spouse: spouseById.get(groupKey), items: [] });
+            groupOrder.push(groupKey);
+        }
+
+        const itemHtml = `<li><span class="report-child-prefix"><span class="report-arabic-num">${arabic}</span><span class="report-roman-num">${roman}.</span></span><span class="report-child-content">${name}${dates}${place}</span></li>`;
+        grouped.get(groupKey).items.push(itemHtml);
+        items.push(itemHtml);
     });
-    return { listHtml: `<ul class="report-children-list">${items.join("")}</ul>`, count: children.length };
+
+    if (grouped.size <= 1) {
+        return { listHtml: `<ul class="report-children-list">${items.join("")}</ul>`, count: children.length };
+    }
+
+    const escapeHtml = (txt) => $("<div></div>").text(txt || "").html();
+
+    const groupsHtml = groupOrder
+        .map((key) => {
+            const group = grouped.get(key);
+            const spouseName = group.spouse
+                ? getPreferredName(group.spouse, { uppercase: false })
+                : key !== "unknown" && key
+                ? lookupSpouseNameFromDom(key) || getPreferredName({ Name: key }, { uppercase: false })
+                : "Unknown spouse";
+            const safeLabel = escapeHtml(spouseName);
+            return `<div class="report-children-group"><div class="report-children-spouse">Children with ${safeLabel}</div><ul class="report-children-list">${group.items.join("")}</ul></div>`;
+        })
+        .join("");
+
+    return { listHtml: groupsHtml, count: children.length };
 }
 
 function updateReportStatus(message) {
