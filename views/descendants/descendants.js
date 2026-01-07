@@ -73,6 +73,10 @@ window.DescendantsView = class DescendantsView extends View {
                 localStorage.getItem("descendantsShowBios") !== null
                     ? JSON.parse(localStorage.getItem("descendantsShowBios"))
                     : true,
+            showPhotos:
+                localStorage.getItem("descendantsShowPhotos") !== null
+                    ? JSON.parse(localStorage.getItem("descendantsShowPhotos"))
+                    : false,
         };
 
         $("body").addClass("descendants");
@@ -141,10 +145,9 @@ window.DescendantsView = class DescendantsView extends View {
             <label title="Show childless"><input type="checkbox" id="showChildless">Childless</label>
             <label title="Show birth and death places"><input type="checkbox" id="showPlaces">Places</label>
             <label title="Show WikiTree IDs"><input type="checkbox" id="showWTID">WT ID</label>
-            <label title="Show Aboville numbers"><input type="checkbox" id="showAboville">Aboville #</label>
             <label title="Show biographies" id="showBiosLabel"><input type="checkbox" id="showBios"><span id="checkboxIndicator"></span>Biographies</label>
         </fieldset>
-        <fieldset id="dateFormat">
+        <fieldset id="sharedControls">
             <label><input type="checkbox" id="showDates" title="Show dates">Show:</label>
             <select id="dateDataStatusSelect" title="Select date data status format">
                 <option value="abbreviations">bef., aft., abt.</option>
@@ -158,12 +161,13 @@ window.DescendantsView = class DescendantsView extends View {
                 <option value="DsMY">24 Nov 1859</option>
                 <option value="Y">1859</option>
             </select>
+            <label title="Show Aboville numbers"><input type="checkbox" id="showAboville">Aboville #</label>
+            <label title="Show images"><input type="checkbox" id="showPhotos">Images</label>
         </fieldset>
         <fieldset id="reportControls">
             <select id="reportGenerationSelect" title="Max generations for report"></select>
             <button class='small' id='buildReport' title="Generate a Family Tree Maker–style report">Build report</button>
             <button class='small' id='cancelReport' disabled title="Cancel report generation">Cancel</button>
-            <label id="reportPhotosLabel" title="Include profile photos in report"><input type="checkbox" id="reportPhotos">Photos</label>
             <label id="reportSpouseFilterLabel" title="Limit report to descendants with one spouse">Spouse filter:
                 <select id="reportSpouseFilter">
                     <option value="all">All spouses</option>
@@ -174,14 +178,19 @@ window.DescendantsView = class DescendantsView extends View {
 
         </div>`).appendTo($(container_selector));
 
-        // Ensure the report wrapper lives immediately after the toolbar so it doesn't sit above controls
-        if ($("#descendantsReportWrapper").length === 0) {
+        const $reportWrapper = $("#descendantsReportWrapper");
+        if ($reportWrapper.length === 0) {
             $(
-                "<div id='descendantsReportWrapper' class='hidden'><div id='descendantsReportStatus'></div><div id='descendantsReport'></div></div>"
+                `<div id='descendantsReportWrapper' class='hidden'><div id='descendantsReportStatus'></div><div id='descendantsReport'></div></div>`
             ).insertAfter("#descendantsButtons");
         } else {
-            $("#descendantsReportWrapper").insertAfter("#descendantsButtons");
+            $reportWrapper.insertAfter("#descendantsButtons");
         }
+
+        // Sync report wrapper classes with current settings
+        $("#descendantsReportWrapper")
+            .toggleClass("aboville-mode", !!window.descendantsSettings.showAboville)
+            .toggleClass("show-photos", !!window.descendantsSettings.showPhotos);
 
         //Set up the checkboxes
         const settings = [
@@ -215,6 +224,12 @@ window.DescendantsView = class DescendantsView extends View {
                 selector: " .spouse",
                 variable: window.descendantsSettings.showSpouses,
             },
+            {
+                key: "Photos",
+                style: "hidePhotosStyle",
+                selector: " .tree-photo",
+                variable: window.descendantsSettings.showPhotos,
+            },
         ];
 
         settings.forEach(({ key, style, selector, variable }) => {
@@ -233,6 +248,12 @@ window.DescendantsView = class DescendantsView extends View {
                 localStorage.setItem(`descendantsShow${key}`, isChecked); // Store the value in local storage
                 if ($(this).prop("id") == "showDates") {
                     toggleDateVisibility();
+                }
+                if ($(this).prop("id") == "showAboville") {
+                    $("#descendantsReportWrapper").toggleClass("aboville-mode", isChecked);
+                }
+                if ($(this).prop("id") == "showPhotos") {
+                    $("#descendantsReportWrapper").toggleClass("show-photos", isChecked);
                 }
             });
         });
@@ -309,6 +330,7 @@ window.DescendantsView = class DescendantsView extends View {
                 if ($("#descendantsReport").is(":empty")) {
                     $("#buildReport").click();
                 }
+                refreshReportSpouseFilterOptions();
             }
         });
 
@@ -364,11 +386,6 @@ window.DescendantsView = class DescendantsView extends View {
             $("#printReport").prop("disabled", !isOn);
         });
 
-        $(container_selector).off("change", "#reportPhotos");
-        $(container_selector).on("change", "#reportPhotos", function () {
-            $("#descendantsReportWrapper").toggleClass("show-photos", $(this).prop("checked"));
-        });
-
         $(container_selector).off("click", "#buildReport");
         $(container_selector).on("click", "#buildReport", function (e) {
             e.preventDefault();
@@ -401,7 +418,7 @@ window.DescendantsView = class DescendantsView extends View {
         $(container_selector).off("click", "#printReport");
         $(container_selector).on("click", "#printReport", function (e) {
             e.preventDefault();
-                refreshReportSpouseFilterOptions();
+            refreshReportSpouseFilterOptions();
             window.print();
         });
 
@@ -797,13 +814,15 @@ const fields = [
     "Mother",
     "Name",
     "Nicknames",
+    "Photo",
+    "PhotoData",
     "Prefix",
     "RealName",
     "Suffix",
     "Spouses",
 ];
 
-const reportFields = [...fields, "Bio", "PhotoData", "Photo", "BurialLocation", "Occupation"];
+const reportFields = [...fields, "Bio", "bioHTML", "PhotoData", "Photo", "BurialLocation", "Occupation"];
 
 // Parent template
 function createParentTemplate(parentData) {
@@ -1198,6 +1217,10 @@ function displayPerson(id, people, generation) {
         const datesOnly = `<span class='datesOnly'>(<span class="birthDeathDate birthDate">${birthDate}</span> – <span class="birthDeathDate deathDate">${deathDate}</span>)</span>`;
         const highlightCheckbox = `<input type='checkbox' class='highlightCheckbox' data-id='${person.Id}' title='Highlight this person' />`;
         const abovilleSpan = `<span class='aboville'></span>`;
+        const photoUrl = person.PhotoData?.url || person.Photo;
+        const treePhoto = photoUrl
+            ? `<img class="tree-photo" src="https://www.wikitree.com${photoUrl}" alt="${fullName}">`
+            : "";
         const birthPin = person.BirthLocation
             ? `<a href="https://maps.google.com/maps?q=${person.BirthLocation}" class="mapsLink" target="_map" title="Google Maps"><img src="https://www.wikitree.com/images/icons/map.gif" alt="map"></a>`
             : "";
@@ -1206,7 +1229,7 @@ function displayPerson(id, people, generation) {
             : "";
 
         // New item
-        const listItemContent = `<span class="nameAndBio">${nameLink} ${wtidSpan} 
+        const listItemContent = `${treePhoto}<span class="nameAndBio">${nameLink} ${wtidSpan} 
         ${datesOnly} ${moreDetailsEye} ${highlightCheckbox} ${abovilleSpan}</span><span class='birthDeathDetails'><span class='birthDeathDate birthDate'>${birthDate}</span><span class='birthDeathPlace birthPlace'>${
             person.BirthLocation || ""
         } ${birthPin}</span><span class='birthDeathDate deathDate'>${deathDate}</span><span class='birthDeathPlace deathPlace'>${
@@ -2308,11 +2331,14 @@ function refreshReportSpouseFilterOptions() {
     const $root = $("#descendants > li.person").first();
     const seen = new Set();
     if ($root.length) {
-        $root.children("dl.spouse").find("dd").each(function () {
-            const $dd = $(this);
-            const id = $dd.data("id");
-            const name =
-                ($dd.data("fullname") ||
+        $root
+            .children("dl.spouse")
+            .find("dd")
+            .each(function () {
+                const $dd = $(this);
+                const id = $dd.data("id");
+                const name = (
+                    $dd.data("fullname") ||
                     $dd
                         .find("a")
                         .filter(function () {
@@ -2320,19 +2346,42 @@ function refreshReportSpouseFilterOptions() {
                         })
                         .first()
                         .text() ||
-                    "")
-                    .trim();
-            if (!id || seen.has(id)) return;
-            seen.add(id);
-            $filter.append(`<option value="${id}">${name || id}</option>`);
-        });
+                    ""
+                ).trim();
+                if (!id || seen.has(id)) return;
+                seen.add(id);
+                $filter.append(`<option value="${id}">${name || id}</option>`);
+            });
     }
 
     if (previous && $filter.find(`option[value='${previous}']`).length) {
         $filter.val(previous);
     }
 
-    const shouldShow = seen.size > 0;
+    let shouldShow = seen.size > 1;
+    if (seen.size === 1) {
+        const spouseId = String(Array.from(seen)[0]);
+        const rootId = String($root.data("id"));
+        const $children = $root.children("ul.personList").children("li.person");
+
+        if ($children.length === 0) {
+            shouldShow = false;
+        } else {
+            // Check if any child has a different parent
+            const hasOtherParentage = Array.from($children).some((child) => {
+                const $child = $(child);
+                const f = String($child.data("father"));
+                const m = String($child.data("mother"));
+                if (f === rootId) return m !== spouseId;
+                if (m === rootId) return f !== spouseId;
+                return true;
+            });
+            if (hasOtherParentage) {
+                shouldShow = true;
+            }
+        }
+    }
+
     $("#reportSpouseFilterLabel").toggle(shouldShow);
 }
 
@@ -2388,7 +2437,7 @@ function startReportBuild() {
     $("#reportModeToggleLabel").show();
     $("body").addClass("report-mode");
     $("#descendantsReportWrapper").removeClass("hidden");
-    $("#descendantsReportWrapper").toggleClass("show-photos", $("#reportPhotos").prop("checked"));
+    $("#descendantsReportWrapper").toggleClass("show-photos", $("#showPhotos").prop("checked"));
     $("#descendants").addClass("hidden"); // Hide tree when report starts
     $("#printReport").prop("disabled", true);
 
@@ -2539,7 +2588,9 @@ async function processReportQueue(queue) {
     while (queue.length && !reportState.cancel) {
         const batch = queue.splice(0, REPORT_LIMITS.batchSize);
 
-        const cachedPeople = batch.filter((p) => window.descendantsReportCache[p.id] || window.descendantsReportCache[p.wtid]);
+        const cachedPeople = batch.filter(
+            (p) => window.descendantsReportCache[p.id] || window.descendantsReportCache[p.wtid]
+        );
         const toFetch = batch.filter((p) => !cachedPeople.includes(p));
 
         // Render cached items immediately without refetching
@@ -2598,6 +2649,7 @@ async function processReportQueue(queue) {
     }
 
     finishReportBuild();
+    refreshReportSpouseFilterOptions();
 }
 
 async function fetchReportBatch(batch) {
@@ -2609,7 +2661,7 @@ async function fetchReportBatch(batch) {
         const [, , people] =
             (await callWithRetry(() =>
                 WikiTreeAPI.getPeople("TA_DescReport", keys, reportFields, {
-                    bioFormat: "html",
+                    bioFormat: "both",
                     resolveRedirect: 1,
                     getRelatives: 1, // Fallback to ensure Spouses are always fetched
                 })
@@ -2678,13 +2730,31 @@ function processReportPersonData(apiPerson, person, spouseMap) {
 
 function sanitizeBioHtml(bioHtml) {
     const $wrapper = $("<div></div>").append(bioHtml);
-    $wrapper.find("img,table,script,style").remove();
-    $wrapper.find(".aContents,.status,.sticker").remove();
-    // Only open external links in new tabs
+
+    // Remove known-bad elements but keep tables if they might be used for layout/images
+    $wrapper.find("script,style").remove();
+    $wrapper.find(".aContents,.status,.sticker,.toc").remove();
+    $wrapper.find("div.status, div.sticker, #toc").remove(); // Remove status, stickers, and TOC
+
+    // Fix relative URLs and open external links in new tabs
     $wrapper.find("a").each(function () {
-        if (!$(this).attr("href")?.startsWith("#")) {
-            $(this).attr("target", "_blank");
+        const $a = $(this);
+        const href = $a.attr("href") || "";
+        if (href && !href.startsWith("#") && !href.startsWith("http")) {
+            $a.attr("href", "https://www.wikitree.com" + href);
         }
+        if (!href.startsWith("#")) {
+            $a.attr("target", "_blank");
+        }
+    });
+
+    $wrapper.find("img").each(function () {
+        const $img = $(this);
+        const src = $img.attr("src") || "";
+        if (src && !src.startsWith("http")) {
+            $img.attr("src", "https://www.wikitree.com" + src);
+        }
+        $img.addClass("report-bio-image");
     });
 
     // Strip empty paragraphs, paragraphs containing only <br>, or containing only whitespace
@@ -2715,23 +2785,33 @@ function sanitizeBioHtml(bioHtml) {
 
 function extractEndnotesFromBio($wrapper, personId) {
     const notes = [];
+    const seenRefs = new Map();
 
     $wrapper.find("sup.reference").each(function () {
         const $sup = $(this);
         const href = $sup.find("a").attr("href") || "";
-        const num = notes.length + 1;
-        let noteHtml = "";
-        if (href.startsWith("#")) {
-            const target = $wrapper.find(href);
-            if (target.length) {
-                noteHtml = target.html();
-                target.remove();
+
+        let num;
+        if (href && seenRefs.has(href)) {
+            num = seenRefs.get(href);
+        } else {
+            num = notes.length + 1;
+            let noteHtml = "";
+            if (href.startsWith("#")) {
+                const target = $wrapper.find(href);
+                if (target.length) {
+                    noteHtml = target.html();
+                    target.remove();
+                }
+            }
+            if (!noteHtml) {
+                noteHtml = $sup.text() || "Citation";
+            }
+            notes.push(noteHtml);
+            if (href) {
+                seenRefs.set(href, num);
             }
         }
-        if (!noteHtml) {
-            noteHtml = $sup.text() || "Citation";
-        }
-        notes.push(noteHtml);
         $sup.replaceWith(`<sup class="report-citation">[${num}]</sup>`);
     });
 
@@ -2859,6 +2939,7 @@ function renderReportPerson(person, data) {
                     <span class="report-id-num">${reportNumber ? reportNumber + ". " : ""}</span>
                     <span class="report-name">${nameDisplay}<sup>${generation}</sup></span>
                     ${ancestryTrace}
+                    <span class="report-aboville-inline">${person.aboville}</span>
                 </div>
                 ${photoHtml}
                 <div class="report-vitals">
@@ -2872,12 +2953,13 @@ function renderReportPerson(person, data) {
             
             ${notesHtml}
 
+            ${endnoteList}
+
             ${
                 childrenList
                     ? `<div class="report-children"><span class="report-section-label">Children of ${nameDisplay} are:</span>${childrenList}</div>`
                     : ""
             }
-            ${endnoteList}
         </article>
     `);
 
@@ -2935,18 +3017,18 @@ function buildChildrenList($li, spouses = [], personId) {
     const lookupSpouseNameFromDom = (spouseId) => {
         if (!spouseId) return "";
         const $dd = $li.children("dl.spouse").find(`dd[data-id='${spouseId}']`).first();
-        const domName =
-            ($dd.data("fullname") ||
-                $dd
-                    .find("a")
-                    .filter(function () {
-                        return !$(this).hasClass("switch");
-                    })
-                    .first()
-                    .text() ||
-                $dd.text() ||
-                ""
-            ).trim();
+        const domName = (
+            $dd.data("fullname") ||
+            $dd
+                .find("a")
+                .filter(function () {
+                    return !$(this).hasClass("switch");
+                })
+                .first()
+                .text() ||
+            $dd.text() ||
+            ""
+        ).trim();
         return domName;
     };
 
@@ -3000,7 +3082,11 @@ function buildChildrenList($li, spouses = [], personId) {
             groupOrder.push(groupKey);
         }
 
-        const itemHtml = `<li><span class="report-child-prefix"><span class="report-arabic-num">${arabic}</span><span class="report-roman-num">${roman}.</span></span><span class="report-child-content">${name}${dates}${place}</span></li>`;
+        const abovilleHtml = `<span class="report-aboville-inline">${$child.data("aboville")}</span>`;
+        const arabicNum = `<span class="report-arabic-num">${arabic}</span>`;
+        const romanNum = `<span class="report-roman-num">${roman}.</span>`;
+
+        const itemHtml = `<li><span class="report-child-prefix">${arabicNum}${romanNum}${abovilleHtml}</span><span class="report-child-content">${name}${dates}${place}</span></li>`;
         grouped.get(groupKey).items.push(itemHtml);
         items.push(itemHtml);
     });
@@ -3009,7 +3095,10 @@ function buildChildrenList($li, spouses = [], personId) {
         return { listHtml: `<ul class="report-children-list">${items.join("")}</ul>`, count: children.length };
     }
 
-    const escapeHtml = (txt) => $("<div></div>").text(txt || "").html();
+    const escapeHtml = (txt) =>
+        $("<div></div>")
+            .text(txt || "")
+            .html();
 
     const groupsHtml = groupOrder
         .map((key) => {
@@ -3020,7 +3109,9 @@ function buildChildrenList($li, spouses = [], personId) {
                 ? lookupSpouseNameFromDom(key) || getPreferredName({ Name: key }, { uppercase: false })
                 : "Unknown spouse";
             const safeLabel = escapeHtml(spouseName);
-            return `<div class="report-children-group"><div class="report-children-spouse">Children with ${safeLabel}</div><ul class="report-children-list">${group.items.join("")}</ul></div>`;
+            return `<div class="report-children-group"><div class="report-children-spouse">Children with ${safeLabel}</div><ul class="report-children-list">${group.items.join(
+                ""
+            )}</ul></div>`;
         })
         .join("");
 

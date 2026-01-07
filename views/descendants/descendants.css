@@ -63,7 +63,7 @@ body.descendants.report-mode #view-container {
 }
 
 #treeViewControls,
-#dateFormat,
+#sharedControls,
 #reportControls {
   display: flex;
   flex-wrap: wrap;
@@ -105,7 +105,7 @@ body.report-mode #reportControls {
   white-space: nowrap;
 }
 
-#dateFormat {
+#sharedControls {
   border-color: #6b9bd1;
   background: rgba(107, 155, 209, 0.05);
 }
@@ -380,6 +380,17 @@ body.report-mode #reportControls {
 .report-aboville-inline {
   font-weight: 600;
   white-space: nowrap;
+  display: none;
+}
+
+#descendantsReportWrapper.aboville-mode .report-aboville-inline {
+  display: inline;
+}
+
+#descendantsReportWrapper.aboville-mode .report-id-num,
+#descendantsReportWrapper.aboville-mode .report-arabic-num,
+#descendantsReportWrapper.aboville-mode .report-roman-num {
+  display: none;
 }
 
 .report-bio {
@@ -410,6 +421,19 @@ body.report-mode #reportControls {
   margin-bottom: 0.2em;
   color: #555;
   font-weight: bold;
+}
+
+.report-bio-image {
+  display: none;
+  max-width: 100%;
+  height: auto;
+  margin: 1em 0;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+#descendantsReportWrapper.show-photos .report-bio-image {
+  display: block;
 }
 
 .report-endnotes {
@@ -819,7 +843,7 @@ body.descendants #closeHelp {
   text-align: center;
 }
 
-#descendantsButtons #dateFormat {
+#descendantsButtons #sharedControls {
   display: inline-block;
 }
 
@@ -897,6 +921,15 @@ body.descendants button {
   background-color: #f6f6f6;
   border-radius: 1em;
   padding: 0 0.5em;
+}
+
+.tree-photo {
+  max-width: 40px;
+  max-height: 40px;
+  margin-right: 0.4em;
+  vertical-align: middle;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 #descendants a.mapsLink {
