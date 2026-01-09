@@ -643,6 +643,41 @@ window.DescendantsView = class DescendantsView extends View {
     }
 };
 
+// Normalize WikiTree asset URLs (images are served from the main www host)
+const WIKITREE_BASE_URL = "https://www.wikitree.com";
+
+function buildWikiTreeUrl(path = "") {
+    if (!path) return "";
+    if (/^https?:\/\//i.test(path)) {
+        return path;
+    }
+    if (path.startsWith("//")) {
+        return `https:${path}`;
+    }
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    return `${WIKITREE_BASE_URL}${normalizedPath}`;
+}
+
+// Prefer API-provided photo URLs; if only a bare filename is present, skip to avoid bad paths
+function getPhotoUrl(primary, fallback) {
+    const candidate = primary || fallback || "";
+    if (!candidate) return "";
+    const trimmed = String(candidate).trim();
+
+    // Already absolute or protocol-relative
+    if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("//")) {
+        return buildWikiTreeUrl(trimmed);
+    }
+
+    // Relative paths that include at least one slash can be safely prefixed
+    if (trimmed.includes("/")) {
+        return buildWikiTreeUrl(trimmed);
+    }
+
+    // Bare filenames (e.g., Adams-12-3.jpg) cannot be resolved without hash path; return empty
+    return "";
+}
+
 function turnOffOtherButtons() {
     $("#xButton").addClass("off");
     $("#xButton").removeClass("on");
@@ -1217,10 +1252,8 @@ function displayPerson(id, people, generation) {
         const datesOnly = `<span class='datesOnly'>(<span class="birthDeathDate birthDate">${birthDate}</span> – <span class="birthDeathDate deathDate">${deathDate}</span>)</span>`;
         const highlightCheckbox = `<input type='checkbox' class='highlightCheckbox' data-id='${person.Id}' title='Highlight this person' />`;
         const abovilleSpan = `<span class='aboville'></span>`;
-        const photoUrl = person.PhotoData?.url || person.Photo;
-        const treePhoto = photoUrl
-            ? `<img class="tree-photo" src="https://www.wikitree.com${photoUrl}" alt="${fullName}">`
-            : "";
+        const photoUrl = getPhotoUrl(person.PhotoData?.url, person.Photo);
+        const treePhoto = photoUrl ? `<img class="tree-photo" src="${photoUrl}" alt="${fullName}">` : "";
         const birthPin = person.BirthLocation
             ? `<a href="https://maps.google.com/maps?q=${person.BirthLocation}" class="mapsLink" target="_map" title="Google Maps"><img src="https://www.wikitree.com/images/icons/map.gif" alt="map"></a>`
             : "";
@@ -1473,8 +1506,9 @@ async function addBio(id) {
         bioDiv.append($(person.bioHTML)).addClass("biography");
 
         let aPhoto = "";
-        if (person.PhotoData?.url) {
-            aPhoto = '<img class="profilePicture" src="https://www.wikitree.com' + person.PhotoData.url + '">';
+        const bioPhotoUrl = getPhotoUrl(person.PhotoData?.url, person.Photo);
+        if (bioPhotoUrl) {
+            aPhoto = '<img class="profilePicture" src="' + bioPhotoUrl + '">';
         }
         bioDiv.prepend(aPhoto);
 
@@ -2712,7 +2746,7 @@ function processReportPersonData(apiPerson, person, spouseMap) {
 
     reportState.done++;
     reportState.bytes += processed.bioHtml.length;
-    processed.photoUrl = apiPerson?.PhotoData?.url || apiPerson?.Photo;
+    processed.photoUrl = getPhotoUrl(apiPerson?.PhotoData?.url, apiPerson?.Photo);
 
     // Attach rich spouse data
     processed.spouses = [];
@@ -2741,10 +2775,10 @@ function sanitizeBioHtml(bioHtml) {
     $wrapper.find("a").each(function () {
         const $a = $(this);
         const href = $a.attr("href") || "";
-        if (href && !href.startsWith("#") && !href.startsWith("http")) {
-            $a.attr("href", "https://www.wikitree.com" + href);
+        if (href && !href.startsWith("#") && !/^[a-z]+:/i.test(href)) {
+            $a.attr("href", buildWikiTreeUrl(href));
         }
-        if (!href.startsWith("#")) {
+        if (href && !href.startsWith("#")) {
             $a.attr("target", "_blank");
         }
     });
@@ -2752,8 +2786,8 @@ function sanitizeBioHtml(bioHtml) {
     $wrapper.find("img").each(function () {
         const $img = $(this);
         const src = $img.attr("src") || "";
-        if (src && !src.startsWith("http")) {
-            $img.attr("src", "https://www.wikitree.com" + src);
+        if (src && !/^https?:\/\//i.test(src) && !src.startsWith("data:")) {
+            $img.attr("src", buildWikiTreeUrl(src));
         }
         $img.addClass("report-bio-image");
     });
@@ -2899,7 +2933,7 @@ function renderReportPerson(person, data) {
 
     let photoHtml = "";
     if (data?.photoUrl) {
-        photoHtml = `<img class="report-photo" src="https://www.wikitree.com${data.photoUrl}" alt="${name}">`;
+        photoHtml = `<img class="report-photo" src="${data.photoUrl}" alt="${name}">`;
     }
 
     let birthHtml = "";
