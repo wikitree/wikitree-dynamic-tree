@@ -3,20 +3,22 @@ body.descendants #view-container {
   min-height: auto;
 }
 
+body.descendants.report-mode #view-container {
+  background: #ffffff;
+}
+
 #descendants li {
   list-style-type: none;
   margin: 0;
   border: 1px solid #ddd;
   margin-bottom: -1px;
   background-color: #f6f6f6;
-  padding: 5px 0 5px 5px;
-  cursor: pointer;
-  overflow: auto;
-  position: relative;
-  border-right: 0;
 }
 #descendants {
   margin-left: 0;
+}
+#descendants.hidden {
+  display: none !important;
 }
 #descendants ul.personList {
   display: none; /* Hide the list by default */
@@ -26,14 +28,572 @@ body.descendants #view-container {
   display: block; /* Show the list when it has the class 'expanded' */
 }
 
-#descendants .expanded {
-  display: block !important;
+/* Report mode styles */
+body.descendants.report-mode #view-container {
+  background: #ffffff;
+}
+
+#descendantsReportWrapper {
+  background: #ffffff;
+  border-top: 1px solid #ccc;
+  padding: 1em 1.25em 1.25em 1.25em;
+  margin-top: 0.5em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#descendantsReportWrapper.hidden {
+  display: none;
+}
+
+#descendantsReportStatus,
+#reportStatusText {
+  display: block; /* Change to block to prevent inline wrapping jumps */
+  font-size: 0.9em;
+  margin-top: 0.4em;
+  color: #666;
+  min-height: 1.2em;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-align: center;
+}
+
+#treeViewControls,
+#sharedControls,
+#reportControls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.6em 0.8em;
+  margin-top: 0.5em;
+  border: 2px solid #ccc;
+  border-radius: 4px;
+  max-width: 100%;
+}
+
+/* View Toggling Logic */
+/* Default (Tree View): Hide report controls */
+#reportControls {
+  display: none !important;
+}
+
+/* Report View: Hide tree controls, Show report controls */
+body.report-mode #treeViewControls {
+  display: none !important;
+}
+
+body.report-mode #reportControls {
+  display: flex !important;
+}
+
+#treeViewControls {
+  border-color: #999;
+  background: rgba(150, 150, 150, 0.05);
+  display: grid;
+  grid-template-columns: auto auto auto auto;
+  gap: 0.4em;
+  justify-content: center;
+}
+
+#treeViewControls label {
+  white-space: nowrap;
+}
+
+#sharedControls {
+  border-color: #6b9bd1;
+  background: rgba(107, 155, 209, 0.05);
+}
+
+#reportControls {
+  border-color: #d7a860;
+  background: rgba(215, 168, 96, 0.08);
+}
+
+#helpEtc {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* View Switcher Controls */
+#viewSwitcher {
+  display: inline-flex; /* Keep buttons together */
+  margin-right: 0.5em; /* Minor spacing from other buttons */
+}
+
+#viewSwitcher button {
+  margin: 0; /* Remove default margins to join them */
+  padding: 0.2em 0.8em; /* Slightly wider click area */
+}
+
+/* Join the buttons */
+#viewSwitcher button#viewTree {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: none;
+}
+
+#viewSwitcher button#viewReport {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/* Active State Highlight */
+#viewSwitcher button.active {
+  background-color: #25422d; /* Dark Green (WikiTree-ish) */
+  color: #fff;
+  font-weight: bold;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  cursor: default;
+  border-color: #1a3020;
+}
+
+/* Inactive State Hover */
+#viewSwitcher button:not(.active):hover {
+  background-color: #eef;
+}
+
+.report-person {
+  border: 1px solid #ddd;
+  padding: 1.2em 1.5em;
+  margin-bottom: 1.5em;
+  margin-left: auto;
+  margin-right: auto;
+  background: #fff;
+  page-break-inside: avoid;
+  max-width: 66em;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  border-left: 6px solid #d7dfea;
+  font-family: Georgia, "Times New Roman", Times, serif; /* Premium serif for narrative */
+  display: flow-root; /* Contain floated elements */
+  font-size: 1.05em;
+  line-height: 1.5;
+  color: #333;
+}
+
+.report-main-title {
+  text-align: center;
+  font-size: 1.8em;
+  margin: 1.5em 0 2em;
+  font-family: inherit;
+  font-weight: bold;
+  color: #000;
+  width: 100%;
+  max-width: 66em;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.report-generation-header {
+  text-align: center;
+  border-bottom: 2px solid #333;
+  margin: 2em 0 1.5em;
+  padding-bottom: 0.3em;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 1.4em;
+  color: #000;
+  width: 100%;
+  max-width: 66em;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.report-person-title {
+  font-size: 1.25em;
+  font-weight: bold;
+  margin-bottom: 0.8em;
+  color: #000;
+}
+
+.report-ancestry-trace {
+  font-weight: normal;
+  font-style: italic;
+  font-size: 0.9em;
+  margin-left: 0.5em;
+  color: #555;
+}
+
+.report-ancestry-trace sup {
+  font-style: normal;
+  font-size: 0.7em;
+  top: -0.4em;
+}
+
+.report-section-label {
+  font-weight: bold;
+  display: block;
+  margin-top: 1.2em;
+  margin-bottom: 0.4em;
+  font-family: inherit;
+  color: #222;
+}
+
+.report-vitals,
+.report-spouses {
+  margin-bottom: 1em;
+}
+
+.report-children-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.5em 0;
+}
+
+.report-children-list li {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 0.3em;
+}
+
+.report-child-prefix {
+  flex: 0 0 5em;
+  display: inline-block; /* Fallback */
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.report-arabic-num {
+  display: inline-block;
+  width: 2.3em;
+  text-align: right;
+  padding-right: 0.5em;
+}
+
+.report-roman-num {
+  display: inline-block;
+  width: 2.2em;
+}
+
+.report-child-content {
+  flex: 1;
+  display: inline-block;
+}
+
+.report-name-inline {
+  font-weight: bold;
+}
+
+.report-notes {
+  margin-bottom: 1.5em;
+  background-color: #f9f9f9;
+  padding: 1em;
+  border-left: 3px solid #ccc;
+  font-size: 0.95em;
+}
+
+.report-notes .report-section-label {
+  margin-top: 0;
+}
+
+.report-endnotes {
+  border-top: 1px solid #eee;
+  padding-top: 1em;
+  margin-top: 2em;
+  font-size: 0.9em;
+  color: #666;
+}
+
+.report-person-header {
+  margin-bottom: 0.8em;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5em;
+  overflow: auto;
+}
+
+.report-person-title {
+  font-size: 1.15em;
+  font-weight: 500;
+  display: block;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.report-vitals {
+  margin-top: 0.3em;
+  font-size: 0.95em;
+  color: #444;
+}
+
+.report-vital-line {
+  line-height: 1.4;
+}
+
+.report-person-title > span {
+  display: inline;
+  margin-right: 0.5em;
+}
+
+.report-name {
+  font-weight: 700 !important;
+  color: #222;
+}
+
+.report-aboville {
+  color: #666;
+  font-weight: bold;
+}
+
+.report-meta,
+.report-places {
+  color: #444;
+  font-size: 0.95em;
+}
+
+.report-spouses,
+.report-children {
+  color: #444;
+  margin-top: 0.5em;
+  font-size: 0.95em;
+  line-height: 1.4;
+}
+
+.report-children-label {
+  font-weight: 600;
+  margin-top: 0.4em;
+}
+
+.report-children-list {
+  list-style-type: none;
+  margin: 0.5em 0 0 0;
+  padding-left: 0;
+}
+
+.report-children-list li {
+  margin: 0.3em 0;
+  line-height: 1.4;
+  display: grid;
+  grid-template-columns: min-content 1fr;
+  gap: 0.5em;
+  align-items: baseline;
+}
+
+.report-aboville-inline {
+  font-weight: 600;
+  white-space: nowrap;
+  display: none;
+}
+
+#descendantsReportWrapper.aboville-mode .report-aboville-inline {
+  display: inline;
+}
+
+#descendantsReportWrapper.aboville-mode .report-id-num,
+#descendantsReportWrapper.aboville-mode .report-arabic-num,
+#descendantsReportWrapper.aboville-mode .report-roman-num {
+  display: none;
+}
+
+.report-bio {
+  margin-top: 1em;
+  line-height: 1.6;
+  font-size: 1.05em;
+  color: #333;
+}
+
+.report-bio p {
+  margin: 0.8em 0;
+}
+
+.report-bio h2 {
+  font-family: sans-serif;
+  font-size: 1.05em;
+  margin-top: 0.8em;
+  margin-bottom: 0.3em;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.report-bio h3 {
+  font-family: sans-serif;
+  font-size: 1em;
+  margin-top: 0.6em;
+  margin-bottom: 0.2em;
+  color: #555;
+  font-weight: bold;
+}
+
+.report-bio-image {
+  display: none;
+  max-width: 100%;
+  height: auto;
+  margin: 1em 0;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+#descendantsReportWrapper.show-photos .report-bio-image {
+  display: block;
+}
+
+.report-endnotes {
+  margin-top: 1.5em;
+  padding-top: 1em;
+  border-top: 1px solid #eee;
+  font-size: 0.9em;
+  color: #555;
+}
+
+.report-photo {
+  display: none;
+  float: right !important;
+  max-width: 75px;
+  max-height: 100px;
+  margin: 0 0 0.5em 1em !important;
+  border: 1px solid #ddd;
+  padding: 2px;
+  background: #fff;
+  border-radius: 4px;
+}
+
+#descendantsReportWrapper.show-photos .report-photo {
+  display: block;
+}
+
+#reportPhotosLabel {
+  margin-left: 1em;
+  font-size: 0.9em;
+  color: #444;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+}
+
+#reportPhotosLabel input {
+  margin: 0;
+}
+
+@media print {
+  @page {
+    margin: 1.5cm;
+  }
+
+  @page landscape-page {
+    size: landscape;
+    margin: 1.5cm;
+  }
+
+  @page portrait-page {
+    size: portrait;
+    margin: 1.5cm;
+  }
+
+  body {
+    page: landscape-page;
+  }
+
+  body.report-mode {
+    page: portrait-page;
+  }
+
+  /* CRITICAL: Ensure no containers restrict height or hide overflow in print */
+  html,
+  body,
+  #view-container,
+  #descendantsReportWrapper,
+  #descendantsReport {
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+    min-height: 0 !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hide UI controls in print */
+  body.descendants #descendantsButtons,
+  body.descendants #descendantsHelp,
+  #reportControls,
+  #reportControlsLabel,
+  #descendantsReportStatus,
+  .load-more,
+  button {
+    display: none !important;
+  }
+
+  /* Hide tree view only when in report mode */
+  body.descendants.report-mode #descendants {
+    display: none !important;
+  }
+
+  /* Hide report wrapper when NOT in report mode */
+  body.descendants:not(.report-mode) #descendantsReportWrapper {
+    display: none !important;
+  }
+
+  /* Ensure report content is visible in print */
+  .report-person,
+  .report-person-header,
+  .report-person-title,
+  .report-meta,
+  .report-places,
+  .report-spouses,
+  .report-children,
+  .report-children-list,
+  .report-bio,
+  .report-endnotes {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+  }
+
+  .report-person:first-of-type {
+    margin-top: 0 !important;
+  }
+
+  #descendantsReportWrapper {
+    border: none;
+  }
+
+  .report-person {
+    border: none;
+    border-bottom: 2px solid #eee;
+    box-shadow: none;
+    max-width: 100%;
+    margin-bottom: 2em;
+    padding: 0;
+  }
+
+  .report-person-title {
+    font-size: 1.3em;
+    font-weight: bold;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  a {
+    color: #000 !important;
+    text-decoration: none;
+  }
+
+  .report-photo {
+    max-width: 100px; /* Slightly smaller for print */
+    border: none;
+    padding: 0;
+  }
 }
 #descendants li > .arrow {
   display: inline-block;
   transition: transform 0.3s ease;
   position: absolute;
   margin-left: -0.3em;
+  cursor: pointer;
 }
 
 #descendants li > .arrow.rotated {
@@ -283,7 +843,7 @@ body.descendants #closeHelp {
   text-align: center;
 }
 
-#descendantsButtons #dateFormat {
+#descendantsButtons #sharedControls {
   display: inline-block;
 }
 
@@ -363,6 +923,15 @@ body.descendants button {
   padding: 0 0.5em;
 }
 
+.tree-photo {
+  max-width: 40px;
+  max-height: 40px;
+  margin-right: 0.4em;
+  vertical-align: middle;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
 #descendants a.mapsLink {
   display: inline-block;
   margin-left: 0.1em;
@@ -380,8 +949,21 @@ body.descendants button {
   margin-bottom: 0.2em;
 }
 
-#descendantsButtons #showBiosLabel {
-  visibility: hidden;
+#descendantsButtons #showBiosLabel,
+#treeViewControls #showBiosLabel {
+  display: none !important;
+}
+
+body:not(.report-mode) #treeViewControls #showBiosLabel {
+  display: inline !important;
+}
+
+body:not(.report-mode) #treeViewControls #showBiosLabel input {
+  margin: 0;
+}
+
+body:not(.report-mode) #treeViewControls #checkboxIndicator {
+  display: none !important;
 }
 
 #descendants li.person {
