@@ -72,11 +72,14 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
         const showWt = document.getElementById(this.showWtIdId);
         if (showWt && this.onShowWtIdChange) showWt.removeEventListener("change", this.onShowWtIdChange);
         const showDeath = document.getElementById(this.showDeathLocationsId);
-        if (showDeath && this.onShowDeathLocationsChange) showDeath.removeEventListener("change", this.onShowDeathLocationsChange);
+        if (showDeath && this.onShowDeathLocationsChange)
+            showDeath.removeEventListener("change", this.onShowDeathLocationsChange);
         const showAll = document.getElementById(this.showAllLocationsId);
-        if (showAll && this.onShowAllLocationsChange) showAll.removeEventListener("change", this.onShowAllLocationsChange);
+        if (showAll && this.onShowAllLocationsChange)
+            showAll.removeEventListener("change", this.onShowAllLocationsChange);
         const splitBy = document.getElementById(this.splitByParentSideId);
-        if (splitBy && this.onSplitByParentSideChange) splitBy.removeEventListener("change", this.onSplitByParentSideChange);
+        if (splitBy && this.onSplitByParentSideChange)
+            splitBy.removeEventListener("change", this.onSplitByParentSideChange);
     }
 
     async loadView(containerSelector, personID) {
@@ -146,11 +149,11 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
             profilesGrid.style.gridTemplateAreas = this.template[0]
                 .map((_, colIndex) => '"' + this.template.map((row) => row[colIndex]).join(" ") + '"')
                 .join("\n");
-            try { profilesGrid.style.setProperty('--pf-columns', (this.template[0] || []).length); } catch (e) {}
+            try {
+                profilesGrid.style.setProperty("--pf-columns", (this.template[0] || []).length);
+            } catch (e) {}
         }
     }
-
-    
 
     getDNARelationship(dna) {
         if (dna.length === 1) {
@@ -184,30 +187,39 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
         if (includeAll && birthLoc) locations = `<span class="locations">b. ${birthLoc}</span>`;
         if (includeAll && this.showDeathLocations && deathLoc) {
             // prefer same-line placement; separate with a small gap
-            locations += `${locations ? ' ' : ''}<span class="locations loc-death">d. ${deathLoc}</span>`;
+            locations += `${locations ? " " : ""}<span class="locations loc-death">d. ${deathLoc}</span>`;
         }
 
         const born = `${person?.IsLiving ? "Born " : ""}${this.formatDateWithStatus(person, "BirthDate")}`;
-        const died = person?.IsLiving ? "" : ` - ${this.formatDateWithStatus(person, "DeathDate")}`;
+        const diedVal = person?.IsLiving ? "" : `${this.formatDateWithStatus(person, "DeathDate")}`;
+        const died = diedVal ? ` – ${diedVal}` : ""; // use en dash
+        const bornText = born;
+        const diedText = diedVal;
+
         if (isSubject) {
             if (person?.BirthLocation) {
                 locations = ` / <div class="locations">${person.BirthLocation}</div>`;
             }
+            const subjectDates = `${bornText}${diedText ? ` – ${diedText}` : ""}`;
             return `
                 ${photo}
                     <h2>
-                        Ancestors of ${wtCompleteName(person)} ${this.showWtId ? ` (${person.Name})` : ''}
-                        / ${born}${died} ${locations}
+                        Ancestors of ${wtCompleteName(person)} ${this.showWtId ? ` (${person.Name})` : ""}
+                        / ${subjectDates} ${locations}
                     </h2>`;
         }
+
         const wtIdInline = this.showWtId ? ` <span class="wt-id">(${person.Name})</span>` : "";
         return `
             <div style="grid-area: ${dna};" class="known-relative g${dna.length}">
                 ${photo}
                 <div>
-                    <h3>${wtCompleteName(person)}${wtIdInline}</h3>
-                    <span>${born}${died}<br>
-                    ${locations}</span>
+                    <div class="name-row">
+                        <h3>${wtCompleteName(person)}</h3>
+                        ${wtIdInline}
+                    </div>
+                    <div class="person-dates"><span class="date-born">${bornText}</span>${diedText ? `<span class="date-dash"> – </span><span class="date-died">${diedText}</span>` : ""}</div>
+                    <div class="person-locations">${locations}</div>
                 </div>
             </div>`;
     }
@@ -251,10 +263,10 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
 
         // add printer-friendly specific toggles as siblings so they wrap with date controls
         optionsContainer.innerHTML += `
-            <span class="printer-option"><label><input type="checkbox" id="${this.showWtIdId}" ${this.showWtId ? 'checked' : ''}> WT ID</label></span>
-            <span class="printer-option"><label><input type="checkbox" id="${this.showDeathLocationsId}" ${this.showDeathLocations ? 'checked' : ''}> Death locations</label></span>
-            <span class="printer-option"><label><input type="checkbox" id="${this.showAllLocationsId}" ${this.showAllLocations ? 'checked' : ''}> Locations for all</label></span>
-            <span class="printer-option"><label><input type="checkbox" id="${this.splitByParentSideId}" ${this.splitByParentSide ? 'checked' : ''}> Split by parent side</label></span>
+            <span class="printer-option"><label><input type="checkbox" id="${this.showWtIdId}" ${this.showWtId ? "checked" : ""}> WT ID</label></span>
+            <span class="printer-option"><label><input type="checkbox" id="${this.showDeathLocationsId}" ${this.showDeathLocations ? "checked" : ""}> Death locations</label></span>
+            <span class="printer-option"><label><input type="checkbox" id="${this.showAllLocationsId}" ${this.showAllLocations ? "checked" : ""}> Locations for all</label></span>
+            <span class="printer-option"><label><input type="checkbox" id="${this.splitByParentSideId}" ${this.splitByParentSide ? "checked" : ""}> Split by parent side</label></span>
         `;
 
         container.parentNode.insertBefore(optionsContainer, container);
