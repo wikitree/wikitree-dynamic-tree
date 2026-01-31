@@ -13,6 +13,18 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
 
         this.wtAPI = wtAPI;
         this.generationsCount = generationsCount > 0 ? generationsCount : 1;
+        const sharedFormatId = window.DateFormatOptions
+            ? window.DateFormatOptions.getStoredFormatId()
+            : null;
+        this.dateFormat = window.DateFormatOptions
+            ? window.DateFormatOptions.getFormatValue(sharedFormatId, "wtDate") || "D MMM YYYY"
+            : "D MMM YYYY";
+        this.dateStatusFormat = window.DateFormatOptions
+            ? window.DateFormatOptions.getStoredStatusFormat()
+            : "abbreviations";
+        this.dateFormatSelectId = "printerFriendlyDateFormat";
+        this.dateStatusSelectId = "printerFriendlyDateStatus";
+        this.optionsContainerId = "printerFriendlyOptions";
     }
 
     meta() {
@@ -24,8 +36,24 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
     }
 
     init(containerSelector, personID) {
+        this.containerSelector = containerSelector;
+        this.personID = personID;
         this.template = Array(this.generationsCount).fill([]);
+        this.renderDateFormatOptions();
         this.loadView(containerSelector, personID);
+    }
+
+    close() {
+        const select = document.getElementById(this.dateFormatSelectId);
+        if (select && this.onDateFormatChange) {
+            select.removeEventListener("change", this.onDateFormatChange);
+        }
+        const statusSelect = document.getElementById(this.dateStatusSelectId);
+        if (statusSelect && this.onDateStatusChange) {
+            statusSelect.removeEventListener("change", this.onDateStatusChange);
+        }
+        const optionsContainer = document.getElementById(this.optionsContainerId);
+        if (optionsContainer) optionsContainer.remove();
     }
 
     async loadView(containerSelector, personID) {
@@ -36,18 +64,18 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
             this.PERSON_FIELDS
         );
         this.people = Object.assign({}, ...data.map((x) => ({ [x.Id.toString()]: x })));
+        this.dnaAssignments = new Set();
 
         this.prepareTemplate(this.generationsCount, "O"); // O = origin
 
         // DNA here is combination of O, F, M letters, //e.g. OF - father, OFM - father's side grandma
         this.assignDNAToPeople(personID, "O");
 
-        this.unknownDNA = Array.from(new Set(this.template.flat())).filter(
-            (dna) =>
-                !Object.values(this.people)
-                    .map((person) => person.dna)
-                    .includes(dna)
-        );
+        this.unknownDNA = Array.from(new Set(this.template.flat())).filter((dna) => {
+            return !Object.values(this.people)
+                .flatMap((person) => person.dnas || [])
+                .includes(dna);
+        });
 
         this.render(containerSelector, personID);
     }
@@ -67,7 +95,12 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
 
     assignDNAToPeople(personID, dna) {
         if (!this.people[personID]) return;
-        this.people[personID]["dna"] = dna;
+        const assignmentKey = `${personID}:${dna}`;
+        if (this.dnaAssignments.has(assignmentKey)) return;
+        this.dnaAssignments.add(assignmentKey);
+
+        if (!this.people[personID].dnas) this.people[personID].dnas = [];
+        if (!this.people[personID].dnas.includes(dna)) this.people[personID].dnas.push(dna);
 
         if (this.people[personID].Father) this.assignDNAToPeople(this.people[personID].Father, `${dna}F`);
         if (this.people[personID].Mother) this.assignDNAToPeople(this.people[personID].Mother, `${dna}M`);
@@ -75,12 +108,12 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
 
     render(containerSelector, personID) {
         let profiles = Object.values(this.people)
-            .map((person) => this.renderPerson(person))
+            .flatMap((person) => (person.dnas || []).map((dna) => this.renderPerson(person, dna)))
             .join("");
 
         let unknownProfiles = this.unknownDNA.map((dna) => this.renderUnknownDNA(dna)).join("");
 
-        let subject = this.renderPerson(this.people[personID], true);
+        let subject = this.renderPerson(this.people[personID], "O", true);
         document.querySelector(containerSelector).innerHTML = `<div id="subject">${subject}</div><div id="profiles">${profiles}${unknownProfiles}</div>`;
 
         profiles = document.querySelector(`${containerSelector} #profiles`);
@@ -108,20 +141,20 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
             </div>`;
     }
 
-    renderPerson(person, isSubject = false) {
-        if (!person.dna || person.dna.length > this.generationsCount || (person.dna.length === 1 && !isSubject)) return "";
+    renderPerson(person, dna, isSubject = false) {
+        if (!dna || dna.length > this.generationsCount || (dna.length === 1 && !isSubject)) return "";
 
         const photoUrl = person.PhotoData ? `${this.WT_DOMAIN}/${person.PhotoData.url}` : "";
-        const photo = person.dna.length <= 3 ? `<img src="${photoUrl}" class="photo">` : "";
+        const photo = dna.length <= 3 ? `<img src="${photoUrl}" class="photo">` : "";
 
         let locations = "";
 
-        if (person.dna.length < 5 && person?.BirthLocation) {
+        if (dna.length < 5 && person?.BirthLocation) {
             locations = `<div class="locations">${person.BirthLocation}</div>`;
         }
 
-        const born = `${person?.IsLiving ? "Born " : ""}${wtDate(person, "BirthDate")}`;
-        const died = person?.IsLiving ? "" : ` - ${wtDate(person, "DeathDate")}`;
+        const born = `${person?.IsLiving ? "Born " : ""}${this.formatDateWithStatus(person, "BirthDate")}`;
+        const died = person?.IsLiving ? "" : ` - ${this.formatDateWithStatus(person, "DeathDate")}`;
         if (isSubject) {
             if (person?.BirthLocation) {
                 locations = ` / <div class="locations">${person.BirthLocation}</div>`;
@@ -134,7 +167,7 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
                     </h2>`;
         }
         return `
-            <div style="grid-area: ${person.dna};" class="known-relative g${person.dna.length}">
+            <div style="grid-area: ${dna};" class="known-relative g${dna.length}">
                 ${photo}
                 <div>
                     <h3>${wtCompleteName(person)}</h3>
@@ -142,5 +175,101 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
                     ${locations}</span>
                 </div>
             </div>`;
+    }
+
+    renderDateFormatOptions() {
+        const container = document.querySelector(this.containerSelector);
+        if (!container) return;
+
+        const existing = document.getElementById(this.optionsContainerId);
+        if (existing) existing.remove();
+
+        const optionsContainer = document.createElement("div");
+        optionsContainer.id = this.optionsContainerId;
+        optionsContainer.className = "familyViewOptions";
+        const selectedFormatId = window.DateFormatOptions
+            ? window.DateFormatOptions.getStoredFormatId()
+            : null;
+        const selectedStatusId = window.DateFormatOptions
+            ? window.DateFormatOptions.getStoredStatusFormat()
+            : this.dateStatusFormat;
+        if (window.DateFormatOptions) {
+            window.DateFormatOptions.setStoredFormatId(selectedFormatId);
+            window.DateFormatOptions.setStoredStatusFormat(selectedStatusId);
+        }
+        const dateOptionsHtml = window.DateFormatOptions
+            ? window.DateFormatOptions.buildFormatOptionsHtml(selectedFormatId)
+            : "";
+        const statusOptionsHtml = window.DateFormatOptions
+            ? window.DateFormatOptions.buildStatusOptionsHtml(selectedStatusId)
+            : "";
+        optionsContainer.innerHTML = `
+            <label for="${this.dateFormatSelectId}">Date Format:</label>
+            <select id="${this.dateFormatSelectId}">
+                ${dateOptionsHtml}
+            </select>
+            <label for="${this.dateStatusSelectId}">Date Status:</label>
+            <select id="${this.dateStatusSelectId}">
+                ${statusOptionsHtml}
+            </select>
+        `;
+
+        container.parentNode.insertBefore(optionsContainer, container);
+
+        const select = document.getElementById(this.dateFormatSelectId);
+        if (!select) return;
+
+        this.onDateFormatChange = (event) => {
+            const selectedId = event.target.value;
+            if (window.DateFormatOptions) {
+                this.dateFormat =
+                    window.DateFormatOptions.getFormatValue(selectedId, "wtDate") || this.dateFormat;
+                window.DateFormatOptions.setStoredFormatId(selectedId);
+            } else {
+                const fallbackMap = {
+                    dsmy: "D MMM YYYY",
+                    smdy: "MMM D, YYYY",
+                    mdy: "MMMM D, YYYY",
+                    dmy: "D MMMM YYYY",
+                    iso: "YYYY-MM-DD",
+                    y: "YYYY",
+                };
+                this.dateFormat = fallbackMap[selectedId] || this.dateFormat;
+            }
+            if (this.containerSelector && this.personID) {
+                this.render(this.containerSelector, this.personID);
+            }
+        };
+        select.addEventListener("change", this.onDateFormatChange);
+
+        const statusSelect = document.getElementById(this.dateStatusSelectId);
+        if (statusSelect) {
+            this.onDateStatusChange = (event) => {
+                this.dateStatusFormat = event.target.value;
+                if (window.DateFormatOptions) {
+                    window.DateFormatOptions.setStoredStatusFormat(this.dateStatusFormat);
+                }
+                if (this.containerSelector && this.personID) {
+                    this.render(this.containerSelector, this.personID);
+                }
+            };
+            statusSelect.addEventListener("change", this.onDateStatusChange);
+        }
+    }
+
+    formatDateWithStatus(person, fieldName) {
+        const formatted = window.wtDate(person, fieldName, {
+            formatString: this.dateFormat,
+            withCertainty: false,
+        });
+        if (!formatted || formatted === "[unknown]") return formatted || "";
+
+        const status = person?.DataStatus?.[fieldName] || "";
+        const statusPrefix = window.DateFormatOptions
+            ? window.DateFormatOptions.formatStatus(status, this.dateStatusFormat)
+            : "";
+        if (!statusPrefix) return formatted;
+        if (["<", ">", "~"].includes(statusPrefix.trim())) return `${statusPrefix}${formatted}`;
+        return `${statusPrefix} ${formatted}`;
     }
 };

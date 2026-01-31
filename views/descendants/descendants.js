@@ -42,9 +42,27 @@ window.DescendantsView = class DescendantsView extends View {
     }
 
     init(container_selector, person_id) {
+        const sharedFormatId = window.DateFormatOptions
+            ? window.DateFormatOptions.getStoredFormatId()
+            : null;
+        const sharedFormatValue = window.DateFormatOptions
+            ? window.DateFormatOptions.getFormatValue(sharedFormatId, "descendants")
+            : null;
+        const sharedStatusFormat = window.DateFormatOptions
+            ? window.DateFormatOptions.getStoredStatusFormat()
+            : null;
         window.descendantsSettings = {
-            dateFormat: localStorage.getItem("descendantsDateFormat") || "ISO",
-            dateDataStatusFormat: localStorage.getItem("descendantsDateDataStatusFormat") || "abbreviations",
+            dateFormat: sharedFormatValue || localStorage.getItem("descendantsDateFormat") || "ISO",
+            dateFormatId:
+                sharedFormatId ||
+                (window.DateFormatOptions
+                    ? window.DateFormatOptions.getFormatIdFromDescendants(
+                          localStorage.getItem("descendantsDateFormat") || "ISO"
+                      )
+                    : null) ||
+                "iso",
+            dateDataStatusFormat:
+                sharedStatusFormat || localStorage.getItem("descendantsDateDataStatusFormat") || "abbreviations",
             showWTID:
                 localStorage.getItem("descendantsShowWTID") !== null
                     ? JSON.parse(localStorage.getItem("descendantsShowWTID"))
@@ -78,6 +96,11 @@ window.DescendantsView = class DescendantsView extends View {
                     ? JSON.parse(localStorage.getItem("descendantsShowPhotos"))
                     : false,
         };
+
+        if (window.DateFormatOptions) {
+            window.DateFormatOptions.setStoredFormatId(window.descendantsSettings.dateFormatId);
+            window.DateFormatOptions.setStoredStatusFormat(window.descendantsSettings.dateDataStatusFormat);
+        }
 
         $("body").addClass("descendants");
         const help = $(
@@ -123,6 +146,12 @@ window.DescendantsView = class DescendantsView extends View {
 
         $descendantsHelp.draggable();
 
+        const dateFormatOptionsHtml = window.DateFormatOptions
+            ? window.DateFormatOptions.buildFormatOptionsHtml(window.descendantsSettings.dateFormatId)
+            : "";
+        const dateStatusOptionsHtml = window.DateFormatOptions
+            ? window.DateFormatOptions.buildStatusOptionsHtml(window.descendantsSettings.dateDataStatusFormat)
+            : "";
         $(`<div id='descendantsButtons'>
         <fieldset id="helpEtc">
         <span id="viewSwitcher">
@@ -150,16 +179,10 @@ window.DescendantsView = class DescendantsView extends View {
         <fieldset id="sharedControls">
             <label><input type="checkbox" id="showDates" title="Show dates">Show:</label>
             <select id="dateDataStatusSelect" title="Select date data status format">
-                <option value="abbreviations">bef., aft., abt.</option>
-                <option value="words">before, after, about</option>
+                ${dateStatusOptionsHtml}
             </select>
             <select id="dateFormatSelect" title="Select date format">
-                <option value="ISO">1859-11-24</option>
-                <option value="MDY">November 24, 1859</option>
-                <option value="sMDY">Nov 24, 1859</option>
-                <option value="DMY">24 November 1859</option>
-                <option value="DsMY">24 Nov 1859</option>
-                <option value="Y">1859</option>
+                ${dateFormatOptionsHtml}
             </select>
             <label title="Show Aboville numbers"><input type="checkbox" id="showAboville">Aboville #</label>
             <label title="Show images"><input type="checkbox" id="showPhotos">Images</label>
@@ -530,11 +553,8 @@ window.DescendantsView = class DescendantsView extends View {
             }
         });
 
-        $("#dateFormatSelect option[value='" + window.descendantsSettings.dateFormat + "']").prop("selected", true);
-        $("#dateDataStatusSelect option[value='" + window.descendantsSettings.dateDataStatusFormat + "']").prop(
-            "selected",
-            true
-        );
+        $("#dateFormatSelect").val(window.descendantsSettings.dateFormatId);
+        $("#dateDataStatusSelect").val(window.descendantsSettings.dateDataStatusFormat);
 
         // Variable to keep track of the initial state of ul.personList elements
         let initialPersonListState = {};
@@ -632,10 +652,31 @@ window.DescendantsView = class DescendantsView extends View {
         $(container_selector).off("change", "#dateFormatSelect,#dateDataStatusSelect");
         $(container_selector).on("change", "#dateFormatSelect,#dateDataStatusSelect", function (e) {
             e.stopImmediatePropagation();
-            localStorage.setItem("descendantsDateFormat", $("#dateFormatSelect").val());
-            localStorage.setItem("descendantsDateDataStatusFormat", $("#dateDataStatusSelect").val());
-            window.descendantsSettings.dateDataStatusFormat = $("#dateDataStatusSelect").val();
-            window.descendantsSettings.dateFormat = $("#dateFormatSelect").val();
+            const formatId = $("#dateFormatSelect").val();
+            const statusFormat = $("#dateDataStatusSelect").val();
+            const mappedFormat = window.DateFormatOptions
+                ? window.DateFormatOptions.getFormatValue(formatId, "descendants")
+                : (
+                      {
+                          iso: "ISO",
+                          mdy: "MDY",
+                          smdy: "sMDY",
+                          dmy: "DMY",
+                          dsmy: "DsMY",
+                          y: "Y",
+                      }[formatId] || formatId
+                  );
+
+            if (window.DateFormatOptions) {
+                window.DateFormatOptions.setStoredFormatId(formatId);
+                window.DateFormatOptions.setStoredStatusFormat(statusFormat);
+            }
+
+            localStorage.setItem("descendantsDateFormat", mappedFormat);
+            localStorage.setItem("descendantsDateDataStatusFormat", statusFormat);
+            window.descendantsSettings.dateFormatId = formatId;
+            window.descendantsSettings.dateDataStatusFormat = statusFormat;
+            window.descendantsSettings.dateFormat = mappedFormat;
             changeDateFormat(window.descendantsSettings.dateFormat);
         });
 
@@ -1962,6 +2003,10 @@ function dataStatusWord(status, ISOdate) {
     }
 
     const statusFormat = window.descendantsSettings.dateDataStatusFormat || "abbreviations";
+
+    if (window.DateFormatOptions) {
+        return window.DateFormatOptions.formatStatus(status, statusFormat);
+    }
 
     if (statusFormat === "abbreviations") {
         statusOut = statusOut.replace("before", "bef.").replace("after", "aft.").replace("about", "abt.");
