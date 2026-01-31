@@ -11,10 +11,33 @@
   font-size: 0.95em;
 }
 
+/* Options layout: keep each label+control together, but allow whole option to wrap */
+.familyViewOptions {
+  margin: 0.5em 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  align-items: center;
+}
+.familyViewOptions .printer-option {
+  display: inline-flex;
+  white-space: nowrap; /* keep label + control together */
+  margin-right: 0.5em;
+  vertical-align: middle;
+  gap: 0.25em;
+  align-items: center;
+}
+.familyViewOptions .printer-option label {
+  margin: 0;
+}
+.familyViewOptions select {
+  vertical-align: middle;
+}
+
 #subject h2 {
   font-size: 1.2em;
   margin: 0;
-  padding: .4em 0;
+  padding: 0.4em 0;
 }
 
 #subject img {
@@ -37,7 +60,7 @@
 }
 
 #profiles .g6 {
-  min-width:  22em
+  min-width: 22em;
 }
 
 #profiles .g6 h3 {
@@ -61,13 +84,25 @@
 }
 
 .known-relative > div > * {
-  margin: 0.1em 0;
+  margin: 0.05em 0;
 }
 
 .known-relative > .photo {
   max-height: 100px;
   object-fit: contain;
   margin: 0.2em 0;
+}
+
+/* location inline compacting */
+.locations {
+  display: inline-block;
+  margin: 0 0.35em 0 0;
+  line-height: 1;
+  vertical-align: baseline;
+  font-size: 0.92em;
+}
+.loc-death {
+  margin-left: 0.25em;
 }
 
 #profiles .g6 * {
@@ -93,4 +128,29 @@
   main {
     padding: 0;
   }
+  #printerFriendlyOptions {
+    display: none;
+  }
+  #subject h2 {
+    font-size: 1em;
+    margin: 0;
+    padding: 0.2em 0;
+  }
+  #subject .locations {
+    display: inline;
+
+  /* Ensure each parent's side prints on its own page when split */
+  .profiles-side {
+    break-after: page;
+    page-break-after: always;
+  }
+  }
+
+/* layout for the side grids */
+.profiles-grid {
+  display: grid;
+  grid-gap: 1px;
+  margin: 1px 0;
+  justify-content: center;
+}
 }

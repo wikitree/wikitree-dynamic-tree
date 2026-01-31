@@ -489,20 +489,19 @@ body.report-mode #reportControls {
     margin: 1.5cm;
   }
 
-  body {
+  body.descendants {
     page: landscape-page;
   }
 
-  body.report-mode {
+  body.descendants.report-mode {
     page: portrait-page;
   }
 
   /* CRITICAL: Ensure no containers restrict height or hide overflow in print */
-  html,
-  body,
-  #view-container,
-  #descendantsReportWrapper,
-  #descendantsReport {
+  body.descendants,
+  body.descendants #view-container,
+  body.descendants #descendantsReportWrapper,
+  body.descendants #descendantsReport {
     height: auto !important;
     overflow: visible !important;
     display: block !important;
@@ -515,11 +514,11 @@ body.report-mode #reportControls {
   /* Hide UI controls in print */
   body.descendants #descendantsButtons,
   body.descendants #descendantsHelp,
-  #reportControls,
-  #reportControlsLabel,
-  #descendantsReportStatus,
-  .load-more,
-  button {
+  body.descendants #reportControls,
+  body.descendants #reportControlsLabel,
+  body.descendants #descendantsReportStatus,
+  body.descendants .load-more,
+  body.descendants button {
     display: none !important;
   }
 
@@ -534,31 +533,31 @@ body.report-mode #reportControls {
   }
 
   /* Ensure report content is visible in print */
-  .report-person,
-  .report-person-header,
-  .report-person-title,
-  .report-meta,
-  .report-places,
-  .report-spouses,
-  .report-children,
-  .report-children-list,
-  .report-bio,
-  .report-endnotes {
+  body.descendants .report-person,
+  body.descendants .report-person-header,
+  body.descendants .report-person-title,
+  body.descendants .report-meta,
+  body.descendants .report-places,
+  body.descendants .report-spouses,
+  body.descendants .report-children,
+  body.descendants .report-children-list,
+  body.descendants .report-bio,
+  body.descendants .report-endnotes {
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
     overflow: visible !important;
   }
 
-  .report-person:first-of-type {
+  body.descendants .report-person:first-of-type {
     margin-top: 0 !important;
   }
 
-  #descendantsReportWrapper {
+  body.descendants #descendantsReportWrapper {
     border: none;
   }
 
-  .report-person {
+  body.descendants .report-person {
     border: none;
     border-bottom: 2px solid #eee;
     box-shadow: none;
@@ -567,22 +566,22 @@ body.report-mode #reportControls {
     padding: 0;
   }
 
-  .report-person-title {
+  body.descendants .report-person-title {
     font-size: 1.3em;
     font-weight: bold;
   }
 
-  body {
+  body.descendants {
     background: #fff !important;
     color: #000 !important;
   }
 
-  a {
+  body.descendants a {
     color: #000 !important;
     text-decoration: none;
   }
 
-  .report-photo {
+  body.descendants .report-photo {
     max-width: 100px; /* Slightly smaller for print */
     border: none;
     padding: 0;

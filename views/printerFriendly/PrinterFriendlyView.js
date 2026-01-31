@@ -23,6 +23,22 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
         this.dateFormatSelectId = "printerFriendlyDateFormat";
         this.dateStatusSelectId = "printerFriendlyDateStatus";
         this.optionsContainerId = "printerFriendlyOptions";
+        // persisted option keys
+        this.showWtIdKey = "printerFriendlyShowWtId";
+        this.showWtId = localStorage.getItem(this.showWtIdKey) === "1";
+        this.showWtIdId = "printerFriendlyShowWtId";
+
+        this.showDeathLocationsKey = "printerFriendlyShowDeathLocations";
+        this.showDeathLocations = localStorage.getItem(this.showDeathLocationsKey) === "1";
+        this.showDeathLocationsId = "printerFriendlyShowDeathLocations";
+
+        this.showAllLocationsKey = "printerFriendlyShowAllLocations";
+        this.showAllLocations = localStorage.getItem(this.showAllLocationsKey) === "1";
+        this.showAllLocationsId = "printerFriendlyShowAllLocations";
+
+        this.splitByParentSideKey = "printerFriendlySplitByParentSide";
+        this.splitByParentSide = localStorage.getItem(this.splitByParentSideKey) === "1";
+        this.splitByParentSideId = "printerFriendlySplitByParentSide";
     }
 
     meta() {
@@ -52,6 +68,15 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
         }
         const optionsContainer = document.getElementById(this.optionsContainerId);
         if (optionsContainer) optionsContainer.remove();
+
+        const showWt = document.getElementById(this.showWtIdId);
+        if (showWt && this.onShowWtIdChange) showWt.removeEventListener("change", this.onShowWtIdChange);
+        const showDeath = document.getElementById(this.showDeathLocationsId);
+        if (showDeath && this.onShowDeathLocationsChange) showDeath.removeEventListener("change", this.onShowDeathLocationsChange);
+        const showAll = document.getElementById(this.showAllLocationsId);
+        if (showAll && this.onShowAllLocationsChange) showAll.removeEventListener("change", this.onShowAllLocationsChange);
+        const splitBy = document.getElementById(this.splitByParentSideId);
+        if (splitBy && this.onSplitByParentSideChange) splitBy.removeEventListener("change", this.onSplitByParentSideChange);
     }
 
     async loadView(containerSelector, personID) {
@@ -105,23 +130,27 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
     }
 
     render(containerSelector, personID) {
-        let profiles = Object.values(this.people)
+        const subject = this.renderPerson(this.people[personID], "O", true);
+        const container = document.querySelector(containerSelector);
+        if (!container) return;
+
+        const profiles = Object.values(this.people)
             .flatMap((person) => (person.dnas || []).map((dna) => this.renderPerson(person, dna)))
             .join("");
 
-        let unknownProfiles = this.unknownDNA.map((dna) => this.renderUnknownDNA(dna)).join("");
-
-        let subject = this.renderPerson(this.people[personID], "O", true);
-        document.querySelector(containerSelector).innerHTML =
-            `<div id="subject">${subject}</div><div id="profiles">${profiles}${unknownProfiles}</div>`;
-
-        profiles = document.querySelector(`${containerSelector} #profiles`);
-
-        profiles.style.gridTemplateAreas = this.template[0]
-            // switches rows and columns and serializes template to string to be used for css grid
-            .map((_, colIndex) => '"' + this.template.map((row) => row[colIndex]).join(" ") + '"')
-            .join("\n");
+        const unknownProfiles = this.unknownDNA.map((dna) => this.renderUnknownDNA(dna)).join("");
+        container.innerHTML = `<div id="subject">${subject}</div><div id="profiles" class="profiles-grid">${profiles}${unknownProfiles}</div>`;
+        const profilesGrid = container.querySelector("#profiles");
+        if (profilesGrid) {
+            // serialize the existing template into CSS grid-template-areas
+            profilesGrid.style.gridTemplateAreas = this.template[0]
+                .map((_, colIndex) => '"' + this.template.map((row) => row[colIndex]).join(" ") + '"')
+                .join("\n");
+            try { profilesGrid.style.setProperty('--pf-columns', (this.template[0] || []).length); } catch (e) {}
+        }
     }
+
+    
 
     getDNARelationship(dna) {
         if (dna.length === 1) {
@@ -134,9 +163,10 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
     }
 
     renderUnknownDNA(dna) {
+        // preserve grid cell but clear placeholder text
         return `
             <div style="grid-area: ${dna};" class="unknown-relative g${dna.length}">
-                <p>(${this.getDNARelationship(dna.slice(1))})</p>
+                <p style="visibility:hidden">&nbsp;</p>
             </div>`;
     }
 
@@ -146,10 +176,15 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
         const photoUrl = person.PhotoData ? `${this.WT_DOMAIN}/${person.PhotoData.url}` : "";
         const photo = dna.length <= 3 ? `<img src="${photoUrl}" class="photo">` : "";
 
+        // locations handling: separate birth/death, and respect options
+        const birthLoc = person?.BirthLocation || "";
+        const deathLoc = person?.DeathLocation || "";
         let locations = "";
-
-        if (dna.length < 5 && person?.BirthLocation) {
-            locations = `<div class="locations">${person.BirthLocation}</div>`;
+        const includeAll = this.showAllLocations || dna.length < 5;
+        if (includeAll && birthLoc) locations = `<span class="locations">b. ${birthLoc}</span>`;
+        if (includeAll && this.showDeathLocations && deathLoc) {
+            // prefer same-line placement; separate with a small gap
+            locations += `${locations ? ' ' : ''}<span class="locations loc-death">d. ${deathLoc}</span>`;
         }
 
         const born = `${person?.IsLiving ? "Born " : ""}${this.formatDateWithStatus(person, "BirthDate")}`;
@@ -161,15 +196,16 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
             return `
                 ${photo}
                     <h2>
-                        Ancestors of ${wtCompleteName(person)} 
+                        Ancestors of ${wtCompleteName(person)} ${this.showWtId ? ` (${person.Name})` : ''}
                         / ${born}${died} ${locations}
                     </h2>`;
         }
+        const wtIdInline = this.showWtId ? ` <span class="wt-id">(${person.Name})</span>` : "";
         return `
             <div style="grid-area: ${dna};" class="known-relative g${dna.length}">
                 ${photo}
                 <div>
-                    <h3>${wtCompleteName(person)}</h3>
+                    <h3>${wtCompleteName(person)}${wtIdInline}</h3>
                     <span>${born}${died}<br>
                     ${locations}</span>
                 </div>
@@ -201,14 +237,24 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
             ? window.DateFormatOptions.buildStatusOptionsHtml(selectedStatusId)
             : "";
         optionsContainer.innerHTML = `
-            <label for="${this.dateFormatSelectId}">Date Format:</label>
-            <select id="${this.dateFormatSelectId}">
-                ${dateOptionsHtml}
-            </select>
-            <label for="${this.dateStatusSelectId}">Date Status:</label>
-            <select id="${this.dateStatusSelectId}">
-                ${statusOptionsHtml}
-            </select>
+            <span class="printer-option"><label for="${this.dateFormatSelectId}">Date Format:</label>
+                <select id="${this.dateFormatSelectId}">
+                    ${dateOptionsHtml}
+                </select>
+            </span>
+            <span class="printer-option"><label for="${this.dateStatusSelectId}">Date Status:</label>
+                <select id="${this.dateStatusSelectId}">
+                    ${statusOptionsHtml}
+                </select>
+            </span>
+        `;
+
+        // add printer-friendly specific toggles as siblings so they wrap with date controls
+        optionsContainer.innerHTML += `
+            <span class="printer-option"><label><input type="checkbox" id="${this.showWtIdId}" ${this.showWtId ? 'checked' : ''}> WT ID</label></span>
+            <span class="printer-option"><label><input type="checkbox" id="${this.showDeathLocationsId}" ${this.showDeathLocations ? 'checked' : ''}> Death locations</label></span>
+            <span class="printer-option"><label><input type="checkbox" id="${this.showAllLocationsId}" ${this.showAllLocations ? 'checked' : ''}> Locations for all</label></span>
+            <span class="printer-option"><label><input type="checkbox" id="${this.splitByParentSideId}" ${this.splitByParentSide ? 'checked' : ''}> Split by parent side</label></span>
         `;
 
         container.parentNode.insertBefore(optionsContainer, container);
@@ -250,6 +296,47 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
                 }
             };
             statusSelect.addEventListener("change", this.onDateStatusChange);
+        }
+
+        // printer-friendly option listeners
+        const showWt = document.getElementById(this.showWtIdId);
+        if (showWt) {
+            this.onShowWtIdChange = (e) => {
+                this.showWtId = e.target.checked;
+                localStorage.setItem(this.showWtIdKey, this.showWtId ? "1" : "0");
+                if (this.containerSelector && this.personID) this.render(this.containerSelector, this.personID);
+            };
+            showWt.addEventListener("change", this.onShowWtIdChange);
+        }
+
+        const showDeath = document.getElementById(this.showDeathLocationsId);
+        if (showDeath) {
+            this.onShowDeathLocationsChange = (e) => {
+                this.showDeathLocations = e.target.checked;
+                localStorage.setItem(this.showDeathLocationsKey, this.showDeathLocations ? "1" : "0");
+                if (this.containerSelector && this.personID) this.render(this.containerSelector, this.personID);
+            };
+            showDeath.addEventListener("change", this.onShowDeathLocationsChange);
+        }
+
+        const showAll = document.getElementById(this.showAllLocationsId);
+        if (showAll) {
+            this.onShowAllLocationsChange = (e) => {
+                this.showAllLocations = e.target.checked;
+                localStorage.setItem(this.showAllLocationsKey, this.showAllLocations ? "1" : "0");
+                if (this.containerSelector && this.personID) this.render(this.containerSelector, this.personID);
+            };
+            showAll.addEventListener("change", this.onShowAllLocationsChange);
+        }
+
+        const splitBy = document.getElementById(this.splitByParentSideId);
+        if (splitBy) {
+            this.onSplitByParentSideChange = (e) => {
+                this.splitByParentSide = e.target.checked;
+                localStorage.setItem(this.splitByParentSideKey, this.splitByParentSide ? "1" : "0");
+                if (this.containerSelector && this.personID) this.render(this.containerSelector, this.personID);
+            };
+            splitBy.addEventListener("change", this.onSplitByParentSideChange);
         }
     }
 
