@@ -143,8 +143,12 @@
   font-size: 0.92em;
   color: inherit;
 }
-.wt-id-inline { font-size: 0.92em; }
-.wt-id-block { font-size: 0.92em; }
+.wt-id-inline {
+  font-size: 0.92em;
+}
+.wt-id-block {
+  font-size: 0.92em;
+}
 
 #profiles .g6 * {
   font-size: 0.85em;
