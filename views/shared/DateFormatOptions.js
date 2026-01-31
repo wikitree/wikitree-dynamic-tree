@@ -20,8 +20,7 @@ window.DateFormatOptions = (() => {
         { id: "symbols", label: "<, >, ~" },
     ];
 
-    const getFormatIdFromDescendants = (value) =>
-        FORMAT_OPTIONS.find((opt) => opt.descendants === value)?.id || null;
+    const getFormatIdFromDescendants = (value) => FORMAT_OPTIONS.find((opt) => opt.descendants === value)?.id || null;
 
     const getFormatIdFromWtDate = (value) => FORMAT_OPTIONS.find((opt) => opt.wtDate === value)?.id || null;
 
@@ -60,7 +59,9 @@ window.DateFormatOptions = (() => {
     };
 
     const getStoredStatusFormat = () =>
-        localStorage.getItem(STORAGE_KEY_STATUS) || localStorage.getItem("descendantsDateDataStatusFormat") || DEFAULT_STATUS_FORMAT;
+        localStorage.getItem(STORAGE_KEY_STATUS) ||
+        localStorage.getItem("descendantsDateDataStatusFormat") ||
+        DEFAULT_STATUS_FORMAT;
 
     const setStoredStatusFormat = (value) => {
         if (value) localStorage.setItem(STORAGE_KEY_STATUS, value);

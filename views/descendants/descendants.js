@@ -42,15 +42,11 @@ window.DescendantsView = class DescendantsView extends View {
     }
 
     init(container_selector, person_id) {
-        const sharedFormatId = window.DateFormatOptions
-            ? window.DateFormatOptions.getStoredFormatId()
-            : null;
+        const sharedFormatId = window.DateFormatOptions ? window.DateFormatOptions.getStoredFormatId() : null;
         const sharedFormatValue = window.DateFormatOptions
             ? window.DateFormatOptions.getFormatValue(sharedFormatId, "descendants")
             : null;
-        const sharedStatusFormat = window.DateFormatOptions
-            ? window.DateFormatOptions.getStoredStatusFormat()
-            : null;
+        const sharedStatusFormat = window.DateFormatOptions ? window.DateFormatOptions.getStoredStatusFormat() : null;
         window.descendantsSettings = {
             dateFormat: sharedFormatValue || localStorage.getItem("descendantsDateFormat") || "ISO",
             dateFormatId:
@@ -656,16 +652,14 @@ window.DescendantsView = class DescendantsView extends View {
             const statusFormat = $("#dateDataStatusSelect").val();
             const mappedFormat = window.DateFormatOptions
                 ? window.DateFormatOptions.getFormatValue(formatId, "descendants")
-                : (
-                      {
-                          iso: "ISO",
-                          mdy: "MDY",
-                          smdy: "sMDY",
-                          dmy: "DMY",
-                          dsmy: "DsMY",
-                          y: "Y",
-                      }[formatId] || formatId
-                  );
+                : {
+                      iso: "ISO",
+                      mdy: "MDY",
+                      smdy: "sMDY",
+                      dmy: "DMY",
+                      dsmy: "DsMY",
+                      y: "Y",
+                  }[formatId] || formatId;
 
             if (window.DateFormatOptions) {
                 window.DateFormatOptions.setStoredFormatId(formatId);
@@ -1183,10 +1177,10 @@ function setUpRemoveButton() {
             btn.text() == "Hide Females"
                 ? btn.text("Show Females")
                 : btn.text() == "Show Females"
-                ? btn.text("Hide Females")
-                : btn.text() == "Hide Males"
-                ? btn.text("Show Males")
-                : btn.text("Hide Males");
+                  ? btn.text("Hide Females")
+                  : btn.text() == "Hide Males"
+                    ? btn.text("Show Males")
+                    : btn.text("Hide Males");
         });
 
         // Expand the root person's children and rotate the arrow on page load
@@ -3024,8 +3018,8 @@ function renderReportPerson(person, data) {
                 ${photoHtml}
                 <div class="report-vitals">
                     <span class="report-name-inline">${nameDisplay}</span> was born ${birthDate}${
-        birthPlace ? " in " + birthPlace : ""
-    }${deathDate ? " and died " + deathDate + (deathPlace ? " in " + deathPlace : "") : ""}. ${spousesNarrative}
+                        birthPlace ? " in " + birthPlace : ""
+                    }${deathDate ? " and died " + deathDate + (deathPlace ? " in " + deathPlace : "") : ""}. ${spousesNarrative}
                 </div>
             </header>
             
@@ -3186,8 +3180,8 @@ function buildChildrenList($li, spouses = [], personId) {
             const spouseName = group.spouse
                 ? getPreferredName(group.spouse, { uppercase: false })
                 : key !== "unknown" && key
-                ? lookupSpouseNameFromDom(key) || getPreferredName({ Name: key }, { uppercase: false })
-                : "Unknown spouse";
+                  ? lookupSpouseNameFromDom(key) || getPreferredName({ Name: key }, { uppercase: false })
+                  : "Unknown spouse";
             const safeLabel = escapeHtml(spouseName);
             return `<div class="report-children-group"><div class="report-children-spouse">Children with ${safeLabel}</div><ul class="report-children-list">${group.items.join(
                 ""

@@ -98,9 +98,7 @@ window.FamilyGroup = class FamilyGroup {
             "Father,Mother,Photo,PhotoData," +
             "Parents,Children,Spouses,Siblings";
 
-        const sharedFormatId = window.DateFormatOptions
-            ? window.DateFormatOptions.getStoredFormatId()
-            : null;
+        const sharedFormatId = window.DateFormatOptions ? window.DateFormatOptions.getStoredFormatId() : null;
         const sharedDateFormat = window.DateFormatOptions
             ? window.DateFormatOptions.getFormatValue(sharedFormatId, "wtDate") || "D MMM YYYY"
             : "D MMM YYYY";
@@ -133,10 +131,8 @@ window.FamilyGroup = class FamilyGroup {
                 window.DateFormatOptions.setStoredFormatId(legacyId);
             }
             this.options.dateFormat =
-                window.DateFormatOptions.getFormatValue(
-                    window.DateFormatOptions.getStoredFormatId(),
-                    "wtDate"
-                ) || this.options.dateFormat;
+                window.DateFormatOptions.getFormatValue(window.DateFormatOptions.getStoredFormatId(), "wtDate") ||
+                this.options.dateFormat;
             this.options.dateStatusFormat = window.DateFormatOptions.getStoredStatusFormat();
             window.DateFormatOptions.setStoredStatusFormat(this.options.dateStatusFormat);
         }
@@ -438,9 +434,9 @@ window.FamilyGroup = class FamilyGroup {
 
         html += ` the ${childType} of ${fatherName} and ${motherName}.
             See ${this.linkedShortName(person)}'s ${this.linkToTreeAndTools(
-            person,
-            "Tree &amp; Tools page"
-        )} for more views.`;
+                person,
+                "Tree &amp; Tools page"
+            )} for more views.`;
         $("#view-description").html(html);
     }
 
@@ -597,9 +593,7 @@ window.FamilyGroup = class FamilyGroup {
         if ($("#familyViewOptions").length > 0) {
             return;
         }
-        const selectedFormatId = window.DateFormatOptions
-            ? window.DateFormatOptions.getStoredFormatId()
-            : null;
+        const selectedFormatId = window.DateFormatOptions ? window.DateFormatOptions.getStoredFormatId() : null;
         const selectedStatusId = window.DateFormatOptions
             ? window.DateFormatOptions.getStoredStatusFormat()
             : this.options.dateStatusFormat;

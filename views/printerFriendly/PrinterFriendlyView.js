@@ -13,9 +13,7 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
 
         this.wtAPI = wtAPI;
         this.generationsCount = generationsCount > 0 ? generationsCount : 1;
-        const sharedFormatId = window.DateFormatOptions
-            ? window.DateFormatOptions.getStoredFormatId()
-            : null;
+        const sharedFormatId = window.DateFormatOptions ? window.DateFormatOptions.getStoredFormatId() : null;
         this.dateFormat = window.DateFormatOptions
             ? window.DateFormatOptions.getFormatValue(sharedFormatId, "wtDate") || "D MMM YYYY"
             : "D MMM YYYY";
@@ -114,7 +112,8 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
         let unknownProfiles = this.unknownDNA.map((dna) => this.renderUnknownDNA(dna)).join("");
 
         let subject = this.renderPerson(this.people[personID], "O", true);
-        document.querySelector(containerSelector).innerHTML = `<div id="subject">${subject}</div><div id="profiles">${profiles}${unknownProfiles}</div>`;
+        document.querySelector(containerSelector).innerHTML =
+            `<div id="subject">${subject}</div><div id="profiles">${profiles}${unknownProfiles}</div>`;
 
         profiles = document.querySelector(`${containerSelector} #profiles`);
 
@@ -187,9 +186,7 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
         const optionsContainer = document.createElement("div");
         optionsContainer.id = this.optionsContainerId;
         optionsContainer.className = "familyViewOptions";
-        const selectedFormatId = window.DateFormatOptions
-            ? window.DateFormatOptions.getStoredFormatId()
-            : null;
+        const selectedFormatId = window.DateFormatOptions ? window.DateFormatOptions.getStoredFormatId() : null;
         const selectedStatusId = window.DateFormatOptions
             ? window.DateFormatOptions.getStoredStatusFormat()
             : this.dateStatusFormat;
@@ -222,8 +219,7 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
         this.onDateFormatChange = (event) => {
             const selectedId = event.target.value;
             if (window.DateFormatOptions) {
-                this.dateFormat =
-                    window.DateFormatOptions.getFormatValue(selectedId, "wtDate") || this.dateFormat;
+                this.dateFormat = window.DateFormatOptions.getFormatValue(selectedId, "wtDate") || this.dateFormat;
                 window.DateFormatOptions.setStoredFormatId(selectedId);
             } else {
                 const fallbackMap = {
