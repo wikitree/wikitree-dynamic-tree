@@ -136,7 +136,106 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
         const subject = this.renderPerson(this.people[personID], "O", true);
         const container = document.querySelector(containerSelector);
         if (!container) return;
+        // If split-by-parent-side requested and we have at least parents + children rows
+        if (this.splitByParentSide && this.generationsCount > 1) {
+            const columns = this.template[0].length;
 
+            // determine which columns contain father (OF) vs mother (OM) areas
+            const fatherCols = [];
+            const motherCols = [];
+            for (let col = 0; col < columns; col++) {
+                let hasF = false;
+                let hasM = false;
+                // scan rows (skip subject row at index 0)
+                for (let row = 1; row < this.template.length; row++) {
+                    const v = this.template[row] && this.template[row][col];
+                    if (!v) continue;
+                    if (v.startsWith("OF") || (v.length > 1 && v[1] === "F")) hasF = true;
+                    if (v.startsWith("OM") || (v.length > 1 && v[1] === "M")) hasM = true;
+                }
+                if (hasF && !hasM) fatherCols.push(col);
+                else if (hasM && !hasF) motherCols.push(col);
+                else {
+                    // ambiguous or no marker: use parent row preference if present
+                    const parentVal = this.template[1] && this.template[1][col];
+                    if (parentVal && parentVal.length > 1 && parentVal[1] === "M") motherCols.push(col);
+                    else fatherCols.push(col);
+                }
+            }
+
+            // build per-side compact templates from chosen column indices
+            const buildCompactTemplate = (cols) => this.template.map((row) => cols.map((ci) => row[ci] || "."));
+            const fatherTemplate = buildCompactTemplate(fatherCols).slice(1);
+            const motherTemplate = buildCompactTemplate(motherCols).slice(1);
+
+            const fatherProfiles = Object.values(this.people)
+                .flatMap((person) =>
+                    (person.dnas || [])
+                        .filter((dna) => dna.startsWith("OF"))
+                        .map((dna) => this.renderPerson(person, dna))
+                )
+                .join("");
+            const motherProfiles = Object.values(this.people)
+                .flatMap((person) =>
+                    (person.dnas || [])
+                        .filter((dna) => dna.startsWith("OM"))
+                        .map((dna) => this.renderPerson(person, dna))
+                )
+                .join("");
+
+            const fatherUnknown = (this.unknownDNA || [])
+                .filter((dna) => dna.startsWith("OF"))
+                .map((dna) => this.renderUnknownDNA(dna))
+                .join("");
+            const motherUnknown = (this.unknownDNA || [])
+                .filter((dna) => dna.startsWith("OM"))
+                .map((dna) => this.renderUnknownDNA(dna))
+                .join("");
+
+            container.innerHTML = `
+                <div id="subject">${subject}</div>
+                <div id="profiles-father" class="profiles-grid profiles-side profiles-father">
+                    ${fatherProfiles}${fatherUnknown}
+                </div>
+                <div id="profiles-mother" class="profiles-grid profiles-side profiles-mother">
+                    ${motherProfiles}${motherUnknown}
+                </div>`;
+
+            const encodeAreas = (template) =>
+                (template[0] || [])
+                    .map((_, colIndex) => '"' + template.map((row) => row[colIndex] || ".").join(" ") + '"')
+                    .join("\n");
+
+            const fatherGrid = container.querySelector("#profiles-father");
+            const motherGrid = container.querySelector("#profiles-mother");
+            if (fatherGrid) {
+                fatherGrid.style.gridTemplateAreas = encodeAreas(fatherTemplate);
+                try {
+                    const colCount = fatherTemplate.length;
+                    const frs = Array(colCount).fill("1fr");
+                    if (colCount > 1) {
+                        frs[colCount - 1] = "2fr";
+                    }
+                    fatherGrid.style.gridTemplateColumns = frs.join(" ");
+                    fatherGrid.style.setProperty("--pf-columns", colCount);
+                } catch (e) {}
+            }
+            if (motherGrid) {
+                motherGrid.style.gridTemplateAreas = encodeAreas(motherTemplate);
+                try {
+                    const colCount = motherTemplate.length;
+                    const frs = Array(colCount).fill("1fr");
+                    if (colCount > 1) {
+                        frs[colCount - 1] = "2fr";
+                    }
+                    motherGrid.style.gridTemplateColumns = frs.join(" ");
+                    motherGrid.style.setProperty("--pf-columns", motherTemplate.length);
+                } catch (e) {}
+            }
+            return;
+        }
+
+        // Default single-grid rendering (unchanged)
         const profiles = Object.values(this.people)
             .flatMap((person) => (person.dnas || []).map((dna) => this.renderPerson(person, dna)))
             .join("");
@@ -146,12 +245,21 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
         const profilesGrid = container.querySelector("#profiles");
         if (profilesGrid) {
             // serialize the existing template into CSS grid-template-areas
-            profilesGrid.style.gridTemplateAreas = this.template[0]
-                .map((_, colIndex) => '"' + this.template.map((row) => row[colIndex]).join(" ") + '"')
-                .join("\n");
-            try {
-                profilesGrid.style.setProperty("--pf-columns", (this.template[0] || []).length);
-            } catch (e) {}
+            const gridTemplate = this.template.slice(1);
+            if (gridTemplate.length > 0) {
+                profilesGrid.style.gridTemplateAreas = gridTemplate[0]
+                    .map((_, colIndex) => '"' + gridTemplate.map((row) => row[colIndex]).join(" ") + '"')
+                    .join("\n");
+                try {
+                    const colCount = gridTemplate.length;
+                    const frs = Array(colCount).fill("1fr");
+                    if (colCount > 1) {
+                        frs[colCount - 1] = "2fr";
+                    }
+                    profilesGrid.style.gridTemplateColumns = frs.join(" ");
+                    profilesGrid.style.setProperty("--pf-columns", colCount);
+                } catch (e) {}
+            }
         }
     }
 
@@ -210,8 +318,9 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
         }
 
         const wtIdInline = this.showWtId ? ` <span class="wt-id">(${person.Name})</span>` : "";
+        const isLastGen = dna.length === this.generationsCount;
         return `
-            <div style="grid-area: ${dna};" class="known-relative g${dna.length}">
+            <div style="grid-area: ${dna};" class="known-relative g${dna.length} ${isLastGen ? "last-column" : ""}">
                 ${photo}
                 <div>
                     <div class="name-row">
