@@ -60,7 +60,6 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
     init(containerSelector, personID) {
         this.containerSelector = containerSelector;
         this.personID = personID;
-        this.template = Array(this.generationsCount).fill([]);
         this.renderDateFormatOptions();
         this.loadView(containerSelector, personID);
     }
@@ -99,6 +98,7 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
     }
 
     async loadView(containerSelector, personID) {
+        this.template = Array.from({ length: this.generationsCount }, () => []);
         let data = await this.wtAPI.getAncestors(
             PrinterFriendlyView.APP_ID,
             personID,
@@ -120,12 +120,13 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
         });
 
         // Calculate duplicate ID occurrences for highlighting
-        // We scan the whole template to see who appears where
-        this.duplicatesMap = new Map(); // Id -> colorIndex (0-5)
+        // We only count people who appear at more than one position *within* the visible generations
+        this.duplicatesMap = new Map(); // Id -> colorIndex (0-11)
         const counts = new Map();
         Object.values(this.people).forEach((p) => {
-            if (p.dnas && p.dnas.length > 1) {
-                counts.set(p.Id, p.dnas.length);
+            const visibleDnas = (p.dnas || []).filter((dna) => dna.length <= this.generationsCount);
+            if (visibleDnas.length > 1) {
+                counts.set(p.Id, visibleDnas.length);
             }
         });
         let colorIdx = 0;
