@@ -169,7 +169,7 @@ window.DescendantsView = class DescendantsView extends View {
             <label title="Show spouses"><input type="checkbox" id="showSpouses">Spouses</label>
             <label title="Show childless"><input type="checkbox" id="showChildless">Childless</label>
             <label title="Show birth and death places"><input type="checkbox" id="showPlaces">Places</label>
-            <label title="Show WikiTree IDs"><input type="checkbox" id="showWTID">WT ID</label>
+            <label title="Show WikiTree IDs"><input type="checkbox" id="showWTID">WikiTree ID</label>
             <label title="Show biographies" id="showBiosLabel"><input type="checkbox" id="showBios"><span id="checkboxIndicator"></span>Biographies</label>
         </fieldset>
         <fieldset id="sharedControls">
