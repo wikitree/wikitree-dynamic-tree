@@ -36,6 +36,14 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
         this.showAllLocations = localStorage.getItem(this.showAllLocationsKey) === "1";
         this.showAllLocationsId = "printerFriendlyShowAllLocations";
 
+        this.showGenderColorsKey = "printerFriendlyShowGenderColors";
+        this.showGenderColors = localStorage.getItem(this.showGenderColorsKey) === "1";
+        this.showGenderColorsId = "printerFriendlyShowGenderColors";
+
+        this.highlightDuplicatesKey = "printerFriendlyHighlightDuplicates";
+        this.highlightDuplicates = localStorage.getItem(this.highlightDuplicatesKey) === "1";
+        this.highlightDuplicatesId = "printerFriendlyHighlightDuplicates";
+
         this.splitByParentSideKey = "printerFriendlySplitByParentSide";
         this.splitByParentSide = localStorage.getItem(this.splitByParentSideKey) === "1";
         this.splitByParentSideId = "printerFriendlySplitByParentSide";
@@ -80,6 +88,14 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
         const splitBy = document.getElementById(this.splitByParentSideId);
         if (splitBy && this.onSplitByParentSideChange)
             splitBy.removeEventListener("change", this.onSplitByParentSideChange);
+
+        const showGender = document.getElementById(this.showGenderColorsId);
+        if (showGender && this.onShowGenderColorsChange)
+            showGender.removeEventListener("change", this.onShowGenderColorsChange);
+
+        const highlightDups = document.getElementById(this.highlightDuplicatesId);
+        if (highlightDups && this.onHighlightDuplicatesChange)
+            highlightDups.removeEventListener("change", this.onHighlightDuplicatesChange);
     }
 
     async loadView(containerSelector, personID) {
@@ -102,6 +118,23 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
                 .flatMap((person) => person.dnas || [])
                 .includes(dna);
         });
+
+        // Calculate duplicate ID occurrences for highlighting
+        // We scan the whole template to see who appears where
+        this.duplicatesMap = new Map(); // Id -> colorIndex (0-5)
+        const counts = new Map();
+        Object.values(this.people).forEach((p) => {
+            if (p.dnas && p.dnas.length > 1) {
+                counts.set(p.Id, p.dnas.length);
+            }
+        });
+        let colorIdx = 0;
+        for (const [id, count] of counts.entries()) {
+            if (count > 1) {
+                this.duplicatesMap.set(id, colorIdx % 12);
+                colorIdx++;
+            }
+        }
 
         this.render(containerSelector, personID);
     }
@@ -319,8 +352,22 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
 
         const wtIdInline = this.showWtId ? ` <span class="wt-id">(${person.Name})</span>` : "";
         const isLastGen = dna.length === this.generationsCount;
+
+        const classes = ["known-relative", `g${dna.length}`];
+        if (isLastGen) classes.push("last-column");
+
+        if (this.showGenderColors) {
+            if (person.Gender === "Male") classes.push("gender-male");
+            else if (person.Gender === "Female") classes.push("gender-female");
+            else classes.push("gender-unknown");
+        }
+
+        if (this.highlightDuplicates && this.duplicatesMap.has(person.Id)) {
+            classes.push(`duplicate-ancestor duplicate-${this.duplicatesMap.get(person.Id)}`);
+        }
+
         return `
-            <div style="grid-area: ${dna};" class="known-relative g${dna.length} ${isLastGen ? "last-column" : ""}">
+            <div style="grid-area: ${dna};" class="${classes.join(" ")}">
                 ${photo}
                 <div>
                     <div class="name-row">
@@ -376,6 +423,8 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
             <span class="printer-option"><label><input type="checkbox" id="${this.showDeathLocationsId}" ${this.showDeathLocations ? "checked" : ""}> Death locations</label></span>
             <span class="printer-option"><label><input type="checkbox" id="${this.showAllLocationsId}" ${this.showAllLocations ? "checked" : ""}> Locations for all</label></span>
             <span class="printer-option"><label><input type="checkbox" id="${this.splitByParentSideId}" ${this.splitByParentSide ? "checked" : ""}> Split by parent side</label></span>
+            <span class="printer-option"><label><input type="checkbox" id="${this.showGenderColorsId}" ${this.showGenderColors ? "checked" : ""}> Gender colors</label></span>
+            <span class="printer-option"><label><input type="checkbox" id="${this.highlightDuplicatesId}" ${this.highlightDuplicates ? "checked" : ""}> Highlight duplicates</label></span>
         `;
 
         container.parentNode.insertBefore(optionsContainer, container);
@@ -458,6 +507,26 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
                 if (this.containerSelector && this.personID) this.render(this.containerSelector, this.personID);
             };
             splitBy.addEventListener("change", this.onSplitByParentSideChange);
+        }
+
+        const showGender = document.getElementById(this.showGenderColorsId);
+        if (showGender) {
+            this.onShowGenderColorsChange = (e) => {
+                this.showGenderColors = e.target.checked;
+                localStorage.setItem(this.showGenderColorsKey, this.showGenderColors ? "1" : "0");
+                if (this.containerSelector && this.personID) this.render(this.containerSelector, this.personID);
+            };
+            showGender.addEventListener("change", this.onShowGenderColorsChange);
+        }
+
+        const highlightDups = document.getElementById(this.highlightDuplicatesId);
+        if (highlightDups) {
+            this.onHighlightDuplicatesChange = (e) => {
+                this.highlightDuplicates = e.target.checked;
+                localStorage.setItem(this.highlightDuplicatesKey, this.highlightDuplicates ? "1" : "0");
+                if (this.containerSelector && this.personID) this.render(this.containerSelector, this.personID);
+            };
+            highlightDups.addEventListener("change", this.onHighlightDuplicatesChange);
         }
     }
 

@@ -238,3 +238,65 @@
     content: " ";
   }
 }
+
+/* Gender Background Colors */
+.gender-male {
+  background-color: #f2f1ff !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.gender-female {
+  background-color: #ffeeee !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.gender-unknown {
+  background-color: #eeffee !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Duplicate Ancestor Borders (Cycle of 12 colors) */
+/* Colors: Red, Green, Blue, Gold, Purple, Cyan, DarkGrey, Lime, Orange, Brown, DarkGreen, Magenta */
+.duplicate-ancestor {
+  border-width: 3px !important;
+  border-style: solid !important;
+  box-sizing: border-box;
+}
+
+.duplicate-0 {
+  border-color: #cc0000 !important;
+} /* Red */
+.duplicate-1 {
+  border-color: #008000 !important;
+} /* Green */
+.duplicate-2 {
+  border-color: #0000cc !important;
+} /* Blue */
+.duplicate-3 {
+  border-color: #fcb815 !important;
+} /* Gold */
+.duplicate-4 {
+  border-color: #cc00cc !important;
+} /* Purple */
+.duplicate-5 {
+  border-color: #00cccc !important;
+} /* Cyan */
+.duplicate-6 {
+  border-color: #333333 !important;
+} /* Dark Grey */
+.duplicate-7 {
+  border-color: #8fc641 !important;
+} /* Lime Green */
+.duplicate-8 {
+  border-color: #ff6600 !important;
+} /* Orange */
+.duplicate-9 {
+  border-color: #663300 !important;
+} /* Brown */
+.duplicate-10 {
+  border-color: #25422d !important;
+} /* Dark Green */
+.duplicate-11 {
+  border-color: #ff00ff !important;
+} /* Magenta */
