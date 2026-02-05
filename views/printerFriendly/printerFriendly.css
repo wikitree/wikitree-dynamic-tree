@@ -1,4 +1,4 @@
-#profiles {
+.profiles-grid {
   display: grid;
   grid-gap: 1px;
   margin: 1px;
@@ -7,14 +7,39 @@
   clear: left;
 }
 
-#profiles * {
+.profiles-grid * {
   font-size: 0.95em;
+}
+
+/* .profiles-grid shared styles merged above */
+
+/* Options layout: keep each label+control together, but allow whole option to wrap */
+.familyViewOptions {
+  margin: 0.5em 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  align-items: center;
+}
+.familyViewOptions .printer-option {
+  display: inline-flex;
+  white-space: nowrap; /* keep label + control together */
+  margin-right: 0.5em;
+  vertical-align: middle;
+  gap: 0.25em;
+  align-items: center;
+}
+.familyViewOptions .printer-option label {
+  margin: 0;
+}
+.familyViewOptions select {
+  vertical-align: middle;
 }
 
 #subject h2 {
   font-size: 1.2em;
   margin: 0;
-  padding: .4em 0;
+  padding: 0.4em 0;
 }
 
 #subject img {
@@ -23,11 +48,15 @@
   margin-right: 1em;
 }
 
-#profiles .g6 * {
+#subject .loc-death {
+  margin-left: 2em;
+}
+
+.profiles-grid .g6 * {
   font-size: 0.85em;
 }
 
-#profiles > div {
+.profiles-grid > div {
   outline: 1px solid #000;
   display: flex;
   align-items: stretch;
@@ -36,12 +65,21 @@
   justify-items: stretch;
 }
 
-#profiles .g6 {
-  min-width:  22em
+.profiles-grid .g6 {
+  min-width: 22em;
 }
 
-#profiles .g6 h3 {
-  display: inline;
+.profiles-grid h3 {
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+  vertical-align: baseline;
+}
+
+/* Keep name-row heading tight but allow a small gap */
+.profiles-grid .name-row h3 {
+  margin-bottom: 0.1em;
 }
 
 .unknown-relative {
@@ -61,7 +99,7 @@
 }
 
 .known-relative > div > * {
-  margin: 0.1em 0;
+  margin: 0.05em 0;
 }
 
 .known-relative > .photo {
@@ -70,27 +108,199 @@
   margin: 0.2em 0;
 }
 
-#profiles .g6 * {
+/* location inline compacting */
+.locations {
+  display: inline-block;
+  margin: 0 0.35em 0 0;
+  line-height: 1;
+  vertical-align: baseline;
+  font-size: 0.92em;
+}
+.loc-death {
+  margin-left: 0.25em;
+}
+
+/* Dates: tighter spacing and allow individual parts to wrap as inline-blocks */
+.person-dates {
+  display: block;
+  margin-top: 0.05em;
+  line-height: 1; /* tighter */
+  font-size: 0.95em;
+}
+.person-dates .date-born,
+.person-dates .date-died,
+.person-dates .date-dash {
+  display: inline-block;
+  vertical-align: middle;
+}
+.person-dates .date-dash {
+  margin: 0 0.25em;
+}
+
+/* Ensure locations are slightly tighter */
+.person-locations {
+  margin-top: 0.08em;
+  line-height: 1;
+}
+
+/* WT ID: reduce emphasis */
+.wt-id {
+  font-weight: normal;
+  font-size: 0.92em;
+  color: inherit;
+  line-height: 0.9em;
+  display: inline-block; /* Ensure line-height applies nicely if it wraps */
+}
+.wt-id-inline {
+  font-size: 0.92em;
+}
+.wt-id-block {
+  font-size: 0.92em;
+}
+
+.profiles-grid .g6 * {
   font-size: 0.85em;
   line-height: 1em;
 }
 
 @media print {
-  #profiles {
+  .profiles-grid {
     min-width: initial;
   }
-  #profiles * {
+  .profiles-grid * {
     font-size: 0.85em;
     line-height: 1.1;
   }
-  #profiles .photo {
+  .profiles-grid .photo {
     max-height: 6em;
   }
-  #profiles .g6 * {
+  .profiles-grid .g6 * {
     font-size: 0.8em;
     line-height: 0.9em;
   }
   main {
     padding: 0;
   }
+  #printerFriendlyOptions {
+    display: none;
+  }
+  #subject h2 {
+    font-size: 1em;
+    margin: 0;
+    padding: 0.2em 0;
+  }
+  #subject .locations {
+    display: inline;
+  }
+
+  /* Ensure each parent's side prints on its own page when split */
+  .profiles-side {
+    break-after: page;
+    page-break-after: always;
+    display: block;
+    width: 100%;
+  }
+
+  /* layout for the profiles grids (single and split). --pf-columns is set by JS */
+  .profiles-grid {
+    display: grid;
+    grid-gap: 1px;
+    margin: 1px 0;
+    width: 100%;
+    justify-content: center;
+    grid-template-columns: repeat(var(--pf-columns, 1), calc((100%) / var(--pf-columns, 1)));
+    grid-auto-rows: auto;
+    box-sizing: border-box;
+    border: 1px solid #000;
+    margin-bottom: 5mm;
+  }
+
+  .profiles-grid > div {
+    box-sizing: border-box;
+    outline: 1px solid #000;
+    display: flex;
+    align-items: stretch;
+    padding: 0.2em 0.5em;
+    text-align: center;
+    justify-items: stretch;
+    min-width: 0 !important;
+  }
+
+  /* Force "last column" dates to try to stay on one line, or at least inline-block flow better */
+  .profiles-grid .last-column .name-row {
+    display: inline;
+    margin-right: 0.5em;
+  }
+  .profiles-grid .last-column .person-dates {
+    display: inline;
+    white-space: normal;
+  }
+  .profiles-grid .last-column .person-dates span {
+    display: inline;
+  }
+  .profiles-grid .last-column .person-dates .date-born::after {
+    content: " ";
+  }
 }
+
+/* Gender Background Colors */
+.gender-male {
+  background-color: #f2f1ff !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.gender-female {
+  background-color: #ffeeee !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.gender-unknown {
+  background-color: #eeffee !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Duplicate Ancestor Borders (Cycle of 12 colors) */
+/* Colors: Red, Green, Blue, Gold, Purple, Cyan, DarkGrey, Lime, Orange, Brown, DarkGreen, Magenta */
+.duplicate-ancestor {
+  border-width: 3px !important;
+  border-style: solid !important;
+  box-sizing: border-box;
+}
+
+.duplicate-0 {
+  border-color: #cc0000 !important;
+} /* Red */
+.duplicate-1 {
+  border-color: #008000 !important;
+} /* Green */
+.duplicate-2 {
+  border-color: #0000cc !important;
+} /* Blue */
+.duplicate-3 {
+  border-color: #fcb815 !important;
+} /* Gold */
+.duplicate-4 {
+  border-color: #cc00cc !important;
+} /* Purple */
+.duplicate-5 {
+  border-color: #00cccc !important;
+} /* Cyan */
+.duplicate-6 {
+  border-color: #333333 !important;
+} /* Dark Grey */
+.duplicate-7 {
+  border-color: #8fc641 !important;
+} /* Lime Green */
+.duplicate-8 {
+  border-color: #ff6600 !important;
+} /* Orange */
+.duplicate-9 {
+  border-color: #663300 !important;
+} /* Brown */
+.duplicate-10 {
+  border-color: #25422d !important;
+} /* Dark Green */
+.duplicate-11 {
+  border-color: #ff00ff !important;
+} /* Magenta */
