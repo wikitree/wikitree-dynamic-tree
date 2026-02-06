@@ -424,7 +424,7 @@ window.PrinterFriendlyView = class PrinterFriendlyView extends View {
 
         // add printer-friendly specific toggles as siblings so they wrap with date controls
         optionsContainer.innerHTML += `
-            <span class="printer-option"><label><input type="checkbox" id="${this.showWtIdId}" ${this.showWtId ? "checked" : ""}> WikiTree ID</label></span>
+            <span class="printer-option"><label><input type="checkbox" id="${this.showWtIdId}" ${this.showWtId ? "checked" : ""}> WikiTree IDs</label></span>
             <span class="printer-option"><label><input type="checkbox" id="${this.showDeathLocationsId}" ${this.showDeathLocations ? "checked" : ""}> Death locations</label></span>
             <span class="printer-option"><label><input type="checkbox" id="${this.showAllLocationsId}" ${this.showAllLocations ? "checked" : ""}> Locations for all</label></span>
             <span class="printer-option"><label><input type="checkbox" id="${this.splitByParentSideId}" ${this.splitByParentSide ? "checked" : ""}> Split by parent side (for printing)</label></span>

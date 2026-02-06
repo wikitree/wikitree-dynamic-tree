@@ -24,6 +24,7 @@ window.AhnentafelView = class AhnentafelView extends View {
     }
 
     init(container_selector, person_id) {
+        this.close();
         $("#view-container").css("min-height", "0").addClass("ahnentafelView");
         let ahnen = new AhnentafelAncestorList(container_selector, person_id);
         ahnen.clearData(); // Clear existing data
@@ -33,6 +34,7 @@ window.AhnentafelView = class AhnentafelView extends View {
     close() {
         $("#moreGenerationsButton").off("click").remove();
         $("header #ahnentafelHeaderBox").remove();
+        $("#ahnentafelOptions").remove();
         $("#view-container").css({ "min-height": "", "overflow": "" });
         $("#view-container").removeClass("ahnentafelView");
         $(document).off("keydown.AhnentafelView");
@@ -54,6 +56,39 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         "LastNameCurrent",
         "Suffix",
         "LastNameOther",
+    ];
+
+    static REPORT_LIMITS = {
+        batchSize: 5,
+        batchDelayMs: 250,
+        perBioChars: 150000,
+        totalChars: 10000000, // Increased to 10MB
+    };
+
+    static REPORT_FIELDS = [
+        "Id",
+        "Name",
+        "FirstName",
+        "LastNameAtBirth",
+        "LastNameCurrent",
+        "MiddleName",
+        "RealName",
+        "Nicknames",
+        "Suffix",
+        "BirthDate",
+        "DeathDate",
+        "BirthLocation",
+        "DeathLocation",
+        "Gender",
+        "DataStatus",
+        "Privacy",
+        "Father",
+        "Mother",
+        "Photo",
+        "PhotoData",
+        "Spouses",
+        "Bio",
+        "bioHTML",
     ];
 
     static makeVisible(targetElement) {
@@ -80,12 +115,36 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         this.ahnentafelNumber = 1;
         this.generation = 1;
         this.maxGeneration = 10;
+
+        const sharedFormatId = window.DateFormatOptions ? window.DateFormatOptions.getStoredFormatId() : null;
+        this.dateFormat = window.DateFormatOptions
+            ? window.DateFormatOptions.getFormatValue(sharedFormatId, "wtDate") || "D MMM YYYY"
+            : "D MMM YYYY";
+        this.dateStatusFormat = window.DateFormatOptions
+            ? window.DateFormatOptions.getStoredStatusFormat()
+            : "abbreviations";
+
         this.monthName = ["Unk", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         this.blankPerson = { Id: 0, FirstName: "Unknown" };
         this.profileFields =
-            "Id,Name,FirstName,LastNameAtBirth,LastNameCurrent,MiddleName,RealName,Nicknames,Suffix,BirthDate,DeathDate,BirthLocation,DeathLocation,Gender,DataStatus,Privacy,Father,Mother,Derived.BirthName,Derived.BirthNamePrivate";
+            "Id,Name,FirstName,LastNameAtBirth,LastNameCurrent,MiddleName,RealName,Nicknames,Suffix,BirthDate,DeathDate,BirthLocation,DeathLocation,Gender,DataStatus,Privacy,Father,Mother,Derived.BirthName,Derived.BirthNamePrivate,Photo,PhotoData";
         this.profileFieldsArray = this.profileFields.split(",");
         this.ancestors = [];
+
+        this.reportState = {
+            running: false,
+            cancel: false,
+            total: 0,
+            done: 0,
+            skipped: 0,
+            errors: 0,
+            bytes: 0,
+            currentGeneration: 0,
+            reportNumberMap: new Map(),
+            lastReportNumber: 0,
+        };
+        window.ahnentafelReportCache = window.ahnentafelReportCache || {};
+
         // Add event listeners to highlight connected ancestors when the "Father of X" type links are hovered.
         $(this.selector).on("mouseover", ".parentOf,.childOf", function (e) {
             const id = $(this).data("id");
@@ -204,6 +263,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         if ($("#moreGenerationsButton").length === 0) {
             let container = $("<div>", { class: "more-generations-container" });
             let numberInput = $("<input>", {
+                id: "generationsToAdd",
                 type: "number",
                 min: 1,
                 max: 5,
@@ -320,8 +380,19 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
 
     // Add debugging to track the refresh process
     refreshAncestorList() {
-        $(this.selector).html(`<div id="ahnentafelAncestorList"></div>`);
-        this.displayGeneration(1);
+        if (this.settings.reportMode) {
+            $("#ahnentafelAncestorList").hide();
+            $("#ahnentafelReportWrapper").removeClass("hidden");
+            if ($("#ahnentafelReport").is(":empty")) {
+                this.startReportBuild();
+            }
+        } else {
+            $("#ahnentafelAncestorList").show();
+            $("#ahnentafelReportWrapper").addClass("hidden");
+            this.displayedIds = new Set();
+            $(this.selector).html(`<div id="ahnentafelAncestorList"></div>`);
+            this.displayGeneration(1);
+        }
     }
 
     generationTitle(generation) {
@@ -482,6 +553,9 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
 
     afterLoading() {
         this.addHeaderBox();
+        this.addViewSwitcher();
+        this.addReportControls();
+        this.renderOptions();
         this.addMoreGenerationsButton();
         this.addToggleButtons();
         this.applySettings();
@@ -493,6 +567,183 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         this.captureState(); // Capture the initial state
         this.addAccessKeys(); // Add access keys
         this.addHelpText(); // Add help text
+
+        if (this.settings.reportMode) {
+            this.refreshAncestorList();
+        }
+    }
+
+    renderOptions() {
+        const container = document.querySelector(this.selector);
+        if (!container) return;
+
+        const existing = document.getElementById("ahnentafelOptions");
+        if (existing) existing.remove();
+
+        const optionsContainer = document.createElement("div");
+        optionsContainer.id = "ahnentafelOptions";
+        optionsContainer.className = "familyViewOptions";
+        if (this.settings.reportMode) {
+            optionsContainer.style.display = "none";
+        }
+
+        const selectedFormatId = window.DateFormatOptions ? window.DateFormatOptions.getStoredFormatId() : null;
+        const selectedStatusId = window.DateFormatOptions
+            ? window.DateFormatOptions.getStoredStatusFormat()
+            : this.dateStatusFormat;
+
+        if (window.DateFormatOptions) {
+            window.DateFormatOptions.setStoredFormatId(selectedFormatId);
+            window.DateFormatOptions.setStoredStatusFormat(selectedStatusId);
+        }
+
+        const dateOptionsHtml = window.DateFormatOptions
+            ? window.DateFormatOptions.buildFormatOptionsHtml(selectedFormatId)
+            : "";
+        const statusOptionsHtml = window.DateFormatOptions
+            ? window.DateFormatOptions.buildStatusOptionsHtml(selectedStatusId)
+            : "";
+
+        optionsContainer.innerHTML = `
+            <span class="printer-option"><label for="ahnentafelDateFormat">Date Format:</label>
+                <select id="ahnentafelDateFormat">
+                    ${dateOptionsHtml}
+                </select>
+            </span>
+            <span class="printer-option"><label for="ahnentafelDateStatus">Date Status:</label>
+                <select id="ahnentafelDateStatus">
+                    ${statusOptionsHtml}
+                </select>
+            </span>
+            <span class="printer-option"><label><input type="checkbox" id="ahnentafelShowWtId" ${
+                this.settings.showWtId ? "checked" : ""
+            }> WikiTree IDs</label></span>
+            <span class="printer-option"><label><input type="checkbox" id="ahnentafelShowGenderColors" ${
+                this.settings.showGenderColors ? "checked" : ""
+            }> Gender colors</label></span>
+        `;
+
+        container.parentNode.insertBefore(optionsContainer, container);
+
+        // Report Wrapper
+        let $reportWrapper = $("#ahnentafelReportWrapper");
+        if ($reportWrapper.length === 0) {
+            $reportWrapper = $(
+                `<div id='ahnentafelReportWrapper' class='hidden'><div id='ahnentafelReportStatus'></div><div id='ahnentafelReport'></div></div>`
+            );
+            $reportWrapper.insertAfter(optionsContainer);
+        }
+
+        $("#ahnentafelDateFormat").on("change", (e) => {
+            const selectedId = e.target.value;
+            if (window.DateFormatOptions) {
+                this.dateFormat = window.DateFormatOptions.getFormatValue(selectedId, "wtDate") || this.dateFormat;
+                window.DateFormatOptions.setStoredFormatId(selectedId);
+            }
+            this.refreshAncestorList();
+        });
+
+        $("#ahnentafelDateStatus").on("change", (e) => {
+            this.dateStatusFormat = e.target.value;
+            if (window.DateFormatOptions) {
+                window.DateFormatOptions.setStoredStatusFormat(this.dateStatusFormat);
+            }
+            this.refreshAncestorList();
+        });
+
+        $("#ahnentafelShowWtId").on("change", (e) => {
+            this.settings.showWtId = e.target.checked;
+            this.saveSettings();
+            this.refreshAncestorList();
+        });
+
+        $("#ahnentafelShowGenderColors").on("change", (e) => {
+            this.settings.showGenderColors = e.target.checked;
+            this.saveSettings();
+            this.applySettings();
+        });
+    }
+
+    addViewSwitcher() {
+        if ($("#viewSwitcher").length === 0) {
+            const switcherHTML = `
+                <span id="viewSwitcher" class="ahn-header-controls">
+                    <button class='small ${!this.settings.reportMode ? "active" : ""}' id='viewList' title="Switch to List View">List View</button>
+                    <button class='small ${this.settings.reportMode ? "active" : ""}' id='viewReport' title="Switch to Report View">Report View</button>
+                </span>`;
+            $("#ahnentafelHeaderBox #help-button").before(switcherHTML);
+
+            $("#viewList").on("click", (e) => {
+                e.preventDefault();
+                this.settings.reportMode = false;
+                this.saveSettings();
+                $("#viewList").addClass("active");
+                $("#viewReport").removeClass("active");
+                $("#ahnentafelOptions").show();
+                $("#reportControls").hide();
+                $("#ahnentafelAncestorList").show();
+                $("#ahnentafelReportWrapper").addClass("hidden");
+                $("body").removeClass("report-mode");
+                $(".more-generations-container").show();
+                $("#formatButton").show();
+            });
+
+            $("#viewReport").on("click", (e) => {
+                e.preventDefault();
+                this.settings.reportMode = true;
+                this.saveSettings();
+                $("#viewReport").addClass("active");
+                $("#viewList").removeClass("active");
+                $("#ahnentafelOptions").hide();
+                $("#reportControls").show();
+                $("#ahnentafelAncestorList").hide();
+                $("#ahnentafelReportWrapper").removeClass("hidden");
+                $("body").addClass("report-mode");
+                $(".more-generations-container").hide();
+                $("#formatButton").show(); // Ensure Format button is visible in Report Mode
+
+                if ($("#ahnentafelReport").is(":empty")) {
+                    this.startReportBuild();
+                }
+            });
+        }
+    }
+
+    addReportControls() {
+        if ($("#reportControls").length === 0) {
+            const controlsHTML = `
+                <span id="reportControls" class="ahn-header-controls" style="${this.settings.reportMode ? "" : "display:none"}">
+                    <select id="reportGenerationSelect" title="Max generations for report"></select>
+                    <button class='small' id='buildReport' title="Generate a narrative-style report">Build report</button>
+                    <button class='small' id='cancelReport' disabled title="Cancel report generation">Cancel</button>
+                    <span id='reportStatusText'></span>
+                    <button class='small' id='printReport' title="Print the current view">Print</button>
+                </span>`;
+            $("#ahnentafelHeaderBox #help-button").before(controlsHTML);
+
+            // Fill reportGenerationSelect
+            const $reportGenSelect = $("#reportGenerationSelect");
+            for (let i = 1; i <= this.maxGeneration; i++) {
+                const $option = $(`<option value="${i}">${i} Generation${i === 1 ? "" : "s"}</option>`);
+                if (i === this.maxGeneration) $option.prop("selected", true);
+                $reportGenSelect.append($option);
+            }
+
+            $("#buildReport").on("click", (e) => {
+                e.preventDefault();
+                this.startReportBuild();
+            });
+
+            $("#cancelReport").on("click", (e) => {
+                e.preventDefault();
+                this.cancelReportBuild();
+            });
+
+            $("#printReport").on("click", (e) => {
+                e.preventDefault();
+                window.print();
+            });
+        }
     }
 
     processReceivedAncestors(ancestorData) {
@@ -697,15 +948,27 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                       } already listed in the Ahnentafel." class="duplicateCount">
                     ${duplicateCount}${multiAhnentafelText} duplicate${duplicateCount == 1 ? "" : "s"}</span>`
                     : "";
+            let genTitle = this.generationTitle(generationNumber);
             if (generationNumber === 1) {
                 range = "";
+                const rootPerson = this.findPersonByAhnentafelNumber(1);
+                if (rootPerson) {
+                    const theName = this.getName(rootPerson).theName;
+                    const birthYear =
+                        rootPerson.BirthDate && rootPerson.BirthDate !== "0000-00-00"
+                            ? rootPerson.BirthDate.split("-")[0]
+                            : "";
+                    const deathYear =
+                        rootPerson.DeathDate && rootPerson.DeathDate !== "0000-00-00"
+                            ? rootPerson.DeathDate.split("-")[0]
+                            : "";
+                    genTitle = `${theName} (${birthYear}–${deathYear})`;
+                }
             }
             $("#ahnentafelAncestorList").append(
                 `<section id="generation_${generationNumber}">
-                    <h2><span title='Generation ${generationNumber}'>${generationNumber}</span>${
-                    generationNumber != 1 ? ":" : ""
-                } ` +
-                    this.generationTitle(generationNumber) +
+                    <h2><span title='Generation ${generationNumber}'>${generationNumber}</span>: ` +
+                    genTitle +
                     `${range} ${duplicateText}${fillRateText}</h2>
                     <div class="generationContainer" data-collapsed="${this.incrementedNumber()}">
                     ${html}
@@ -732,8 +995,14 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
 
     getName(person) {
         const aName = new PersonName(person);
-        const theName = aName.withParts(this.WANTED_NAME_PARTS);
-        const theParts = aName.getParts(["LastNameAtBirth", "FirstNames"]);
+        const theName = aName.withParts(AhnentafelAncestorList.WANTED_NAME_PARTS);
+        const theParts = aName.getParts(AhnentafelAncestorList.WANTED_NAME_PARTS);
+
+        // Safety check: if getParts returned an error string, return it as theName
+        if (typeof theParts === "string") {
+            return { theName: theParts };
+        }
+
         const theLNAB = theParts.get("LastNameAtBirth");
         const theFirstNames = theParts.get("FirstNames");
         const theSuffix = theParts.get("Suffix");
@@ -742,7 +1011,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         const theLastName = theParts.get("LastNameCurrent");
         const theLastNameOther = theParts.get("LastNameOther");
         const thePreferredName = theParts.get("PreferredName");
-        const theRealName = theParts.get("RealName");
+        const theRealName = person.RealName || "";
         return {
             theName,
             theParts,
@@ -783,6 +1052,13 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             if (person.BirthDate === "0000-00-00") {
                 person.BirthDate = "";
             }
+
+            // Get gender from Ahnentafel number, but use actual gender for the root person (#1)
+            const gender = ahnentafelNumber === 1 ? person.Gender : ahnentafelNumber % 2 === 0 ? "Male" : "Female";
+            const genderClass = this.settings.showGenderColors ? gender : "";
+            const coupleClass =
+                ahnentafelNumber === 1 ? "" : ahnentafelNumber % 2 === 0 ? "ahnentafel-father" : "ahnentafel-mother";
+
             const dataAttributes = {
                 "data-birth-date": person.BirthDate || "",
                 "data-birth-location": person.BirthLocation || "",
@@ -790,6 +1066,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                 "data-death-location": person.DeathLocation || "",
                 "data-birth-date-status": person?.DataStatus?.BirthDate || "",
                 "data-death-date-status": person?.DataStatus?.DeathDate || "",
+                "data-gender": gender,
             };
             const dataAttributeString = Object.entries(dataAttributes)
                 .map(([key, value]) => `${key}="${value}"`)
@@ -799,35 +1076,37 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             ${theName.theFirstNames}
             ${person.Nicknames ? `"${person.Nicknames}" ` : ""}
             ${person.LastNameCurrent !== person.LastNameAtBirth ? ` (${person.LastNameAtBirth}) ` : ""}
-            ${person.LastNameCurrent}</a>${person.Suffix ? ` ${person.Suffix}` : ""}${
-                additionalNumbers ? ` (Also ${additionalNumbers})` : ""
-            }`;
+            ${person.LastNameCurrent}</a>${person.Suffix ? ` ${person.Suffix}` : ""}`;
+
+            const wtIdInline = this.settings.showWtId ? ` <span class="wt-id">(${person.Name})</span>` : "";
+
+            if (additionalNumbers) {
+                profileLink += ` (Also ${additionalNumbers})`;
+            }
+
             if (!theName.theFirstNames) {
                 profileLink = "Private";
             }
 
-            // Get gender from Ahnnetafel number
-            const gender = ahnentafelNumber % 2 === 0 ? "Male" : "Female";
-
-            return `<div data-highlighted="${this.incrementedNumber()}" class="ahnentafelPerson ${gender}" id="person_${
+            return `<div data-highlighted="${this.incrementedNumber()}" class="ahnentafelPerson ${genderClass} ${coupleClass}" id="person_${
                 person.Id
             }" data-ahnentafel-number="${ahnentafelNumber}" ${dataAttributeString}>
                         <span class="ahnentafelNumber">${ahnentafelNumber}.</span>
                         <span class="personText">
-                            ${profileLink}:
+                            ${profileLink}${wtIdInline}:
                             <span class="birthAndDeathDetails">${this.formatBirthDeathDetails(person)}</span>
                             <span class="relativeDetails"><span class="parentOfDetails dataItem">${this.formatParentOfLinks(
                                 person,
                                 ahnentafelNumber
                             )}</span>
-                            <span class="childOfDetails dataItem">${this.formatParentLinks(
-                                person,
-                                ahnentafelNumber
-                            )}</span></span>
+                             <span class="childOfDetails dataItem">${this.formatParentLinks(
+                                 person,
+                                 ahnentafelNumber
+                             )}</span></span>
                         </span>
                         <button class="descendantButton" data-ahnentafel="${ahnentafelNumber}" title="See only ${
-                person.FirstName
-            }'s descendants and ancestors">↕</button>
+                            person.FirstName
+                        }'s descendants and ancestors">↕</button>
             </div>`;
         }
     }
@@ -844,6 +1123,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
 
         // Generate the child's name
         const theName = this.getName(child);
+        const wtIdInline = this.settings.showWtId ? ` <span class="wt-id">(${child.Name})</span>` : "";
 
         // Create the link for the direct child
         let name = theName.theFirstNames + " " + child.LastNameAtBirth;
@@ -852,7 +1132,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         }
         let childLink = `<a data-id="${
             child.Id
-        }" class="parentOf" data-highlighted="${this.incrementedNumber()}">${name}</a>`;
+        }" class="parentOf" data-highlighted="${this.incrementedNumber()}">${name}</a>${wtIdInline}`;
 
         // Determine the relationship label based on Ahnen numbers
         let relationshipLabel = ahnentafelNumber % 2 === 0 ? "Father" : "Mother";
@@ -887,12 +1167,13 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         let parent = this.ancestors.find((p) => p.Id === parentId);
         if (parent) {
             const theName = this.getName(parent);
+            const wtIdInline = this.settings.showWtId ? ` <span class="wt-id">(${parent.Name})</span>` : "";
 
             let name = `${theName.theFirstNames} ${parent.LastNameAtBirth}`;
             if (!theName.theFirstNames) {
                 name = "Private";
             }
-            return `(${ahnentafelNumber}) <a data-id="${parentId}" class="childOf" data-highlighted="${this.incrementedNumber()}">${name}</a>`;
+            return `(${ahnentafelNumber}) <a data-id="${parentId}" class="childOf" data-highlighted="${this.incrementedNumber()}">${name}</a>${wtIdInline}`;
         } else {
             return "";
         }
@@ -912,23 +1193,16 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         const $this = this;
         $(".ahnentafelPerson").each(function () {
             const $personElement = $(this);
-            // Construct a temporary 'person' object from data attributes
-            const person = {
-                BirthDate: $personElement.data("birth-date"),
-                DeathDate: $personElement.data("death-date"),
-                BirthLocation: $personElement.data("birth-location"),
-                DeathLocation: $personElement.data("death-location"),
-                DataStatus: {
-                    BirthDate: $personElement.data("birth-date-status"),
-                    DeathDate: $personElement.data("death-date-status"),
-                },
-            };
+            const ahnentafelNumber = parseInt($personElement.data("ahnentafel-number"));
+            const person = $this.findPersonByAhnentafelNumber(ahnentafelNumber);
 
-            // Call formatBirthDeathDetails with this temporary person object
-            const newContent = $this.formatBirthDeathDetails(person);
+            if (person) {
+                // Call formatBirthDeathDetails with the real person object
+                const newContent = $this.formatBirthDeathDetails(person);
 
-            // Update the .birthAndDeathDetails container within the current .ahnentafelPerson element
-            $personElement.find(".birthAndDeathDetails").html(newContent);
+                // Update the .birthAndDeathDetails container within the current .ahnentafelPerson element
+                $personElement.find(".birthAndDeathDetails").html(newContent);
+            }
         });
     }
 
@@ -937,75 +1211,25 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         const formatSetting = this.settings.format || 1;
 
         // Utility to format dates, assumed to be defined elsewhere
-        const formatDate = (date) => (date ? this.formatDate(date) : "");
+        // Utility to format dates, using the global formatDate method
+        const formatDate = (date, fieldName) => (date ? this.formatDate(date, person, fieldName) : "");
 
         // Function to format location string, only adding "in" if location exists
         const formatLocation = (location) => (location ? ` in ${location}` : "");
-
-        // Function to determine date status prefix based on formatSetting and date status
-        const formatDateStatus = (status, isTableFormat = false) => {
-            if (isTableFormat) {
-                if (formatSetting === 3) {
-                    // Table format with words
-                    switch (status) {
-                        case "guess":
-                            return "abt.";
-                        case "before":
-                            return "bef.";
-                        case "after":
-                            return "aft.";
-                        default:
-                            return "";
-                    }
-                } else if (formatSetting === 4) {
-                    // Table format with symbols
-                    switch (status) {
-                        case "guess":
-                            return "~";
-                        case "before":
-                            return "<";
-                        case "after":
-                            return ">";
-                        default:
-                            return "";
-                    }
-                }
-            } else {
-                // Narrative style with words
-                switch (status) {
-                    case "guess":
-                        return "about";
-                    case "before":
-                        return "before";
-                    case "after":
-                        return "after";
-                    default:
-                        return "";
-                }
-            }
-            return "";
-        };
 
         let content = "";
 
         switch (formatSetting) {
             case 1: // Original narrative style
             case 2: // Tidy table style, narrative
-                const birthStatusWord = formatDateStatus(person.DataStatus?.BirthDate);
-                const deathStatusWord = formatDateStatus(person.DataStatus?.DeathDate);
-
-                let formattedBirthDate = formatDate(person.BirthDate);
+                let formattedBirthDate = formatDate(person.BirthDate, "BirthDate");
                 if (!formattedBirthDate || person.BirthDate === "0000-00-00" || !person.BirthDate) {
                     formattedBirthDate = "";
-                } else {
-                    formattedBirthDate = `${birthStatusWord} ${formattedBirthDate}`;
                 }
 
-                let formattedDeathDate = formatDate(person.DeathDate);
+                let formattedDeathDate = formatDate(person.DeathDate, "DeathDate");
                 if (!formattedDeathDate || person.DeathDate === "0000-00-00" || !person.DeathDate) {
                     formattedDeathDate = "";
-                } else {
-                    formattedDeathDate = `${deathStatusWord} ${formattedDeathDate}`;
                 }
 
                 let formattedBirthLocation = formatLocation(person.BirthLocation) || "";
@@ -1018,37 +1242,30 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                     formattedDeathLocation = "";
                 }
 
-                let birthDetails =
-                    person.BirthDate || person.BirthLocation
-                        ? `<span class='birthDetails'>Born ${formattedBirthDate} ${formattedBirthLocation}.</span>`
-                        : "";
-                let deathDetails =
-                    person.DeathDate || person.DeathLocation
-                        ? `<span class='deathDetails'>Died ${formattedDeathDate} ${formattedDeathLocation}.</span>`
-                        : "";
+                let birthStr = `${formattedBirthDate}${formattedBirthLocation}`.trim();
+                let deathStr = `${formattedDeathDate}${formattedDeathLocation}`.trim();
 
-                content = `${birthDetails} ${deathDetails}`;
+                let birthDetails = birthStr ? `<span class='birthDetails'>Born ${birthStr}.</span>` : "";
+                let deathDetails = deathStr ? `<span class='deathDetails'>Died ${deathStr}.</span>` : "";
+
+                content = `${birthDetails} ${deathDetails}`.trim();
                 break;
 
             case 3: // Table with 'Born:' and 'Died:', using words
             case 4: // Table with 'b.' and 'd.', using symbols
                 const birthPrefix = formatSetting === 4 ? "b." : "Born:";
                 const deathPrefix = formatSetting === 4 ? "d." : "Died:";
-                let birthStatus = formatDateStatus(person.DataStatus?.BirthDate, true);
-                let deathStatus = formatDateStatus(person.DataStatus?.DeathDate, true);
 
-                let theBirthDate = formatDate(person.BirthDate);
+                let theBirthDate = formatDate(person.BirthDate, "BirthDate");
                 if (!theBirthDate || person.BirthDate === "0000-00-00" || !person.BirthDate) {
                     theBirthDate = "";
-                    birthStatus = "";
                 }
-                let theDeathDate = formatDate(person.DeathDate);
+                let theDeathDate = formatDate(person.DeathDate, "DeathDate");
                 if (!theDeathDate || person.DeathDate === "0000-00-00" || !person.DeathDate) {
                     theDeathDate = "";
-                    deathStatus = "";
                 }
 
-                let birthRow = `<tr><td>${birthPrefix}</td><td>${birthStatus} ${theBirthDate}</td><td>${
+                let birthRow = `<tr><td>${birthPrefix}</td><td>${theBirthDate}</td><td>${
                     person.BirthLocation || ""
                 }</td></tr>`;
                 if (!person.BirthDate && !person.BirthLocation) {
@@ -1072,7 +1289,24 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         return person ? `${person.FirstName} ${person.LastNameAtBirth}` : "Unknown";
     }
 
-    formatDate(date) {
+    formatDate(date, person, fieldName) {
+        if (window.wtDate) {
+            const formatted = window.wtDate(person, fieldName, {
+                formatString: this.dateFormat,
+                withCertainty: false,
+            });
+            if (!formatted || formatted === "[unknown]" || formatted === "0000-00-00") return "";
+
+            const status = person?.DataStatus?.[fieldName] || "";
+            const statusPrefix = window.DateFormatOptions
+                ? window.DateFormatOptions.formatStatus(status, this.dateStatusFormat)
+                : "";
+            if (!statusPrefix) return formatted;
+            if (["<", ">", "~"].includes(statusPrefix.trim())) return `${statusPrefix}${formatted}`;
+            return `${statusPrefix} ${formatted}`;
+        }
+
+        // Fallback to original logic if wtDate or DateFormatOptions is not available
         if (!date || date === "0000-00-00") return "";
         let [year, month, day] = date.split("-");
         month = parseInt(month, 10);
@@ -1215,14 +1449,26 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
     }
 
     addFormatButton() {
-        const buttonHTML = `<button class="small" id="formatButton"
-        title="Change the format of the birth and death details.  Cycle through four options."
-        >Format</label>`;
         if ($("#formatButton").length === 0) {
+            const buttonHTML = `
+                <button class="small" id="formatButton" title="Change the format of the birth and death details. Cycle through four options.">Format</button>
+                <span id="reportImageToggle" class="ahn-header-controls" style="${
+                    this.settings.reportMode ? "" : "display:none"
+                }">
+                    <label style="font-size: 0.9em; margin-left: 0.5em;"><input type="checkbox" id="ahnentafelShowPhotos" ${
+                        this.settings.showPhotos ? "checked" : ""
+                    }> Images</label>
+                    <label style="font-size: 0.9em; margin-left: 0.5em;"><input type="checkbox" id="ahnentafelWideReport" ${
+                        this.settings.wide ? "checked" : ""
+                    }> Wide</label>
+                    <label style="font-size: 0.9em; margin-left: 0.5em;"><input type="checkbox" id="ahnentafelShowChildren" ${
+                        this.settings.showChildren ? "checked" : ""
+                    }> Children</label>
+                </span>`;
             $("#ahnentafelHeaderBox #help-button").before(buttonHTML);
             const formatButton = $("#formatButton");
-            formatButton.prop("checked", this.settings.tidy);
             const $this = this;
+
             formatButton.on("click", function () {
                 $this.settings.format++;
                 if ($this.settings.format > 4) {
@@ -1231,22 +1477,47 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                 $this.saveSettings();
                 $this.applySettings();
             });
+
+            $("#ahnentafelShowPhotos").on("change", (e) => {
+                this.settings.showPhotos = e.target.checked;
+                this.saveSettings();
+                this.applySettings();
+            });
+
+            $("#ahnentafelWideReport").on("change", (e) => {
+                this.settings.wide = e.target.checked;
+                this.saveSettings();
+                this.applySettings();
+            });
+
+            $("#ahnentafelShowChildren").on("change", (e) => {
+                this.settings.showChildren = e.target.checked;
+                this.saveSettings();
+                if (this.settings.reportMode && $("#ahnentafelReport").children().length > 0) {
+                    this.startReportBuild(); // Rebuild report to fetch/render children
+                }
+            });
         }
     }
 
     // Load settings from localStorage
     loadSettings() {
-        const defaultSettings = { tidy: false, format: 1 };
+        const defaultSettings = {
+            tidy: false,
+            format: 1,
+            showWtId: false,
+            showGenderColors: true,
+            reportMode: false,
+            showPhotos: true,
+            wide: false,
+            showChildren: true,
+        };
         const storedSettingsString = localStorage.getItem("ahnentafelSettings");
         let storedSettings = storedSettingsString ? JSON.parse(storedSettingsString) : null;
 
-        // If storedSettings is not null, check for the 'format' property
+        // If storedSettings is not null, merge with defaultSettings to ensure all properties exist
         if (storedSettings) {
-            // If 'format' is not present in storedSettings, set it to 1
-            if (storedSettings.format === undefined) {
-                storedSettings.format = 1;
-            }
-            return storedSettings;
+            return { ...defaultSettings, ...storedSettings };
         } else {
             // If there are no storedSettings, return the defaultSettings
             return defaultSettings;
@@ -1275,16 +1546,41 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
     // Apply settings to the UI
     applySettings() {
         this.reformatAll();
+        const $this = this;
+        $(".ahnentafelPerson").each(function () {
+            const $person = $(this);
+            const gender = $person.data("gender");
+            if ($this.settings.showGenderColors) {
+                if (gender) {
+                    $person.addClass(gender);
+                }
+            } else {
+                $person.removeClass("Male Female Unknown");
+            }
+        });
         if (this.settings.format > 2) {
             this.setUniformDateColumnWidth();
         }
-        /*
-        if (this.settings.tidy) {
-            $("#ahnentafelAncestorList").addClass("tidy");
+
+        // Apply photo visibility and toggle UI visibility
+        const $reportWrapper = $("#ahnentafelReportWrapper");
+        if (this.settings.showPhotos) {
+            $reportWrapper.addClass("show-photos");
         } else {
-            $("#ahnentafelAncestorList").removeClass("tidy");
+            $reportWrapper.removeClass("show-photos");
         }
-        */
+
+        if (this.settings.wide) {
+            $reportWrapper.addClass("wide");
+        } else {
+            $reportWrapper.removeClass("wide");
+        }
+
+        if (this.settings.reportMode) {
+            $("#reportImageToggle").show();
+        } else {
+            $("#reportImageToggle").hide();
+        }
     }
 
     // Inside the AhnentafelAncestorList class
@@ -1457,5 +1753,538 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                 this.captureState();
             }, 500);
         });
+    }
+
+    resetReportState() {
+        this.reportState = {
+            ...this.reportState,
+            running: false,
+            cancel: false,
+            done: 0,
+            skipped: 0,
+            errors: 0,
+            bytes: 0,
+            currentGeneration: 0,
+            reportNumberMap: new Map(),
+            lastReportNumber: 0,
+        };
+    }
+
+    updateReportStatus(msg) {
+        const text = msg || "";
+        $("#reportStatusText, #ahnentafelReportStatus").text(text);
+    }
+
+    setReportUiState({ busy }) {
+        $("#buildReport").prop("disabled", busy);
+        $("#cancelReport").prop("disabled", !busy);
+        $("#reportGenerationSelect").prop("disabled", busy);
+    }
+
+    async startReportBuild() {
+        if (this.reportState.running) {
+            return;
+        }
+
+        const maxGeneration = parseInt($("#reportGenerationSelect").val() || this.maxGeneration);
+        const people = this.collectReportAncestors(maxGeneration);
+        if (people.length === 0) {
+            this.updateReportStatus("No ancestors found for the selected generations.");
+            return;
+        }
+
+        $("#ahnentafelReport").empty();
+        this.resetReportState();
+        this.reportState.running = true;
+        this.reportState.total = people.length;
+        this.updateReportStatus(`Initializing report for ${people.length} ancestors...`);
+        this.setReportUiState({ busy: true });
+
+        this.buildReportShell(people[0]);
+        try {
+            await this.processReportQueue(people);
+        } catch (error) {
+            console.error("Report build failed", error);
+            this.updateReportStatus("Report build failed. See console for details.");
+            this.finishReportBuild();
+        }
+    }
+
+    cancelReportBuild() {
+        if (!this.reportState.running) {
+            return;
+        }
+        this.reportState.cancel = true;
+        this.updateReportStatus("Cancelling...");
+    }
+
+    finishReportBuild(reason = "") {
+        this.setReportUiState({ busy: false });
+        this.reportState.running = false;
+
+        let doneMsg = `Report ready: ${this.reportState.done}/${this.reportState.total} profiles`;
+        if (reason) {
+            doneMsg = `Report stopped: ${this.reportState.done}/${this.reportState.total} profiles (${reason})`;
+        } else if (this.reportState.cancel) {
+            doneMsg = `Report cancelled: ${this.reportState.done} profiles ready`;
+        }
+
+        const skippedMsg = this.reportState.skipped ? `, skipped ${this.reportState.skipped}` : "";
+        const errorMsg = this.reportState.errors ? `, errors ${this.reportState.errors}` : "";
+        this.updateReportStatus(doneMsg + skippedMsg + errorMsg);
+
+        $("#printReport").prop("disabled", false);
+    }
+
+    collectReportAncestors(maxGeneration) {
+        const people = [];
+        // Use a Set to avoid duplicates if someone appears multiple times in tree
+        const seenIds = new Set();
+
+        // Sort ancestors by generation and then Ahnentafel number to ensure correct report order
+        const sortedAncestors = [...this.ancestors].sort((a, b) => {
+            const genA = Math.min(...a.Generation);
+            const genB = Math.min(...b.Generation);
+            if (genA !== genB) return genA - genB;
+            return a.AhnentafelNumber[0] - b.AhnentafelNumber[0];
+        });
+
+        sortedAncestors.forEach((person) => {
+            if (seenIds.has(person.Id)) return;
+            const generation = Math.min(...person.Generation);
+            if (generation <= maxGeneration) {
+                seenIds.add(person.Id);
+                people.push({
+                    id: person.Id,
+                    wtid: person.Name,
+                    ahnentafel: person.AhnentafelNumber[0],
+                    generation: generation,
+                });
+            }
+        });
+        return people;
+    }
+
+    buildReportShell(rootPerson) {
+        const $report = $("#ahnentafelReport");
+        $report.empty();
+
+        if (rootPerson) {
+            const person = this.ancestors.find((a) => a.Id === rootPerson.id);
+            if (person) {
+                const name = this.getName(person).theName;
+                $report.append(`<h1 class="report-main-title">Ancestors of ${name}</h1>`);
+            }
+        }
+    }
+
+    async processReportQueue(queue) {
+        while (queue.length && !this.reportState.cancel) {
+            const batch = queue.splice(0, AhnentafelAncestorList.REPORT_LIMITS.batchSize);
+
+            const cachedPeople = batch.filter(
+                (p) => window.ahnentafelReportCache[p.id] || window.ahnentafelReportCache[p.wtid]
+            );
+            const toFetch = batch.filter((p) => !cachedPeople.includes(p));
+
+            cachedPeople.forEach((person) => {
+                if (this.reportState.cancel) return;
+                const data = this.processReportPersonData(null, person, {});
+                this.renderReportAncestor(person, data);
+            });
+
+            if (!toFetch.length) {
+                continue;
+            }
+
+            const wtidList = toFetch.map((p) => p.wtid).join(", ");
+            this.updateReportStatus(`Fetching bios for: ${wtidList}...`);
+
+            const batchMap = await this.fetchReportBatch(toFetch);
+
+            // Fetch spouses for this batch
+            const spouseIds = new Set();
+            Object.values(batchMap).forEach((p) => {
+                if (p.Spouses) {
+                    Object.values(p.Spouses).forEach((s) => {
+                        if (s.Id) spouseIds.add(s.Id);
+                    });
+                }
+            });
+
+            let spouseMap = {};
+            if (spouseIds.size > 0) {
+                this.updateReportStatus(`Fetching spouse details for: ${wtidList}...`);
+                const spouseIdList = Array.from(spouseIds).join(",");
+                const [, , spouses] =
+                    (await this.callWithRetry(() =>
+                        WikiTreeAPI.getPeople(
+                            "TA_AhnReportSpouses",
+                            spouseIdList,
+                            AhnentafelAncestorList.REPORT_FIELDS,
+                            { resolveRedirect: 1 }
+                        )
+                    )) || [];
+                spouseMap = spouses || {};
+            }
+
+            toFetch.forEach((person) => {
+                if (this.reportState.cancel) return;
+                const apiPerson = batchMap[person.id] || batchMap[String(person.id)] || batchMap[person.wtid];
+                const data = this.processReportPersonData(apiPerson, person, spouseMap, batchMap);
+                this.renderReportAncestor(person, data);
+            });
+
+            if (!this.reportState.cancel && AhnentafelAncestorList.REPORT_LIMITS.batchDelayMs > 0 && queue.length > 0) {
+                await new Promise((resolve) => setTimeout(resolve, AhnentafelAncestorList.REPORT_LIMITS.batchDelayMs));
+            }
+
+            if (this.reportState.bytes >= AhnentafelAncestorList.REPORT_LIMITS.totalChars) {
+                this.finishReportBuild(`Reached size limit (${Math.round(this.reportState.bytes / 1024)} KB)`);
+                return;
+            }
+        }
+
+        this.finishReportBuild();
+    }
+
+    async fetchReportBatch(batch) {
+        const keys = batch.map((p) => p.id).filter(Boolean);
+        if (!keys.length) {
+            return {};
+        }
+        try {
+            const [, , people] =
+                (await this.callWithRetry(() =>
+                    WikiTreeAPI.getPeople("TA_AhnReport", keys, AhnentafelAncestorList.REPORT_FIELDS, {
+                        bioFormat: "both",
+                        resolveRedirect: 1,
+                        descendants: this.settings.showChildren ? 1 : 0,
+                    })
+                )) || [];
+            return people || {};
+        } catch (error) {
+            console.error("getPeople batch failed", error);
+            this.reportState.errors += batch.length;
+            return {};
+        }
+    }
+
+    processReportPersonData(apiPerson, person, spouseMap, batchMap = null) {
+        if (!apiPerson) {
+            return window.ahnentafelReportCache[person.id] || window.ahnentafelReportCache[person.wtid];
+        }
+
+        const bioRaw = apiPerson.bioHTML || apiPerson.bio_html || apiPerson.bioHtml || apiPerson.Bio || "";
+        this.reportState.bytes += bioRaw.length;
+
+        const { bioHtml, endnotes } = this.extractEndnotesFromBio(this.sanitizeBioHtml(bioRaw), person.id);
+
+        const processed = {
+            id: apiPerson.Id,
+            bioHtml,
+            endnotes,
+            photoUrl: this.getPhotoUrl(apiPerson.PhotoData?.url, apiPerson.Photo),
+            spouses: [],
+            children: [],
+        };
+
+        if (this.settings.showChildren && batchMap) {
+            const pid = String(apiPerson.Id);
+            // Scan batchMap for anyone whose Father or Mother is this person
+            const childrenList = Object.values(batchMap).filter(
+                (p) => String(p.Father) === pid || String(p.Mother) === pid
+            );
+
+            childrenList.forEach((childObj) => {
+                if (!childObj) return;
+                processed.children.push({
+                    name: this.getName(childObj).theName,
+                    birth: childObj.BirthDate,
+                    death: childObj.DeathDate,
+                    wtid: childObj.Name,
+                });
+            });
+            processed.children.sort((a, b) => (a.birth || "9999").localeCompare(b.birth || "9999"));
+        } else if (this.settings.showChildren && apiPerson.Children) {
+            // Fallback to direct Children property if batchMap scan fails or not provided
+            Object.values(apiPerson.Children).forEach((child) => {
+                const childObj = typeof child === "object" ? child : null;
+                if (!childObj) return;
+                processed.children.push({
+                    name: this.getName(childObj).theName,
+                    birth: childObj.BirthDate,
+                    death: childObj.DeathDate,
+                    wtid: childObj.Name,
+                });
+            });
+            processed.children.sort((a, b) => (a.birth || "9999").localeCompare(b.birth || "9999"));
+        }
+
+        if (apiPerson.Spouses) {
+            Object.values(apiPerson.Spouses).forEach((s) => {
+                const sDetail = spouseMap[String(s.Id)];
+                if (sDetail) {
+                    processed.spouses.push(sDetail);
+                } else {
+                    processed.spouses.push(s);
+                }
+            });
+        }
+
+        window.ahnentafelReportCache[person.id] = processed;
+        return processed;
+    }
+
+    sanitizeBioHtml(bioHtml) {
+        const $wrapper = $("<div></div>").append(bioHtml);
+        $wrapper.find("script,style").remove();
+        $wrapper.find(".aContents,.status,.sticker,.toc").remove();
+        $wrapper.find("div.status, div.sticker, #toc").remove();
+
+        $wrapper.find("a").each(function () {
+            const $a = $(this);
+            const href = $a.attr("href") || "";
+            if (href && !href.startsWith("#") && !/^[a-z]+:/i.test(href)) {
+                $a.attr("href", "https://www.wikitree.com" + (href.startsWith("/") ? "" : "/") + href);
+            }
+            if (href && !href.startsWith("#")) {
+                $a.attr("target", "_blank");
+            }
+        });
+
+        $wrapper.find("img").each(function () {
+            const $img = $(this);
+            const src = $img.attr("src") || "";
+            if (src && !/^https?:\/\//i.test(src) && !src.startsWith("data:")) {
+                $img.attr("src", "https://www.wikitree.com" + (src.startsWith("/") ? "" : "/") + src);
+            }
+            $img.addClass("report-bio-image");
+        });
+
+        $wrapper.find("p").each(function () {
+            const text = $(this).text().trim();
+            const hasBr = $(this).find("br").length > 0;
+            const hasOtherStuff = $(this).children().not("br").length > 0;
+            if (!text && !hasOtherStuff) {
+                $(this).remove();
+            }
+        });
+
+        $wrapper.children("br").remove();
+
+        $wrapper
+            .contents()
+            .filter(function () {
+                return this.nodeType === 3 && this.textContent.trim().length > 0;
+            })
+            .each(function () {
+                const $p = $("<p></p>").text(this.textContent);
+                $(this).replaceWith($p);
+            });
+        return $wrapper;
+    }
+
+    extractEndnotesFromBio($wrapper, personId) {
+        const notes = [];
+        const seenRefs = new Map();
+
+        $wrapper.find("sup.reference").each(function () {
+            const $sup = $(this);
+            const href = $sup.find("a").attr("href") || "";
+
+            let num;
+            if (href && seenRefs.has(href)) {
+                num = seenRefs.get(href);
+            } else {
+                num = notes.length + 1;
+                let noteHtml = "";
+                if (href.startsWith("#")) {
+                    const target = $wrapper.find(href);
+                    if (target.length) {
+                        noteHtml = target.html();
+                        target.remove();
+                    }
+                }
+                if (!noteHtml) {
+                    noteHtml = $sup.text() || "Citation";
+                }
+                notes.push(noteHtml);
+                if (href) {
+                    seenRefs.set(href, num);
+                }
+            }
+            $sup.replaceWith(`<sup class="report-citation">[${num}]</sup>`);
+        });
+
+        return { bioHtml: $wrapper.html(), endnotes: notes };
+    }
+
+    renderReportAncestor(person, data) {
+        const personData = this.ancestors.find((a) => a.Id === person.id);
+        const name = this.getName(personData).theName;
+        const gender = personData.Gender;
+        const generation = person.generation;
+
+        // Generation Header
+        if (generation > this.reportState.currentGeneration) {
+            this.reportState.currentGeneration = generation;
+            $("#ahnentafelReport").append(`<h2 class="report-generation-header">Generation No. ${generation}</h2>`);
+        }
+
+        const spousesNarrative = this.formatSpouseNarrative(data.spouses, name);
+
+        let childrenNarrative = "";
+        if (this.settings.showChildren && data.children && data.children.length > 0) {
+            const childrenList = data.children
+                .map((child) => {
+                    let vitals = "";
+                    if (child.birth && child.birth !== "0000-00-00") {
+                        vitals += `b. ${child.birth.split("-")[0]}`;
+                    }
+                    if (child.death && child.death !== "0000-00-00") {
+                        vitals += (vitals ? ", " : "") + `d. ${child.death.split("-")[0]}`;
+                    }
+                    return `${child.name}${vitals ? ` (${vitals})` : ""}`;
+                })
+                .join("; ");
+            childrenNarrative = `<div class="report-children">Children of ${name}: ${childrenList}.</div>`;
+        }
+
+        const endnoteList = data?.endnotes?.length
+            ? `<ol class="report-endnotes">${data.endnotes.map((n) => `<li>${n}</li>`).join("")}</ol>`
+            : "";
+
+        const bioHtml = data?.bioHtml ? data.bioHtml : "<em>Biography not loaded or skipped for this profile.</em>";
+
+        let photoHtml = "";
+        if (this.settings.showPhotos && data?.photoUrl) {
+            photoHtml = `<img class="report-photo" src="${data.photoUrl}" alt="${name}">`;
+        }
+
+        const birthDateFormatted = this.formatDate(personData.BirthDate, personData, "BirthDate");
+        const birthPlace = personData.BirthLocation || "";
+        const deathDateFormatted = this.formatDate(personData.DeathDate, personData, "DeathDate");
+        const deathPlace = personData.DeathLocation || "";
+
+        let birthHtml = "";
+        if (birthDateFormatted || birthPlace) {
+            birthHtml = `<div class="report-vital-line">b. ${birthDateFormatted}${
+                birthDateFormatted && birthPlace ? ", " : ""
+            }${birthPlace}</div>`;
+        }
+
+        let deathHtml = "";
+        if (deathDateFormatted || deathPlace) {
+            deathHtml = `<div class="report-vital-line">d. ${deathDateFormatted}${
+                deathDateFormatted && deathPlace ? ", " : ""
+            }${deathPlace}</div>`;
+        }
+
+        const html = `
+            <div class="report-person" id="report_person_${person.id}">
+                ${photoHtml}
+                <div class="report-person-header">
+                    <span class="report-person-title">
+                        <span class="report-ahnentafel">${person.ahnentafel}.</span>
+                        <span class="report-name">${name.toUpperCase()}</span>
+                    </span>
+                    <div class="report-vitals">
+                        ${birthHtml}
+                        ${deathHtml}
+                    </div>
+                </div>
+                <div class="report-bio">
+                    <div class="family-summary">
+                        <p class="report-spouse-narrative">${spousesNarrative}</p>
+                        ${childrenNarrative}
+                    </div>
+                    ${bioHtml}
+                    ${endnoteList}
+                </div>
+            </div>
+        `;
+
+        $("#ahnentafelReport").append(html);
+        this.reportState.done++;
+        this.updateReportStatus(`Building report: ${this.reportState.done}/${this.reportState.total}...`);
+    }
+
+    formatSpouseNarrative(spouses, personFirstName) {
+        if (!spouses || spouses.length === 0) return "";
+        // extract just the first name if a full name is passed
+        const firstName = personFirstName.split(" ")[0];
+
+        const results = spouses.map((s) => {
+            const name = this.getName(s).theName.toUpperCase();
+            const mDate = this.formatDate(s.MarriageDate, s, "MarriageDate");
+            const mLoc = s.MarriageLocation || "";
+            const bDate = this.formatDate(s.BirthDate, s, "BirthDate");
+            const bLoc = s.BirthLocation || "";
+            const dDate = this.formatDate(s.DeathDate, s, "DeathDate");
+            const dLoc = s.DeathLocation || "";
+
+            let parentStr = "";
+            const father = s.Father ? s.Father.FullName || s.Father.Name : "";
+            const mother = s.Mother ? s.Mother.FullName || s.Mother.Name : "";
+            if (father || mother) {
+                const rel = s.Gender === "Male" ? "son" : s.Gender === "Female" ? "daughter" : "child";
+                parentStr = `, ${rel} of ${father || "unknown"}${father && mother ? " and " : ""}${mother || ""}`;
+            }
+
+            let vitalsStr = "";
+            if (bDate || bLoc || dDate || dLoc) {
+                vitalsStr = `, born ${bDate || ""}${bLoc ? " in " + bLoc : ""}${
+                    dDate ? " and died " + dDate + (dLoc ? " in " + dLoc : "") : ""
+                }.`;
+            }
+
+            return `${firstName} married ${name}${mDate ? " " + mDate : ""}${
+                mLoc ? " in " + mLoc : ""
+            }${parentStr}${vitalsStr}`;
+        });
+
+        return results.join(" ");
+    }
+
+    getPhotoUrl(url, photo) {
+        let candidate = url;
+        if (typeof url === "object" && url !== null) {
+            candidate = url.url;
+        }
+        if (!candidate) candidate = photo;
+
+        if (candidate) {
+            if (/^https?:\/\//i.test(candidate)) return candidate;
+            if (candidate.startsWith("//")) return "https:" + candidate;
+            if (candidate.includes("/")) {
+                return "https://www.wikitree.com" + (candidate.startsWith("/") ? "" : "/") + candidate;
+            }
+        }
+        return null;
+    }
+
+    joinWithAnd(parts) {
+        if (!parts || parts.length === 0) return "";
+        if (parts.length === 1) return parts[0];
+        if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
+        return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+    }
+
+    async wait(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    async callWithRetry(fn) {
+        let lastError;
+        for (let i = 0; i < 3; i++) {
+            try {
+                return await fn();
+            } catch (err) {
+                lastError = err;
+                await this.wait(1000 * (i + 1));
+            }
+        }
+        throw lastError;
     }
 };

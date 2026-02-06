@@ -25,6 +25,7 @@ window.FamilyView = class FamilyView extends window.View {
      * @param person_id
      */
     init(container_selector, person_id) {
+        this.close();
         this.view = new window.FamilyGroup(container_selector, person_id);
         this.view.displayFamilyGroup();
     }
@@ -590,8 +591,9 @@ window.FamilyGroup = class FamilyGroup {
     }
 
     renderOptions() {
-        if ($("#familyViewOptions").length > 0) {
-            return;
+        const existing = $("#familyViewOptions");
+        if (existing.length > 0) {
+            existing.remove();
         }
         const selectedFormatId = window.DateFormatOptions ? window.DateFormatOptions.getStoredFormatId() : null;
         const selectedStatusId = window.DateFormatOptions
@@ -605,9 +607,6 @@ window.FamilyGroup = class FamilyGroup {
             : "";
         const optionsHTML = `
             <div id="familyViewOptions" class="familyViewOptions">
-                <label><input type="checkbox" id="showWTID" ${
-                    this.options.showWTID ? "checked" : ""
-                }> Show WikiTree IDs</label>
                 <label for="dateFormatSelect">Date Format:</label>
                 <select id="dateFormatSelect">
                     ${dateOptionsHtml}
@@ -616,6 +615,9 @@ window.FamilyGroup = class FamilyGroup {
                 <select id="dateStatusSelect">
                     ${statusOptionsHtml}
                 </select>
+                <label><input type="checkbox" id="showWTID" ${
+                    this.options.showWTID ? "checked" : ""
+                }> WikiTree IDs</label>
             </div>
         `;
         $("#view-container").before(optionsHTML);
