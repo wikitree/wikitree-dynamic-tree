@@ -10,7 +10,7 @@ window.DescendantsView = class DescendantsView extends View {
     close() {
         // Another view is about to be activated, retore the original overflow value of view-container
         $("#view-container").css("overflow", "");
-        $("body").removeClass("descendants");
+        $("body").removeClass("descendants report-mode");
 
         function removeEventListeners() {
             const container_selector = "#view-container";
@@ -98,7 +98,7 @@ window.DescendantsView = class DescendantsView extends View {
             window.DateFormatOptions.setStoredStatusFormat(window.descendantsSettings.dateDataStatusFormat);
         }
 
-        $("body").addClass("descendants");
+        $("body").removeClass("report-mode").addClass("descendants");
         const help = $(
             `<div id='descendantsHelp'>
             <h2>Descendants</h2><button class="x small" id="closeHelp">x</button>
@@ -325,32 +325,28 @@ window.DescendantsView = class DescendantsView extends View {
         $(container_selector).off("click", "#viewTree");
         $(container_selector).on("click", "#viewTree", function (e) {
             e.preventDefault();
-            if ($("body").hasClass("report-mode")) {
-                $("body").removeClass("report-mode");
-                $("#viewTree").addClass("active");
-                $("#viewReport").removeClass("active");
-                $("#descendantsReportWrapper").hide();
-                $("#descendants").show();
-            }
+            $("body").removeClass("report-mode");
+            $("#viewTree").addClass("active");
+            $("#viewReport").removeClass("active");
+            $("#descendantsReportWrapper").hide();
+            $("#descendants").show();
         });
 
         $(container_selector).off("click", "#viewReport");
         $(container_selector).on("click", "#viewReport", function (e) {
             e.preventDefault();
-            if (!$("body").hasClass("report-mode")) {
-                $("body").addClass("report-mode");
-                $("#viewReport").addClass("active");
-                $("#viewTree").removeClass("active");
-                $("#descendantsReportWrapper").show();
-                $("#descendants").hide();
+            $("body").addClass("report-mode");
+            $("#viewReport").addClass("active");
+            $("#viewTree").removeClass("active");
+            $("#descendantsReportWrapper").show();
+            $("#descendants").hide();
 
-                // Build report if empty (first run)
-                // Use a check length to ensure we don't rebuild if satisfied.
-                if ($("#descendantsReport").is(":empty")) {
-                    $("#buildReport").click();
-                }
-                refreshReportSpouseFilterOptions();
+            // Build report if empty (first run)
+            // Use a check length to ensure we don't rebuild if satisfied.
+            if ($("#descendantsReport").children().length === 0) {
+                startReportBuild();
             }
+            refreshReportSpouseFilterOptions();
         });
 
         $(container_selector).off("click", "#showHelp,#closeHelp");
@@ -2541,8 +2537,12 @@ function finishReportBuild() {
     setReportUiState({ busy: false });
     reportState.running = false;
 
-    let doneMsg = `Report ready: ${reportState.done}/${reportState.total} profiles`;
-    if (reportState.cancel) doneMsg = `Report cancelled: ${reportState.done} profiles ready`;
+    const maxGeneration = parseInt($("#reportGenerationSelect").val() || 1, 10);
+    const generationLabel = Number.isNaN(maxGeneration)
+        ? ""
+        : ` (${maxGeneration} generation${maxGeneration === 1 ? "" : "s"})`;
+    let doneMsg = `Report ready: ${reportState.done}/${reportState.total} profiles${generationLabel}`;
+    if (reportState.cancel) doneMsg = `Report cancelled: ${reportState.done} profiles ready${generationLabel}`;
 
     const skippedMsg = reportState.skipped ? `, skipped ${reportState.skipped}` : "";
     const errorMsg = reportState.errors ? `, errors ${reportState.errors}` : "";
@@ -3193,5 +3193,30 @@ function buildChildrenList($li, spouses = [], personId) {
 }
 
 function updateReportStatus(message) {
-    $("#reportStatusText").text(message);
+    const $status = $("#descendantsReportStatus");
+    const $controlStatus = $("#reportStatusText");
+
+    if (reportState?.running) {
+        $controlStatus.text("");
+        if ($status.find("#descendantsReportTree").length === 0) {
+            $status
+                .empty()
+                .append(
+                    "<img id='descendantsReportTree' src='./views/cc7/images/tree.gif' alt='Loading' title='Working'>"
+                );
+            $("#descendantsReportTree").css({
+                display: "block",
+                margin: "6px auto",
+                height: "100px",
+                width: "100px",
+                borderRadius: "50%",
+                border: "4px solid forestgreen",
+            });
+        }
+        return;
+    }
+
+    $status.find("#descendantsReportTree").remove();
+    $status.text(message || "");
+    $controlStatus.text("");
 }

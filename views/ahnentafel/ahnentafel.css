@@ -127,25 +127,42 @@
 .report-person-header {
   margin-bottom: 0.8em;
   border-bottom: 1px solid #eee;
-  padding-bottom: 0.5em;
+  padding: 0.3em;
   overflow: auto;
+}
+
+.report-person-header.Male {
+  background-color: #f2f1ff;
+}
+
+.report-person-header.Female {
+  background-color: #ffeeee;
+}
+
+.report-person-header.Unknown {
+  background-color: #eeffee;
 }
 
 .report-person-title {
   font-size: 1.25em;
   font-weight: bold;
-  display: block;
+  display: flex;
+  gap: 0.5em;
   color: #000;
   margin-bottom: 0.4em;
 }
 
 .report-ahnentafel {
   margin-right: 0.5em;
+  display: inline-block;
+  width: 2.2em;
+  text-align: right;
 }
 
 .report-vitals {
   font-size: 0.95em;
   color: #444;
+  margin-left: 2.7em;
 }
 
 .report-vital-line {
@@ -593,6 +610,10 @@
   margin-left: 0.1em;
 }
 
+.wt-id {
+  display: none;
+}
+
 .more-generations-container {
   display: flex;
   align-items: center;
@@ -651,7 +672,8 @@
 @media print {
   #ahnentafelAncestorList .descendantButton,
   #ahnentafelAncestorList .toggleButton,
-  #ahnentafelOptions {
+  #ahnentafelOptions,
+  #ahnentafelReportStatus {
     display: none;
   }
   header,
