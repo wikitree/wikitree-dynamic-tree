@@ -25,6 +25,7 @@ window.FamilyView = class FamilyView extends window.View {
      * @param person_id
      */
     init(container_selector, person_id) {
+        this.close();
         this.view = new window.FamilyGroup(container_selector, person_id);
         this.view.displayFamilyGroup();
     }
@@ -98,9 +99,17 @@ window.FamilyGroup = class FamilyGroup {
             "Father,Mother,Photo,PhotoData," +
             "Parents,Children,Spouses,Siblings";
 
+        const sharedFormatId = window.DateFormatOptions ? window.DateFormatOptions.getStoredFormatId() : null;
+        const sharedDateFormat = window.DateFormatOptions
+            ? window.DateFormatOptions.getFormatValue(sharedFormatId, "wtDate") || "D MMM YYYY"
+            : "D MMM YYYY";
+        const sharedStatusFormat = window.DateFormatOptions
+            ? window.DateFormatOptions.getStoredStatusFormat()
+            : "abbreviations";
         this.options = {
             showWTID: false,
-            dateFormat: "D MMM YYYY",
+            dateFormat: sharedDateFormat,
+            dateStatusFormat: sharedStatusFormat,
         };
         this.localStorageKey = "familyView_options";
         this.loadOptions();
@@ -116,6 +125,17 @@ window.FamilyGroup = class FamilyGroup {
             } catch (e) {
                 console.error("Error loading familyView options", e);
             }
+        }
+        if (window.DateFormatOptions) {
+            const legacyId = window.DateFormatOptions.getFormatIdFromWtDate(this.options.dateFormat);
+            if (legacyId) {
+                window.DateFormatOptions.setStoredFormatId(legacyId);
+            }
+            this.options.dateFormat =
+                window.DateFormatOptions.getFormatValue(window.DateFormatOptions.getStoredFormatId(), "wtDate") ||
+                this.options.dateFormat;
+            this.options.dateStatusFormat = window.DateFormatOptions.getStoredStatusFormat();
+            window.DateFormatOptions.setStoredStatusFormat(this.options.dateStatusFormat);
         }
     }
 
@@ -180,6 +200,29 @@ window.FamilyGroup = class FamilyGroup {
      */
     birthName(person) {
         return person.BirthName;
+    }
+
+    formatDateWithStatus(person, fieldName, statusFieldName = fieldName) {
+        const formatted = window.wtDate(person, fieldName, {
+            formatString: this.options.dateFormat,
+            withCertainty: false,
+        });
+        if (!formatted || formatted === "[unknown]") return formatted || "";
+
+        const status =
+            person?.DataStatus?.[statusFieldName] ||
+            person?.data_status?.[statusFieldName] ||
+            person?.DataStatus?.[fieldName] ||
+            person?.data_status?.[fieldName] ||
+            "";
+
+        const statusPrefix = window.DateFormatOptions
+            ? window.DateFormatOptions.formatStatus(status, this.options.dateStatusFormat)
+            : "";
+
+        if (!statusPrefix) return formatted;
+        if (["<", ">", "~"].includes(statusPrefix.trim())) return `${statusPrefix}${formatted}`;
+        return `${statusPrefix} ${formatted}`;
     }
 
     /**
@@ -292,7 +335,7 @@ window.FamilyGroup = class FamilyGroup {
             if (birth_place.length > 1) {
                 birth_place = ` in ${birth_place}`;
             }
-            const birthDate = window.wtDate(person, "BirthDate", { formatString: this.options.dateFormat });
+            const birthDate = this.formatDateWithStatus(person, "BirthDate");
             html += `Born: ${birthDate}${birth_place}<br/>`;
         } else if (person.BirthDateDecade) {
             html += `Born: ${person.BirthDateDecade}<br/>`;
@@ -303,7 +346,7 @@ window.FamilyGroup = class FamilyGroup {
                 if (death_place.length > 1) {
                     death_place = ` in ${death_place}`;
                 }
-                const deathDate = window.wtDate(person, "DeathDate", { formatString: this.options.dateFormat });
+                const deathDate = this.formatDateWithStatus(person, "DeathDate");
                 html += `Died: ${deathDate}${death_place}<br/>`;
             } else if (person.DeathDateDecade) {
                 html += `Died: ${person.DeathDateDecade}<br/>`;
@@ -392,9 +435,9 @@ window.FamilyGroup = class FamilyGroup {
 
         html += ` the ${childType} of ${fatherName} and ${motherName}.
             See ${this.linkedShortName(person)}'s ${this.linkToTreeAndTools(
-            person,
-            "Tree &amp; Tools page"
-        )} for more views.`;
+                person,
+                "Tree &amp; Tools page"
+            )} for more views.`;
         $("#view-description").html(html);
     }
 
@@ -516,7 +559,7 @@ window.FamilyGroup = class FamilyGroup {
                         let html = `<div class="fv_familyBlock">
                             <h2>${person.RealName} and ${this.fullName(spouse)}</h2>
                             <h3>${person.RealName} married ${this.birthName(spouse)},
-                            ${window.wtDate(spouse, "marriage_date", { formatString: this.options.dateFormat })}
+                            ${this.formatDateWithStatus(spouse, "marriage_date")}
                             ${marr_place}</h3>`;
                         html += this.extractFamilyGroupHTML(person, spouse, spousal_relation, spousesKey);
                         html += "</div>";
@@ -548,32 +591,33 @@ window.FamilyGroup = class FamilyGroup {
     }
 
     renderOptions() {
-        if ($("#familyViewOptions").length > 0) {
-            return;
+        const existing = $("#familyViewOptions");
+        if (existing.length > 0) {
+            existing.remove();
         }
+        const selectedFormatId = window.DateFormatOptions ? window.DateFormatOptions.getStoredFormatId() : null;
+        const selectedStatusId = window.DateFormatOptions
+            ? window.DateFormatOptions.getStoredStatusFormat()
+            : this.options.dateStatusFormat;
+        const dateOptionsHtml = window.DateFormatOptions
+            ? window.DateFormatOptions.buildFormatOptionsHtml(selectedFormatId)
+            : "";
+        const statusOptionsHtml = window.DateFormatOptions
+            ? window.DateFormatOptions.buildStatusOptionsHtml(selectedStatusId)
+            : "";
         const optionsHTML = `
             <div id="familyViewOptions" class="familyViewOptions">
-                <label><input type="checkbox" id="showWTID" ${
-                    this.options.showWTID ? "checked" : ""
-                }> Show WikiTree IDs</label>
                 <label for="dateFormatSelect">Date Format:</label>
                 <select id="dateFormatSelect">
-                    <option value="D MMM YYYY" ${
-                        this.options.dateFormat === "D MMM YYYY" ? "selected" : ""
-                    }>D MMM YYYY</option>
-                    <option value="MMM D, YYYY" ${
-                        this.options.dateFormat === "MMM D, YYYY" ? "selected" : ""
-                    }>MMM D, YYYY</option>
-                    <option value="MMMM D, YYYY" ${
-                        this.options.dateFormat === "MMMM D, YYYY" ? "selected" : ""
-                    }>MMMM D, YYYY</option>
-                    <option value="D MMMM YYYY" ${
-                        this.options.dateFormat === "D MMMM YYYY" ? "selected" : ""
-                    }>D MMMM YYYY</option>
-                    <option value="YYYY-MM-DD" ${
-                        this.options.dateFormat === "YYYY-MM-DD" ? "selected" : ""
-                    }>ISO (YYYY-MM-DD)</option>
+                    ${dateOptionsHtml}
                 </select>
+                <label for="dateStatusSelect">Date Status:</label>
+                <select id="dateStatusSelect">
+                    ${statusOptionsHtml}
+                </select>
+                <label><input type="checkbox" id="showWTID" ${
+                    this.options.showWTID ? "checked" : ""
+                }> WikiTree IDs</label>
             </div>
         `;
         $("#view-container").before(optionsHTML);
@@ -585,7 +629,31 @@ window.FamilyGroup = class FamilyGroup {
         });
 
         $("#dateFormatSelect").on("change", (e) => {
-            this.options.dateFormat = e.target.value;
+            const selectedId = e.target.value;
+            if (window.DateFormatOptions) {
+                this.options.dateFormat =
+                    window.DateFormatOptions.getFormatValue(selectedId, "wtDate") || this.options.dateFormat;
+                window.DateFormatOptions.setStoredFormatId(selectedId);
+            } else {
+                const fallbackMap = {
+                    dsmy: "D MMM YYYY",
+                    smdy: "MMM D, YYYY",
+                    mdy: "MMMM D, YYYY",
+                    dmy: "D MMMM YYYY",
+                    iso: "YYYY-MM-DD",
+                    y: "YYYY",
+                };
+                this.options.dateFormat = fallbackMap[selectedId] || this.options.dateFormat;
+            }
+            this.saveOptions();
+            this.displayFamilyGroup();
+        });
+
+        $("#dateStatusSelect").on("change", (e) => {
+            this.options.dateStatusFormat = e.target.value;
+            if (window.DateFormatOptions) {
+                window.DateFormatOptions.setStoredStatusFormat(this.options.dateStatusFormat);
+            }
             this.saveOptions();
             this.displayFamilyGroup();
         });
@@ -595,6 +663,7 @@ window.FamilyGroup = class FamilyGroup {
         this.isClosed = true;
         $("#showWTID").off();
         $("#dateFormatSelect").off();
+        $("#dateStatusSelect").off();
         $("#familyViewOptions").remove();
     }
 

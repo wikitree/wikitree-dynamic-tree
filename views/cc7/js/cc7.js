@@ -1036,6 +1036,7 @@ class CC7 {
                         const biography = new Biography(theSourceRules);
                         biography.parse(bioPerson.getBio(), bioPerson, "");
                         biography.validate();
+                        person.bioScore = biography.getScore();
                         person.hasBioIssues = biography.hasStyleIssues() || !biography.hasSources();
                         if (person.hasBioIssues) {
                             person.bioCheckReport = getReportLines(biography, bioPerson.isPre1700());
@@ -1785,8 +1786,9 @@ class CC7 {
                 input.removeEventListener("input", PeopleTable.filterListener);
                 input.removeEventListener("click", PeopleTable.clearFilterClickListener);
             });
-        $("#cc7PBFilter").off("select2:select");
+        $("#cc7PrivFilter").off("select2:select");
         $("#cc7DegFilter").off("select2:select");
+        $("#cc7BCSFilter").off("select2:select");
 
         $(
             [
