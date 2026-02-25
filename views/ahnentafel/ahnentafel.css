@@ -412,25 +412,19 @@
 #ahnentafelAncestorList .ahnentafelPerson.Male,
 #ahnentafelAncestorList .ahnentafelPersonShort.Male {
   background-color: #f2f1ff;
-  border: 1px solid transparent;
 }
-
+#ahnentafelAncestorList .ahnentafelPerson,
+#ahnentafelAncestorList .ahnentafelPersonShort {
+  border: 3px solid transparent;
+}
 #ahnentafelAncestorList .ahnentafelPerson.Female,
 #ahnentafelAncestorList .ahnentafelPersonShort.Female {
   background-color: #ffeeee;
-  border: 1px solid transparent;
 }
 
 #ahnentafelAncestorList .ahnentafelPerson.Unknown,
 #ahnentafelAncestorList .ahnentafelPersonShort.Unknown {
   background-color: #eeffee;
-  border: 1px solid transparent;
-}
-
-#ahnentafelAncestorList .ahnentafelPerson,
-#ahnentafelAncestorList .ahnentafelPersonShort {
-  background-color: transparent;
-  border: 1px solid #666;
 }
 
 #ahnentafelAncestorList div.ahnentafelPerson.highlighted,
@@ -438,7 +432,7 @@
 #ahnentafelAncestorList div.ahnentafelPersonShort.highlighted,
 #ahnentafelAncestorList div.ahnentafelPersonShort.highlightedClick {
   border: 3px solid gold;
-  padding: 0;
+  padding: 3px;
 }
 #ahnentafelAncestorList .ahnentafelLink,
 #ahnentafelAncestorList .childOf,
