@@ -399,6 +399,30 @@
   margin-bottom: 0.8em;
 }
 
+/* Parent mode toggle buttons styling */
+.parentModeToggle {
+  display: inline-flex;
+  gap: 0.25em;
+  margin-left: 0.5em;
+}
+.parentModeToggle .parentModeButton {
+  min-width: 90px;
+  padding: 0.2em 0.4em;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+  border-radius: 3px;
+}
+.parentModeToggle .parentModeButton.small {
+  font-size: 0.85em;
+}
+.parentModeToggle .parentModeButton.active {
+  background-color: #25422d;
+  color: #fff;
+  font-weight: bold;
+  border-color: #1f3b2a;
+}
+
 #ahnentafelAncestorList .ahnentafelPerson > span.personText,
 #ahnentafelAncestorList .ahnentafelPersonShort > span.personText {
   margin-left: 0.3em; /* Space between number and name */
