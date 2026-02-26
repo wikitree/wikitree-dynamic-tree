@@ -345,7 +345,7 @@ export class CachedPerson {
     // data even after a full load. definitelyHasNoSpouse() also takes the noMoreSpouses flag into account.
     hasSpouse(id) {
         if (id) {
-            this._data.Spouses && this._data.Spouses.has(id);
+            return this._data.Spouses && this._data.Spouses.has(id);
         }
         return this._data.Spouses && this._data.PreferredSpouseId;
     }
@@ -370,10 +370,13 @@ export class CachedPerson {
         }
     }
     setSpouses(spousesData) {
-        this._data.Spouses = new Set(Object.keys(spousesData));
+        // Note: unlike Parents, Children, and Siblings, a recent change made the Spouses field an array of spouse
+        // records rather than a map of id to record.
+        this._data.Spouses = new Set(spousesData.map((s) => +s.Id));
 
         // The primary profile retrieved via an API call does not have marriage date and -place fields.
-        // That data is only present in each of the Spouses sub-records retrieved with the primary profile.
+        // That data is only present in each of the Spouses sub-records retrieved in the Spouses field with
+        // the primary profile.
         // However, such a spouse record has no Parents or Children records. If we then later retrieve the
         // spouse record again via API in order to obtain their Parents or Children records, that new record
         // no longer has the marriage data. Therefore, here we copy the marriage data (if any) from the Spouses
@@ -382,7 +385,9 @@ export class CachedPerson {
         let firstSpouseId = undefined;
         let firstMarriageDate = Utils.dateObject();
         this._data.MarriageDates = {};
-        for (const [spouseId, spouseData] of Object.entries(spousesData)) {
+        // for (const [spouseId, spouseData] of Object.entries(spousesData)) {
+        for (const spouseData of spousesData) {
+            const spouseId = +spouseData.Id;
             const mDate = spouseData.marriage_date || "0000-00-00";
             const dateObj = Utils.dateObject(mDate);
             this._data.MarriageDates[spouseId] = {
