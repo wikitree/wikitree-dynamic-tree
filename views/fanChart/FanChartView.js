@@ -2586,6 +2586,7 @@ import { PDFs } from "../shared/PDFs.js";
                 // customBadgeLabels;
 
                 FanChartView.removeBadges("DNA");
+                FanChartView.adjustAdoBioLabelText();
 
                 if (
                     showBadges ||
