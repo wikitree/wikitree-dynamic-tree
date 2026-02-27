@@ -209,30 +209,24 @@ export class Couple {
     isDescendantExpandable(show = false) {
         const aP = this.aPerson();
         const bP = this.bPerson();
+        const noD3children = !this.children;
+        const aNotExpanded =
+            !this.a || (!aP?.isNoSpouse && aP?.getSpouseIds()?.size > 0 && aP?.getSpouses().length == 0);
+        const bNotExpanded =
+            !this.b || (!bP?.isNoSpouse && bP?.getSpouseIds()?.size > 0 && bP?.getSpouses().length == 0);
+        const mayHaveCh = this.mayHaveChildren();
+        const aNoChildIds = this.a && !aP?.getChildrenIds();
+        const bNoChildIds = this.b && !bP?.getChildrenIds();
+        const isExpandable =
+            noD3children && (aNotExpanded || bNotExpanded || (mayHaveCh && (aNoChildIds || bNoChildIds)));
         if (show) {
-            const noD3children = !this.children;
-            const aNotExpanded =
-                !this.a || (!aP?.isNoSpouse && aP?.getSpouseIds?.size > 0 && taP?.getSpouses().length == 0);
-            const bNotExpanded =
-                !this.b || (!bP?.isNoSpouse && bP?.getSpouseIds?.size > 0 && bP?.getSpouses().length == 0);
-            const mayHaveCh = this.mayHaveChildren();
-            const aNoChildIds = this.a && !aP?.getChildrenIds();
-            const bNoChildIds = this.b && !bP?.getChildrenIds();
-            const rslt = noD3children && (aNotExpanded || bNotExpanded || (mayHaveCh && (aNoChildIds || bNoChildIds)));
             console.log(
                 `isDescendantExpandable ${this.getId()}:\n` +
                     `noD3children=${noD3children} && (aNotExpanded=${aNotExpanded} || bNotExpanded=${bNotExpanded}) ` +
-                    `|| (mayHaveCh=${mayHaveCh} && (aNoChildIds=${aNoChildIds} || bNoChildIds=${bNoChildIds})) = ${rslt}`
+                    `|| (mayHaveCh=${mayHaveCh} && (aNoChildIds=${aNoChildIds} || bNoChildIds=${bNoChildIds})) = ${isExpandable}`
             );
         }
-        return (
-            !this.children && // no D3 children and
-            (!this.a ||
-                (!aP?.isNoSpouse && aP?.getSpouseIds?.size > 0 && aP?.getSpouses().length == 0) || // a has unloaded spouse(s) or
-                !this.b ||
-                (!!bP?.isNoSpouse && !bP?.getSpouseIds?.size > 0 && !bP?.getSpouses().length == 0) || // b has unloaded spouse(s) or
-                (this.mayHaveChildren() && ((this.a && !aP?.getChildrenIds()) || (this.b && !bP?.getChildrenIds())))) // a or b has no children
-        );
+        return isExpandable;
     }
 
     isExpanded() {
