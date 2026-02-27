@@ -5784,16 +5784,19 @@ import { PDFs } from "../shared/PDFs.js";
                     let thisGenNum = Math.floor(Math.log2(n.ahnNum));
                     let newAhnNumPos = n.ahnNum + 2 * Math.pow(2, thisGenNum);
                     let isFathersLine = false;
-                    let skipThisN = false;
+                    let showThisNode = false;
                     let compareNum = n.ahnNum - Math.pow(2, thisGenNum) - Math.pow(2, thisGenNum - 1);
-                    if (compareNum < Math.pow(2, thisGenNum - 1)) {
+                    if (compareNum < 0) {
                         isFathersLine = true;
                     }
 
-                    if ((isFathersLine && !n.person._data.BioFather) || (isFathersLine && !n.person._data.BioMother)) {
-                        skipThisN = true;
+                    if (
+                        (isFathersLine && FanChartView.primaryPerson._data.BioFather) ||
+                        (!isFathersLine && FanChartView.primaryPerson._data.BioMother)
+                    ) {
+                        showThisNode = true;
                     }
-                    if (n.ahnNum > 1) {
+                    if (n.ahnNum > 1 && showThisNode == true) {
                         n.ahnNum4Display = n.ahnNum;
                         n.ahnNumPos = newAhnNumPos;
                         n.ahnNum = newAhnNumPos;
@@ -5814,7 +5817,17 @@ import { PDFs } from "../shared/PDFs.js";
                             2 ** thisGenNum,
                             2 ** (thisGenNum - 1),
                             { isFathersLine },
-                            { skipThisN }
+                            { showThisNode }
+                        );
+                    } else {
+                        console.log(
+                            "BIO:",
+                            n.ahnNum,
+                            { thisGenNum },
+                            { newAhnNumPos },
+                            { isFathersLine },
+                            { showThisNode },
+                            { compareNum }
                         );
                     }
                 });
@@ -5828,11 +5841,11 @@ import { PDFs } from "../shared/PDFs.js";
             // links = this.tree.links(nodes);
             // this.drawLinks(links);
             FanChartView.updateLegendIfNeeded();
-            FanChartView.adjustAdoBioLabelText();
             this.drawNodes(nodes);
             updateDNAlinks(nodes);
             hideMDateDIVs();
             updateFontsIfNeeded();
+            FanChartView.adjustAdoBioLabelText();
         } else {
             throw new Error("Missing root");
         }
