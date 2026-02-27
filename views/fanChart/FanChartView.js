@@ -1372,12 +1372,7 @@ import { PDFs } from "../shared/PDFs.js";
                                 // { value: "review", text: "Profiles needing review" },
                             ],
                             defaultValue: "Match",
-                            comment: "(Match = by default choose Adoptive parents for ancestors on the Adoptive side, ",
-                        },
-                        {
-                            optionName: "break0",
-                            comment: "and Biological parents for Ancestors on the Biological side.)",
-                            type: "br",
+                            comment: "(Match = Adoptive parents on Adoptive side / Bio parents on Biological side.)",
                         },
                     ],
                 },
