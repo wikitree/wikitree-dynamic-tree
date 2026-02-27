@@ -3068,6 +3068,14 @@ import { PDFs } from "../shared/PDFs.js";
             Family: { Ado: " Family ", Bio: "BioParents" },
         };
 
+        if (FanChartView.primaryPerson._data.BioFather && !FanChartView.primaryPerson._data.BioMother) {
+            comboSettings.Parents.Bio = "BioFather ";
+            comboSettings.Family.Bio = "BioFather ";
+        } else if (!FanChartView.primaryPerson._data.BioFather && FanChartView.primaryPerson._data.BioMother) {
+            comboSettings.Parents.Bio = "BioMother ";
+            comboSettings.Family.Bio = "BioMother ";
+        }
+
         if (allCapsSetting == true) {
             comboSettings[textSetting].Ado = comboSettings[textSetting].Ado.toUpperCase();
             comboSettings[textSetting].Bio = comboSettings[textSetting].Bio.toUpperCase();
@@ -4945,6 +4953,13 @@ import { PDFs } from "../shared/PDFs.js";
                 document.getElementById("familyTypeAdoRadio").checked = true;
             } else {
                 document.getElementById("ABCfamTypeSpan").style.display = "revert";
+                if (FanChartView.familyType == "Ado") {
+                    document.getElementById("familyTypeAdoRadio").checked = true;
+                } else if (FanChartView.familyType == "Bio") {
+                    document.getElementById("familyTypeBioRadio").checked = true;
+                } else if (FanChartView.familyType == "Combo") {
+                    document.getElementById("familyTypeComboRadio").checked = true;
+                }
             }
 
             thePeopleList.add(person);
@@ -5318,11 +5333,12 @@ import { PDFs } from "../shared/PDFs.js";
                 }
 
                 // PUT everyone into the Ahnentafel order ... which will include the private TBD! peeps if any
-                if (FanChartView.familyType == "Ado") {
-                    FanChartView.myAhnentafel.update(person, "Ado"); // update the AhnenTafel with the latest ancestors
-                } else if (FanChartView.familyType == "Bio") {
-                    // FanChartView.myAhnentafel.update(person, "Bio"); // update the AhnenTafel with the latest ancestors
-                }
+                FanChartView.myAhnentafel.update(person, "Ado"); // update the AhnenTafel with the latest ancestors
+                // if (FanChartView.familyType == "Ado") {
+                //     // FanChartView.myAhnentafel.update(person, "Ado"); // update the AhnenTafel with the latest ancestors
+                // } else if (FanChartView.familyType == "Bio") {
+                //     // FanChartView.myAhnentafel.update(person, "Bio"); // update the AhnenTafel with the latest ancestors
+                // }
                 FanChartView.adoAhnentafel.update(person);
                 FanChartView.bioAhnentafel.update(person, "Bio");
 
@@ -5386,6 +5402,7 @@ import { PDFs } from "../shared/PDFs.js";
 
                 updateMyAhentafelMarriages();
                 updateMyAhentafelMarriages(FanChartView.bioAhnentafel);
+                adjustAdoBioLabelText();
 
                 self.drawTree(person);
                 calculateFontMetrics();
@@ -5719,11 +5736,27 @@ import { PDFs } from "../shared/PDFs.js";
     Tree.prototype.draw = function () {
         // condLog("Tree.prototype.draw");
         if (this.root) {
-            // var nodes = thePeopleList.listAllPersons();// [];//this.tree.nodes(this.root);
+            // ORIGINAL CODING : var nodes = thePeopleList.listAllPersons();// [];//this.tree.nodes(this.root);
+
+            // =========
+            // var nodes  is the MOST important data structure of the whole Fan Chart.
+            // =========
+            // Each PERSON in the chart is represented as a NODE in this NODES array.
+            // Each NODE has an Ahnentafel number, and a pointer to the PERSON it represents, among other things.
+            // The NODES array is what D3 uses to draw the boxes and the links between them.  So getting this right is critical.
+
+            // DEFAULT:  create the NODES array from the myAhnentafel list of ancestors, which is the "Ado" family line. / Primary Family of Mother & Father .
             var nodes = FanChartView.myAhnentafel.listOfAncestorsForFanChart(FanChartView.numGens2Display); // [];//this.tree.nodes(this.root);
+
             if (FanChartView.familyType == "Bio") {
+                // If we are showing the "Bio" family line, then we want to create the NODES array from the bioAhnentafel list of ancestors instead, which is the "Bio" family line.
+                // This will include the BIO parents and grandparents if they are different from the ADO parents and grandparents.
                 nodes = FanChartView.bioAhnentafel.listOfAncestorsForFanChart(FanChartView.numGens2Display); // [];//this.tree.nodes(this.root);
             } else if (FanChartView.familyType == "Combo") {
+                // If we are showing the "Combo" family line, then we want to create the NODES array from BOTH the ADO and BIO Ahnentafel lists of ancestors,
+                // which is the "Combo" family line.
+
+                // NOTE:  We don't want to repeat parents on the BIO side who are both part of the Primary Fammily (Mother or Father)
                 nodes = [];
                 if (!FanChartView.comboAhnentafel.marriageList) {
                     FanChartView.comboAhnentafel.marriageList = [];
@@ -5750,6 +5783,16 @@ import { PDFs } from "../shared/PDFs.js";
                 BIOnodes.forEach(function (n) {
                     let thisGenNum = Math.floor(Math.log2(n.ahnNum));
                     let newAhnNumPos = n.ahnNum + 2 * Math.pow(2, thisGenNum);
+                    let isFathersLine = false;
+                    let skipThisN = false;
+                    let compareNum = n.ahnNum - Math.pow(2, thisGenNum) - Math.pow(2, thisGenNum - 1);
+                    if (compareNum < Math.pow(2, thisGenNum - 1)) {
+                        isFathersLine = true;
+                    }
+
+                    if ((isFathersLine && !n.person._data.BioFather) || (isFathersLine && !n.person._data.BioMother)) {
+                        skipThisN = true;
+                    }
                     if (n.ahnNum > 1) {
                         n.ahnNum4Display = n.ahnNum;
                         n.ahnNumPos = newAhnNumPos;
@@ -5760,7 +5803,19 @@ import { PDFs } from "../shared/PDFs.js";
                                 FanChartView.bioAhnentafel.marriageList[n.ahnNum4Display];
                         }
                         nodes.push(n);
-                        // console.log("BIO:", n.ahnNum, " becomes ", n.ahnNumPos);
+                        console.log(
+                            "BIO:",
+                            n.ahnNum,
+                            " becomes ",
+                            n.ahnNumPos,
+                            "old / actual Ahn# " + n.ahnNum4Display,
+                            { thisGenNum },
+                            { newAhnNumPos },
+                            2 ** thisGenNum,
+                            2 ** (thisGenNum - 1),
+                            { isFathersLine },
+                            { skipThisN }
+                        );
                     }
                 });
 
@@ -5773,6 +5828,7 @@ import { PDFs } from "../shared/PDFs.js";
             // links = this.tree.links(nodes);
             // this.drawLinks(links);
             FanChartView.updateLegendIfNeeded();
+            FanChartView.adjustAdoBioLabelText();
             this.drawNodes(nodes);
             updateDNAlinks(nodes);
             hideMDateDIVs();
