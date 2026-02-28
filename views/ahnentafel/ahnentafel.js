@@ -174,6 +174,9 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             const next = selectedMode;
             this.parentModeMap.set(personId, next);
 
+            // Immediate visual feedback
+            this.updateParentModeButtonStates();
+
             if (next === "bio") {
                 const person = this.ancestors.find((p) => p.Id === personId);
                 if (person) {
@@ -225,6 +228,8 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
 
             // refresh view
             this.refreshAncestorList();
+            // Ensure buttons reflect the effective parentMode after rebuild
+            this.updateParentModeButtonStates();
         });
         $(this.selector).on("click", ".ahnentafelLink,.parentOf,.childOf", function (e) {
             e.preventDefault();
@@ -467,6 +472,23 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         }
     }
 
+    // Update the active class on parent-mode buttons to reflect `parentModeMap`
+    updateParentModeButtonStates() {
+        $(this.selector)
+            .find(".parentModeButton")
+            .each((_, btn) => {
+                const $b = $(btn);
+                const pid = parseInt($b.data("person-id"), 10);
+                const btnMode = $b.data("mode");
+                const effective = this.parentModeMap.get(pid) || "adoptive";
+                if (btnMode === effective) {
+                    $b.addClass("active");
+                } else {
+                    $b.removeClass("active");
+                }
+            });
+    }
+
     generationTitle(generation) {
         let title;
         switch (generation) {
@@ -639,6 +661,9 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         this.addAccessKeys(); // Add access keys
         this.updateReportGenerationSelect(true);
         this.applyViewMode(this.settings.reportMode);
+        if (this.settings.showGenderColors) {
+            $("#ahnentafelAncestorList").addClass("gender-colors");
+        }
     }
 
     renderOptions(container = document.getElementById("ahnentafelAncestorList")) {
@@ -734,6 +759,11 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
 
         $("#ahnentafelShowGenderColors").on("change", (e) => {
             this.settings.showGenderColors = e.target.checked;
+            if (this.settings.showGenderColors) {
+                $("#ahnentafelAncestorList").addClass("gender-colors");
+            } else {
+                $("#ahnentafelAncestorList").removeClass("gender-colors");
+            }
             this.saveSettings();
             this.applySettings();
         });
@@ -1785,6 +1815,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                     };
                 })
                 .get(),
+            parentModes: Object.fromEntries(Array.from(this.parentModeMap.entries())),
         };
         this.changeStack.push(state);
         this.currentStackIndex++;
@@ -1841,6 +1872,23 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             }
         });
 
+        // Restore parent mode map (if present) and rebuild the tree to reflect it
+        if (state.parentModes) {
+            this.parentModeMap = new Map(Object.entries(state.parentModes).map(([k, v]) => [parseInt(k, 10), v]));
+            // Recompute generations and refresh display so parent-mode changes are applied
+            this.ancestors.forEach((a) => {
+                a.Generation = [];
+                a.AhnentafelNumber = [];
+            });
+            const rootPerson = this.ancestors.find((p) => p.Id === this.startId);
+            if (rootPerson) {
+                this.assignGenerationAndAhnentafel(rootPerson, 1, 1, new Set());
+            }
+            this.refreshAncestorList();
+            // Update button active states after rebuild
+            this.updateParentModeButtonStates();
+        }
+
         // Restore the visibility of generation containers
         state.generationContainers.forEach((container) => {
             const selector = `#${container.id} .generationContainer`;
@@ -1857,7 +1905,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
     trackChanges() {
         $(this.selector)
             .off("click.ahnentafelTrack")
-            .on("click.ahnentafelTrack", ".toggleButton,.descendantButton,.childOf,.parentOf", () => {
+            .on("click.ahnentafelTrack", ".toggleButton,.descendantButton,.childOf,.parentOf,.parentModeButton", () => {
                 // Using setTimeout to ensure the state is captured after it changes
                 setTimeout(() => {
                     this.captureState();

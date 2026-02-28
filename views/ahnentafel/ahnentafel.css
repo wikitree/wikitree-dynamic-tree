@@ -430,7 +430,14 @@
 
 #ahnentafelAncestorList .ahnentafelPerson,
 #ahnentafelAncestorList .ahnentafelPersonShort {
+  background-color: #fff;
+  border-color: #ccc;
+}
+
+.gender-colors #ahnentafelAncestorList .ahnentafelPerson,
+.gender-colors #ahnentafelAncestorList .ahnentafelPersonShort {
   background-color: #efe;
+  border-color: transparent;
 }
 
 #ahnentafelAncestorList .ahnentafelPerson.Male,
