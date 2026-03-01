@@ -3800,7 +3800,7 @@ class SlippyTreePerson {
         }
 
         let currentUserName = window?.wtViewRegistry?.session?.lm?.user?.name;
-        if (currentUserName) {
+        if (currentUserName && this.data.Managers) {
             for (let p of this.data.Managers) {
                 if (p.Name == currentUserName) {
                     categories.push(["Managed by me"]);
