@@ -418,7 +418,7 @@
 }
 .parentModeToggle .parentModeButton.active {
   background-color: #25422d;
-  color: #fff;
+  color: #fff !important;
   font-weight: bold;
   border-color: #1f3b2a;
 }
