@@ -701,10 +701,6 @@
   #ahnentafelReportStatus {
     display: none;
   }
-  header,
-  main {
-    display: none !important;
-  }
   html,
   body {
     height: auto !important;
