@@ -132,6 +132,8 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
     --mother:  #F00;                    /* color of link to mother */
     --father:  #00F;                    /* color of link to father */
     --neutral: #8C8;                    /* color of link to ungendered parent or a non-biological link */
+    --biofather: #8CF;                  /* color of biological links */
+    --biomother: #FC8;                  /* color of biological links */
     --spouse:  #181;                    /* color of spouse link */
     --coparent: none;                   /* color of coparent link (not drawn by default) */
     --selection-border-width: 4px;
@@ -141,6 +143,8 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
     --father-transparent:  #00F0;       /* transparent version of father */
     --parent-transparent:  #0A00;       /* transparent version of parent */
     --spouse-transparent:  #1810;       /* transparent version of spouse */
+    --biofather-transparent:  #FF00;    /* transparent version of spouse */
+    --biomother-transparent:  #FF00;    /* transparent version of spouse */
     --unloaded-parent-length: 40px;     /* The length of a fading line indicating an unloaded parent */
     --unloaded-child-length: 30px;      /* The length of a fading line indicating an unloaded child */
     --unloaded-spouse-length: 20px;     /* The length of a fading line indicating an unloaded spouse */
@@ -259,12 +263,6 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
     -webkit-user-select: none;
 }
 
-.slippy-tree-container .helpContainer .slippy-settings-wheel {
-    margin-top: 1em;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-around;
-}
 .slippy-tree-container .helpContainer .icon-attribution {
     position: relative;
     top: 12px;
@@ -274,48 +272,61 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
 .slippy-tree-container .helpContainer .icon-attribution a {
     color: inherit;
 }
-.slippy-tree-container .helpContainer .slippy-settings-wheel img {
-    height: 2.9em;
-    margin-bottom: -1em;
-    float: left;
-}
-.slippy-tree-container .helpContainer .slippy-settings-wheel > div {
-    width: 12em;
-    padding: 4px;
-    border: 4px solid #888;
-    border-radius: 8px;
-    background: #eee;
-    color: black;
-}
-.slippy-tree-container .helpContainer .slippy-settings-wheel > div.selected {
-    border-color: red;
+.slippy-tree-container .helpContainer .slippy-settings {
+    display: flex;
+    flex-flow: row wrap;
+    gap: 8px;
+    select {
+        flex: 1;
+    }
+    label {
+        flex: 1;
+        flex-basis: 20%;
+        display: flex;
+        border: 4px solid #888;
+        border-radius: 8px;
+        padding: 4px;
+        justify-content: center;
+        align-items: center;
+        input {
+            appearance: none;
+            width: 0;   /* needed on ios */
+            height: 0;
+        }
+        img {
+            min-height: 3em;
+        }
+        span {
+            flex: 1;
+        }
+        &:has(input:checked) {
+            border-color: black;
+        }
+        &:not(:has(input:checked)) {
+            background: #ddd;
+            opacity: 0.5;
+        }
+        &:has(input:disabled) {
+            display: none;
+        }
+    }
+    @media (max-height: 800px) {
+        label {
+            flex-basis: auto;
+        }
+        label span {
+            display: none;
+        }
+    }
 }
 .slippy-tree-container .helpContainer .slippy-settings-view  {
     width: 100%;
     display: flex;
     align-items: center;
 }
-.slippy-tree-container .helpContainer :is(.slippy-settings-male, .slippy-settings-female) {
-    /* ideally would use accent-color here, but results on Safari are poor */
-    appearance: none;
-    box-sizing: border-box;
-    width: 1em;
-    height: 1em;
-    border: 2px solid var(--gender-color);
-    &:checked {
-        background: var(--gender-color);
-    }
-    margin-left: 4px;
-}
-.slippy-tree-container .helpContainer .slippy-settings-female {
-    --gender-color: var(--female);
-}
-.slippy-tree-container .helpContainer .slippy-settings-male {
-    --gender-color: var(--male);
-}
+
 .slippy-tree-container .helpContainer .slippy-categories {
     flex: 1;
-    max-width: calc(100% - 2em - 8px); /*sigh, chrome bug */
 }
 @media (not (hover:hover)) {
     /* this block applies only if there is no mouse present */
@@ -549,7 +560,7 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
 
 /* relations */
 .slippy-tree .relations :is(path, line) {
-    opacity: 0.1;
+    opacity: 0.15;
     fill: none;
     stroke-width: 4px;
     stroke: #888;       /* default color, always overridden */
@@ -559,6 +570,12 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
 }
 .slippy-tree .relations .father {
     stroke: var(--father);
+}
+.slippy-tree .relations .mother.biological {
+    stroke: var(--biomother);
+}
+.slippy-tree .relations .father.biological {
+    stroke: var(--biofather);
 }
 .slippy-tree .relations .spouse {
     stroke: var(--spouse);
@@ -599,11 +616,23 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
 .slippy-tree .relations .unloaded-father {
     stroke: url("#unloaded-father");
 }
+.slippy-tree .relations .unloaded-mother.biological {
+    stroke: url("#unloaded-biomother");
+}
+.slippy-tree .relations .unloaded-father.biological {
+    stroke: url("#unloaded-biofather");
+}
 .slippy-tree .relations .father-unloaded {
     stroke: url("#father-unloaded");
 }
 .slippy-tree .relations .mother-unloaded {
     stroke: url("#mother-unloaded");
+}
+.slippy-tree .relations .father-unloaded.biological {
+    stroke: url("#biofather-unloaded");
+}
+.slippy-tree .relations .mother-unloaded.biological {
+    stroke: url("#biomother-unloaded");
 }
 .slippy-tree .relations .spouse-unloaded {
     stroke: url("#spouse-unloaded");
