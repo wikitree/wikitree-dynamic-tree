@@ -328,7 +328,7 @@ window.FamilyGroup = class FamilyGroup {
         }
         html += `<strong>${this.linkedProfileName(person)}</strong><br/>`;
         if (this.options.showWTID) {
-            html += `<span class="wt-id">(${person.Name})</span><br/>`;
+            html += `<span class="fv_wt-id">(${person.Name})</span><br/>`;
         }
         if (person.BirthDate && person.BirthDate !== "0000-00-00" && person.DataStatus.BirthDate !== "blank") {
             let birth_place = this.grabField(person, "BirthLocation");
@@ -538,20 +538,38 @@ window.FamilyGroup = class FamilyGroup {
         // We will work through each spouse and produce a family table for every couple… provided there are any
         // marriages at all
         if (person.Spouses && Object.keys(person.Spouses).length > 0) {
+            console.log("[FamilyView] Found", Object.keys(person.Spouses).length, "spouses");
+            console.log("[FamilyView] Spouses structure (is Array?):", Array.isArray(person.Spouses));
+            console.log("[FamilyView] Spouses keys:", Object.keys(person.Spouses));
+            console.log("[FamilyView] Spouses content:", person.Spouses);
+            
+            // Convert array to object keyed by ID if needed
+            let spousesObj = person.Spouses;
+            if (Array.isArray(person.Spouses)) {
+                console.log("[FamilyView] Converting Spouses array to object");
+                spousesObj = {};
+                person.Spouses.forEach(spouse => {
+                    spousesObj[spouse.Id] = spouse;
+                });
+                console.log("[FamilyView] Converted Spouses object:", spousesObj);
+            }
+            
             const spouseList = this.sortByDate(
-                Object.values(person.Spouses).map((x) =>
+                Object.values(spousesObj).map((x) =>
                     Object({
                         Id: x.Id,
                         Date: x.marriage_date || "0000-00-00", // Protect against missing marriage dates
                     })
                 )
             );
+            console.log("[FamilyView] Sorted spouseList:", spouseList);
 
             for (const spouseEntry in spouseList) {
                 if (spouseList.hasOwnProperty(spouseEntry)) {
                     const spousesKey = spouseList[spouseEntry].Id;
-                    if (person.Spouses.hasOwnProperty(spousesKey)) {
-                        const spouse = person.Spouses[spousesKey];
+                    console.log("[FamilyView] Processing spouse with key:", spousesKey, "hasOwnProperty?:", spousesObj.hasOwnProperty(spousesKey));
+                    if (spousesObj.hasOwnProperty(spousesKey)) {
+                        const spouse = spousesObj[spousesKey];
                         let marr_place = this.grabField(spouse, "marriage_location");
                         if (marr_place.length > 1) {
                             marr_place = `in ${marr_place}`;
@@ -564,16 +582,21 @@ window.FamilyGroup = class FamilyGroup {
                         html += this.extractFamilyGroupHTML(person, spouse, spousal_relation, spousesKey);
                         html += "</div>";
 
+                        console.log("[FamilyView] Appending family block HTML to #family_group");
                         wv.append(html);
+                    } else {
+                        console.log("[FamilyView] Spouse not found in spousesObj with key:", spousesKey);
                     }
                 }
             }
         } else {
             // No spouses… just give the details for the person alone
+            console.log("[FamilyView] No spouses found, displaying person alone");
             wv.append(this.extractFamilyGroupHTML(person, null, spousal_relation, "0"));
         }
 
         if (person.Children && Object.keys(person.Children).length > 0) {
+            console.log("[FamilyView] Adding children list");
             let html = this.createChildListIntroductionLine(person);
             for (const childListKey in person.childList) {
                 if (person.childList.hasOwnProperty(childListKey)) {
@@ -586,8 +609,13 @@ window.FamilyGroup = class FamilyGroup {
                 }
             }
             html += `</ol>`;
+            console.log("[FamilyView] Appending children list to #children_list");
             $("#children_list").append(html);
+        } else {
+            console.log("[FamilyView] No children to display");
         }
+        
+        console.log("[FamilyView] displayFamilyGroup() completed successfully");
     }
 
     renderOptions() {
