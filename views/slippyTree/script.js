@@ -2224,7 +2224,7 @@ class SlippyTree extends View {
                 }
                 if (add) {
                     let pathname = "edge-" + Math.min(person.id, r.person.id) + "-" + Math.max(person.id, r.person.id);
-                    let path = edges.querySelector("#" + pathname);
+                    let path = document.getElementById(pathname);
                     if (!path) {
                         path = document.createElementNS(this.#SVG, "path");
                         path.setAttribute("id", pathname);
@@ -2266,7 +2266,8 @@ class SlippyTree extends View {
                             } else {
                                 path.classList.add("parent");
                             }
-                            if (r.biological) {
+                            if (r.biological && settings.biological && settings.nonbiological) {
+                                // Add the biological marker only if we're displaying both.
                                 path.classList.add("biological");
                             }
                             if (person.generation == r.person.generation) {
@@ -2285,7 +2286,7 @@ class SlippyTree extends View {
                 }
             }
             if (children.length == 0 && person.data.NoChildren == 1) {
-                let path = edges.querySelector("#noissue-" + person.id);
+                let path = document.getElementById("noissue-" + person.id);
                 if (!path) {
                     path = document.createElementNS(this.#SVG, "path");
                     path.classList.add("noissue");
@@ -2304,18 +2305,22 @@ class SlippyTree extends View {
                 const spouse = marriage.b;
                 for (const r of person.relations) {
                     if (r.rel == "spouse" && r.person == spouse && r.type != "inferred" && r.date) {
-                        let text = document.createElementNS(this.#SVG, "text");
-                        text.appendChild(document.createTextNode(this.formatDate(r.date)));
-                        text.classList.add("marriage");
-                        text.setAttribute("id", "label-" + person.id + "-" + spouse.id);
-                        labels.appendChild(text);
-                        // Don't really have a good idea to display multiple spouses,
-                        // at the moment it looks like each spouse marries the next one.
-                        text.person = person;
-                        text.person0 = marriage.top;
-                        text.person1 = marriage.bot;
-                        if (person == focus || r.person == focus) {
-                            text.classList.add("focus");
+                        const id = "label-" + person.id + "-" + spouse.id;
+                        let text = document.getElementById(id);
+                        if (text == null) {
+                            text = document.createElementNS(this.#SVG, "text");
+                            text.appendChild(document.createTextNode(this.formatDate(r.date)));
+                            text.classList.add("marriage");
+                            text.setAttribute("id", id);
+                            labels.appendChild(text);
+                            // Don't really have a good idea to display multiple spouses,
+                            // at the moment it looks like each spouse marries the next one.
+                            text.person = person;
+                            text.person0 = marriage.top;
+                            text.person1 = marriage.bot;
+                            if (person == focus || r.person == focus) {
+                                text.classList.add("focus");
+                            }
                         }
                     }
                 }
