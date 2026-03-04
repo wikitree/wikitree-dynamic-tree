@@ -228,9 +228,10 @@ class SlippyTree extends View {
      </g>
     </g>
    </svg>
-   <p class="slippy-about">
+   <p class="slippy-about" style="line-height:1.3">
     A multi-root tree showing several parent and child relationships at once.<br/>
-    Spouses are displayed together, refocus to change the order.
+    For extended help visit the
+    <a target="_new" href="https://www.wikitree.com/wiki/Space:Slippy_Tree_-_help_page">Slippy Tree Help Page</a>
    </p>
 
    <div class="slippy-settings">
