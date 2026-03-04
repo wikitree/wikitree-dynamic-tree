@@ -175,9 +175,8 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
         margin-right: 16px;
         bottom: 28px;
         color: black;
-        -webkit-text-stroke: 6px var(--background-color);
-        -webkit-text-fill: black;
-        paint-order: stroke fill;
+        background: var(--background-color);
+        padding: 1px;
     }
     .slippy-tree-container .relationshipName .name {
         font-weight: bold;
