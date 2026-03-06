@@ -55,20 +55,14 @@ class SlippyTree extends View {
         this.browser = typeof window != "undefined"; // The code is sometimes debugged locally in nodejs too.
         this.state = { debug: {} };
         this.state.props = props || {};
-        this.debug =
-            typeof this.state.props.debug == "boolean"
-                ? this.state.props.debug
-                : this.browser
-                ? window.deubgLoggingOn
-                : true;
-        this.state.container =
-            typeof container_selector == "string" ? document.querySelector(container_selector) : container_selector;
+        this.debug = typeof this.state.props.debug == "boolean" ? this.state.props.debug : this.browser ? window.deubgLoggingOn : true;
+        this.state.container = typeof container_selector == "string" ? document.querySelector(container_selector) : container_selector;
+        const hasMouse = this.browser && !window.matchMedia("not (hover: hover)").matches; // true if MQ recognised and primary device has no hover.
 
         try {
             this.settings = JSON.parse(window.localStorage.getItem("slippyTree-settings"));
         } catch (e) {}
         if (!this.settings) {
-            let hasMouse = this.browser && !window.matchMedia("not (hover: hover)").matches; // true if MQ recognised and primary device has no hover.
             this.settings = {
                 wheel: hasMouse ? "zoom" : "scroll",
             };
@@ -138,10 +132,10 @@ class SlippyTree extends View {
   <div>
    <div class="helpCloseButton">&#x2715;</div>
    <h1 style="margin:0 0 0.5em 0">The Slippy Tree</h1>
-   <svg class="slippy-tree" width="500" height="140" style="display:block">
+   <svg class="slippy-tree" width="500" height="140" style="display:block; margin-bottom: 1em">
     <defs>
      <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" />
+      <path d="M 0 0 L 10 5 L 0 10 z"></path>
      </marker>
     </defs>
     <g transform="translate(0 20)">
@@ -151,13 +145,14 @@ class SlippyTree extends View {
       <path class="spouse" d="M 2.5 20 C 2.5 40 2.5 40 10.5 40" transform="translate(-100 0)"></path>
       <path class="father dna focus" d="M 339 26 C 289.25 26 289.25 10 239.5 10" transform="translate(-139 0)"></path>
       <path class="mother nonbiological focus" d="M 339 26 C 294.25 26 294.25 40 249.5 40" transform="translate(-139 0)"></path>
+      <path class="mother biological confident focus" d="M 339 26 C 294.25 26 294.25 90 249.5 90" transform="translate(-139 0)"></path>
       <path class="spouse focus" d="M 341 36 C 341 56 341 56 349 56" transform="translate(-139 0)"></path>
       <path class="spouse focus" d="M 341 36 C 341 86 341 86 349 86" transform="translate(-139 0)"></path>
       <path class="mother confident focus" d="M 639 19 C 589 19 589 26 539 26" transform="translate(-239 0)"></path>
       <path class="mother focus" d="M 639 59 C 589 59 589 26 539 26" transform="translate(-239 0)"></path>
       <path class="unloaded-father confident" d="M 339 26 C 319.25 26 319.25 16 289.5 16" transform="translate(-299 -17)"></path>
       <path class="father-unloaded" d="M 279 10 L 239.5 11" transform="translate(219 50)"></path>
-      <path class="spouse-unloaded" d="M 339 26 C 329 26 329 46 329 46" transform="translate(-290 16)"></path>
+      <path class="spouse-unloaded" d="M 339 76 C 329 76 329 96 329 96" transform="translate(-290 16)"></path>
       <path class="noissue" d="M 460 19 l 5 0 m 0 -8 l 0 16"></path>
      </g>
      <g class="labels">
@@ -199,61 +194,89 @@ class SlippyTree extends View {
        <path d="M 0 0 H {TAGSIZE} L 0 {TAGSIZE} Z"></path>
        <text y="14" x="30">Mother</text>
       </g>
+      <g class="female spouse" transform="translate(50 80)">
+       <rect height="20" width="60"></rect>
+       <path d="M 0 0 H {TAGSIZE} L 0 {TAGSIZE} Z"></path>
+       <text y="14" x="30">Bio Mother</text>
+      </g>
      </g>
      <g class="labels">
-      <path d="M 330 -4 L 350 14" stroke="black" fill="none" marker-end="url(#arrow)"/>
-      <text x="320" y="-6">Mother is confident</text>
-      <path d="M 130 60 L 140 44" stroke="black" fill="none" marker-end="url(#arrow)"/>
-      <text x="130" y="70">Mother is non-biological</text>
-      <path d="M 180 -4 L 160 10" stroke="black" fill="none" marker-end="url(#arrow)"/>
-      <path d="M 165 85 L 197 75" stroke="black" fill="none" marker-end="url(#arrow)"/>
-      <text x="190" y="-6">Father is confirmed with DNA</text>
-      <text x="140" y="90">Marriage</text>
-      <path d="M 350 100 L 340 86" stroke="black" fill="none" marker-end="url(#arrow)"/>
+      <path d="M 330 -4 L 350 14" stroke="black" fill="none" marker-end="url(#arrow)"></path>
+      <text x="330" y="-6">Mother is confident</text>
+      <path d="M 130 60 L 140 44" stroke="black" fill="none" marker-end="url(#arrow)"></path>
+      <text x="75" y="60">Mother is non-biological</text>
+      <path d="M 130 65 L 140 68" stroke="black" fill="none" marker-end="url(#arrow)"></path>
+      <text x="75" y="72">Biological mother shown</text>
+      <path d="M 180 -4 L 160 10" stroke="black" fill="none" marker-end="url(#arrow)"></path>
+      <path d="M 165 85 L 197 75" stroke="black" fill="none" marker-end="url(#arrow)"></path>
+      <text x="200" y="-6">Father is confirmed with DNA</text>
+      <text x="170" y="95">Marriage</text>
+      <path d="M 350 100 L 340 86" stroke="black" fill="none" marker-end="url(#arrow)"></path>
       <text x="350" y="110">Father is uncertain</text>
-      <path d="M 415 -5 L 410 6" stroke="black" fill="none" marker-end="url(#arrow)"/>
+      <path d="M 415 -5 L 410 6" stroke="black" fill="none" marker-end="url(#arrow)"></path>
       <text x="410" y="-8">Highlight</text>
-      <path d="M 410 85 L 407 59" stroke="black" fill="none" marker-end="url(#arrow)"/>
+      <path d="M 410 85 L 407 59" stroke="black" fill="none" marker-end="url(#arrow)"></path>
       <text x="400" y="98">WikiTree Member</text>
-      <path d="M 20 85 L 17 12" stroke="black" fill="none" marker-end="url(#arrow)"/>
-      <text x="50" y="98">Ancestors to load</text>
-      <path d="M 480 110 L 490 69" stroke="black" fill="none" marker-end="url(#arrow)"/>
+      <path d="M 32 -8 L 20 -3" stroke="black" fill="none" marker-end="url(#arrow)"></path>
+      <text x="75" y="-6">Ancestors to load</text>
+      <path d="M 480 110 L 490 69" stroke="black" fill="none" marker-end="url(#arrow)"></path>
       <text x="450" y="118">Descendants to load</text>
-      <path d="M 50 72 L 46 57" stroke="black" fill="none" marker-end="url(#arrow)"/>
-      <text x="70" y="85">Spouse to load</text>
+      <path d="M 65 115 L 46 107" stroke="black" fill="none" marker-end="url(#arrow)"></path>
+      <text x="100" y="118">Spouse to load</text>
       <text x="480" y="-8">No Issue</text>
-      <path d="M 470 -5 L 467 7" stroke="black" fill="none" marker-end="url(#arrow)"/>
+      <path d="M 470 -5 L 467 7" stroke="black" fill="none" marker-end="url(#arrow)"></path>
      </g>
     </g>
    </svg>
-   <p class="slippy-about">
+   <p class="slippy-about" style="line-height:1.3">
     A multi-root tree showing several parent and child relationships at once.<br/>
-    Spouses are displayed together, refocus to change the order.
+    For extended help visit the
+    <a target="_new" href="https://www.wikitree.com/wiki/Space:Slippy_Tree_-_help_page">Slippy Tree Help Page</a>
    </p>
-   <div class="slippy-settings-view">
-    <select class="slippy-categories"></select>
-    <input type="checkbox" class="slippy-settings-male"/>
-    <input type="checkbox" class="slippy-settings-female"/>
+
+   <div class="slippy-settings">
+    <div class="slippy-settings-view">
+     <select class="slippy-categories"></select>
+    </div>
+    <label>
+     <input type="checkbox" name="slippy-settings-male" class="slippy-settings-male">
+     <img src="{PATHPREFIX}views/slippyTree/resources/male.svg">
+     <span>Show male &<br/>unknown</span>
+    </label>
+    <label>
+     <input type="checkbox" name="slippy-settings-female" class="slippy-settings-female">
+     <img src="{PATHPREFIX}views/slippyTree/resources/female.svg">
+     <span>Show female &<br/>unknown</span>
+    </label>
+    <label>
+     <input type="checkbox" name="slippy-settings-biological" class="slippy-settings-biological">
+     <img src="{PATHPREFIX}views/slippyTree/resources/dna.svg">
+     <span>Show biological lines</span>
+    </label>
+    <label>
+     <input type="checkbox" name="slippy-settings-nonbiological" class="slippy-settings-nonbiological">
+     <img src="{PATHPREFIX}views/slippyTree/resources/adopted.svg">
+     <span>Show non-bio lines</span>
+    </label>
+    <label>
+     <input type="radio" name="slippy-settings-wheel" value="zoom" class="slippy-settings-wheel">
+     <img src="{PATHPREFIX}views/slippyTree/resources/mouse.svg">
+     <span>Scroll-wheel zooms<br/>(best for mouse)</span>
+    </label>
+    <label>
+     <input type="radio" name="slippy-settings-wheel" value="scroll" class="slippy-settings-wheel">
+     <img src="{PATHPREFIX}views/slippyTree/resources/trackpad.svg">
+     <span>Scroll-wheel scrolls<br/>(best for trackpad)</span>
+    </label>
    </div>
-   <div class="slippy-settings-wheel">
-    <div class="slippy-settings-wheel-zoom">
-     <img src="{PATHPREFIX}views/slippyTree/resources/mouse.svg"/>
-     <span>Scroll-wheel zooms (best for mouse)</span>
-    </div>
-    <div class="slippy-settings-wheel-scroll">
-     <img src="{PATHPREFIX}views/slippyTree/resources/trackpad.svg"/>
-     <span>Scroll-wheel scrolls (best for trackpad)</span>
-    </div>
-    <p style="margin:0.5em 0 0 0">
+   <p style="margin:0.5em 0 0 0">
     Cursor keys navigate, +/- to zoom
     <a href="" class="download-link">Download Current View</a>
-    </p>
-   </div>
+   </p>
    <div class="icon-attribution">Icons by Andrew Nielsen and Simon Sim via the <a href="http://thenounproject.com">Noun Project</a> (CC BY 3.0)</div>
   </div>
  </div>
 </div>
-
 `;
 
         this.state.people = [];
@@ -308,30 +331,42 @@ class SlippyTree extends View {
                 }
             });
             helpBox.addEventListener("click", (e) => {
-                this.showHelp(false);
+                let captured = false;
+                for (let n=e.target;n!=helpBox;n=n.parentNode) {
+                    if (n.nodeName == "LABEL" || n.target == "SELECT" || n.target == "INPUT") {
+                        captured = true;
+                        break;
+                    }
+                }
+                if (!captured) {
+                    this.showHelp(false);
+                }
             });
-            document.querySelector(".slippy-settings-wheel-zoom").addEventListener("click", (e) => {
-                this.setSettings({ wheel: "zoom" }, e);
+            document.querySelectorAll(".slippy-settings .slippy-settings-wheel").forEach((e) => {
+                e.disabled = !hasMouse;
             });
-            document.querySelector(".slippy-settings-wheel-scroll").addEventListener("click", (e) => {
-                this.setSettings({ wheel: "scroll" }, e);
+            document.querySelectorAll(".slippy-settings input").forEach((elt) => {
+                elt.addEventListener("change", (e) => {
+                    let name = elt.name;
+                    if (name == "slippy-settings-wheel") {
+                        this.setSettings({ wheel: elt.value }, e);
+                    } else if (name == "slippy-settings-male") {
+                        this.setSettings({ male: elt.checked }, e);
+                        this.setFocus(this.state.focus);
+                    } else if (name == "slippy-settings-female") {
+                        this.setSettings({ female: elt.checked }, e);
+                        this.setFocus(this.state.focus);
+                    } else if (name == "slippy-settings-biological") {
+                        this.setSettings({ biological: elt.checked }, e);
+                        this.setFocus(this.state.focus);
+                    } else if (name == "slippy-settings-nonbiological") {
+                        this.setSettings({ nonbiological: elt.checked }, e);
+                        this.setFocus(this.state.focus);
+                    }
+                }, true);
             });
-            document.querySelector(".slippy-categories").addEventListener("click", (e) => {
-                e.stopPropagation();
-            });
-            document.querySelector(".slippy-settings-male").addEventListener("change", (e) => {
-                this.setSettings({ male: !this.settings.male }, e);
-                this.setFocus(this.state.focus);
-            });
-            document.querySelector(".slippy-settings-female").addEventListener("change", (e) => {
-                this.setSettings({ female: !this.settings.female }, e);
-                this.setFocus(this.state.focus);
-            });
-            document.querySelector(".slippy-settings-male").addEventListener("click", (e) => {
-                e.stopPropagation();
-            });
-            document.querySelector(".slippy-settings-female").addEventListener("click", (e) => {
-                e.stopPropagation();
+            document.querySelector(".slippy-settings select").addEventListener("click", (e) => {
+                e.stopPropagation();    // Required for ios
             });
             document.querySelector(".output-name + img").addEventListener("click", (e) => {
                 e.stopPropagation();
@@ -348,9 +383,7 @@ class SlippyTree extends View {
                 e.preventDefault();
                 this.downloadTree();
             });
-            document.querySelector(".download-link").style.color = getComputedStyle(
-                document.querySelector(".download-link")
-            ).color; // Deep magic. Remove the "visited" appearance from this link
+            document.querySelector(".download-link").style.color = getComputedStyle(document.querySelector(".download-link")).color; // Deep magic. Remove the "visited" appearance from this link
             document.querySelector(".slippy-categories").addEventListener("change", (e) => {
                 let value = e.target.options[e.target.selectedIndex].fullValue;
                 this.setCategory(value);
@@ -618,17 +651,7 @@ class SlippyTree extends View {
                         oldfocus.classList.remove("focus");
                         focus.classList.add("focus");
                     }
-                } else if (
-                    e.key == "ArrowUp" ||
-                    e.key == "ArrowDown" ||
-                    e.key == "ArrowRight" ||
-                    e.key == "ArrowLeft" ||
-                    e.key == "+" ||
-                    e.key == "-" ||
-                    e.key == "Enter" ||
-                    e.key == "Escape" ||
-                    e.key == "?"
-                ) {
+                } else if (e.key == "ArrowUp" || e.key == "ArrowDown" || e.key == "ArrowRight" || e.key == "ArrowLeft" || e.key == "+" || e.key == "-" || e.key == "Enter" || e.key == "Escape" || e.key == "?") {
                     e.preventDefault();
                     let view = { scale: self.state.view.scale, cx: self.state.view.cx, cy: self.state.view.cy };
                     let focus = self.state.view.keyboardFocus;
@@ -646,42 +669,21 @@ class SlippyTree extends View {
                     } else if (e.key == "-") {
                         view.scale /= this.#SCROLLSTEP_KEYS;
                     } else {
-                        let score,
-                            best = null,
-                            max = 0x7fffffff,
-                            threshold = 30;
+                        let score, best = null, max = 0x7fffffff, threshold = 30;
                         for (const person of self.state.people) {
                             if (person.isHidden()) {
                                 continue;
                             }
-                            if (
-                                e.key == "ArrowUp" &&
-                                Math.abs(person.cx - focus.cx) < threshold &&
-                                person.cy < focus.cy &&
-                                (score = focus.cy - person.cy) < max
-                            ) {
+                            if (e.key == "ArrowUp" && Math.abs(person.cx - focus.cx) < threshold && person.cy < focus.cy && (score = focus.cy - person.cy) < max) {
                                 best = person;
                                 max = score;
-                            } else if (
-                                e.key == "ArrowDown" &&
-                                Math.abs(person.cx - focus.cx) < threshold &&
-                                person.cy > focus.cy &&
-                                (score = person.cy - focus.cy) < max
-                            ) {
+                            } else if (e.key == "ArrowDown" && Math.abs(person.cx - focus.cx) < threshold && person.cy > focus.cy && (score = person.cy - focus.cy) < max) {
                                 best = person;
                                 max = score;
-                            } else if (
-                                e.key == "ArrowRight" &&
-                                person.cx - focus.cx > threshold &&
-                                (score = (person.cx - focus.cx) * 10 + Math.abs(person.cy - focus.cy)) < max
-                            ) {
+                            } else if (e.key == "ArrowRight" && person.cx - focus.cx > threshold && (score = (person.cx - focus.cx) * 10 + Math.abs(person.cy - focus.cy)) < max) {
                                 best = person;
                                 max = score;
-                            } else if (
-                                e.key == "ArrowLeft" &&
-                                focus.cx - person.cx > threshold &&
-                                (score = (focus.cx - person.cx) * 10 + Math.abs(person.cy - focus.cy)) < max
-                            ) {
+                            } else if (e.key == "ArrowLeft" && focus.cx - person.cx > threshold && (score = (focus.cx - person.cx) * 10 + Math.abs(person.cy - focus.cy)) < max) {
                                 best = person;
                                 max = score;
                             }
@@ -699,14 +701,8 @@ class SlippyTree extends View {
                 if (!this.state) {
                     return;
                 }
-                this.state.view.cx =
-                    (this.state.scrollPane.clientWidth / 2 + this.state.scrollPane.scrollLeft - this.state.view.padx0) /
-                        this.state.view.scale +
-                    this.state.view.x0;
-                this.state.view.cy =
-                    (this.state.scrollPane.clientHeight / 2 + this.state.scrollPane.scrollTop - this.state.view.pady0) /
-                        this.state.view.scale +
-                    this.state.view.y0;
+                this.state.view.cx = (this.state.scrollPane.clientWidth / 2 + this.state.scrollPane.scrollLeft - this.state.view.padx0) / this.state.view.scale + this.state.view.x0;
+                this.state.view.cy = (this.state.scrollPane.clientHeight / 2 + this.state.scrollPane.scrollTop - this.state.view.pady0) / this.state.view.scale + this.state.view.y0;
             });
             this.state.resizeObserver = new ResizeObserver((entries) => {
                 if (!this.state) {
@@ -937,26 +933,38 @@ class SlippyTree extends View {
             } else if (patch.male === false && !this.settings.female) {
                 this.settings.female = true;
             }
+            // Can't turn off biological AND nonbiological
+            if (patch.biological === false && !this.settings.nonbiological) {
+                this.settings.nonbiological = true;
+            } else if (patch.nonbiological === false && !this.settings.biological) {
+                this.settings.biological = true;
+            }
         }
         if (typeof this.settings.male == "undefined") {     // New setting
-             this.settings.male = true;
+            this.settings.male = true;
         }
         if (typeof this.settings.female == "undefined") {     // New setting
-             this.settings.female = true;
+            this.settings.female = true;
+        }
+        if (typeof this.settings.biological == "undefined") {     // New setting
+            this.settings.biological = true;
+        }
+        if (typeof this.settings.nonbiological == "undefined") {     // New setting
+            this.settings.nonbiological = true;
         }
         if (this.settings.male === false && this.settings.female === false) {
             this.settings.male = this.settings.female = true;   // just in case
         }
-        let zoomButton = document.querySelector(".slippy-settings-wheel-zoom");
-        let scrollButton = document.querySelector(".slippy-settings-wheel-scroll");
+        if (this.settings.biological === false && this.settings.nonbiological === false) {
+            this.settings.biological = this.settings.nonbiological = true;   // just in case
+        }
         let searchFamily = document.querySelector(".slippy-search-family");
-        let male = document.querySelector(".slippy-settings-male");
-        let female = document.querySelector(".slippy-settings-female");
-        zoomButton.classList.toggle("selected", this.settings.wheel == "zoom");
-        scrollButton.classList.toggle("selected", this.settings.wheel == "scroll");
+        document.querySelector(".slippy-settings-male").checked = this.settings.male;
+        document.querySelector(".slippy-settings-female").checked = this.settings.female;
+        document.querySelector(".slippy-settings-biological").checked = this.settings.biological;
+        document.querySelector(".slippy-settings-nonbiological").checked = this.settings.nonbiological;
+        document.querySelector(".slippy-settings-wheel[value=\"" + this.settings.wheel + "\"]").checked = true;
         searchFamily.classList.toggle("selected", this.settings.search != "individual");
-        male.checked = this.settings.male;
-        female.checked = this.settings.female;
         window.localStorage.setItem("slippyTree-settings", JSON.stringify(this.settings));
     }
 
@@ -1138,20 +1146,11 @@ class SlippyTree extends View {
             if (version != this.#VERSION) {
                 return false;
             }
-            let focusid =
-                (val.codePointAt(i++) << 24) |
-                (val.codePointAt(i++) << 16) |
-                (val.codePointAt(i++) << 8) |
-                val.codePointAt(i++);
-            let id = 0,
-                pass = 0;
+            let focusid = (val.codePointAt(i++) << 24) | (val.codePointAt(i++) << 16) | (val.codePointAt(i++) << 8) | val.codePointAt(i++);
+            let id = 0, pass = 0;
             while (i < val.length) {
                 if (id == 0) {
-                    id =
-                        (val.codePointAt(i++) << 24) |
-                        (val.codePointAt(i++) << 16) |
-                        (val.codePointAt(i++) << 8) |
-                        val.codePointAt(i++);
+                    id = (val.codePointAt(i++) << 24) | (val.codePointAt(i++) << 16) | (val.codePointAt(i++) << 8) | val.codePointAt(i++);
                     if (id == 0) {
                         pass++;
                         data[pass] = [];
@@ -1266,10 +1265,8 @@ class SlippyTree extends View {
             this.state.svg.setAttribute("height", (this.state.view.targetHeight = targetHeight));
         }
 
-        const targetX =
-            Math.round((this.state.view.cx - this.state.view.x0) * this.state.view.scale) + this.state.view.padx0;
-        const targetY =
-            Math.round((this.state.view.cy - this.state.view.y0) * this.state.view.scale) + this.state.view.pady0;
+        const targetX = Math.round((this.state.view.cx - this.state.view.x0) * this.state.view.scale) + this.state.view.padx0;
+        const targetY = Math.round((this.state.view.cy - this.state.view.y0) * this.state.view.scale) + this.state.view.pady0;
         this.state.scrollPane.scrollLeft = Math.round(targetX - this.state.view.viewWidth / 2);
         this.state.scrollPane.scrollTop = Math.round(targetY - this.state.view.viewHeight / 2);
         //        console.log("RESCALE: scale="+JSON.stringify(o)+" target=["+targetWidth+" "+targetHeight+"] view=["+this.state.view.viewWidth+" "+this.state.view.viewHeight+"] center=["+targetX+" "+targetY+"] tr="+tran+" sp="+x+" "+y);
@@ -1385,7 +1382,7 @@ class SlippyTree extends View {
             } else {
                 let q = [a];
                 while ((b = q.pop())) {
-                    for (let child of b.children()) {
+                    for (let child of b.children(this.settings)) {
                         edges.push("edge-" + Math.min(b.id, child.id) + "-" + Math.max(b.id, child.id));
                         q.push(child);
                     }
@@ -1579,10 +1576,9 @@ class SlippyTree extends View {
         this.placeNodes(focus, ordered, this.state.view.marriages, () => {
             // Re-add edges, people, labels in priority order
             for (const person of ordered) {
-                if (isNaN(person.tx) || isNaN(person.ty))
-                    throw new Error(
-                        "Person=" + person + " g=" + person.generation + " tx=" + person.tx + " ty=" + person.ty
-                    );
+                if (isNaN(person.tx) || isNaN(person.ty)) {
+                    throw new Error("Person=" + person + " g=" + person.generation + " tx=" + person.tx + " ty=" + person.ty);
+                }
                 if (typeof person.x != "number" || typeof person.y != "number") {
                     person.x = person.y = 0; // INITIAL POSITION: from center
                 }
@@ -1603,10 +1599,9 @@ class SlippyTree extends View {
                 }
                 let focusedges = [];
                 for (const person of ordered) {
-                    if (isNaN(person.tx) || isNaN(person.ty))
-                        throw new Error(
-                            "Person=" + person + " g=" + person.generation + " tx=" + person.tx + " ty=" + person.ty
-                        );
+                    if (isNaN(person.tx) || isNaN(person.ty)) {
+                        throw new Error("Person=" + person + " g=" + person.generation + " tx=" + person.tx + " ty=" + person.ty);
+                    }
                     if (typeof person.x != "number" || typeof person.y != "number") {
                         person.x = person.y = 0; // INITIAL POSITION: from center
                     }
@@ -1674,7 +1669,7 @@ class SlippyTree extends View {
                     q.push(spouse);
                 }
             }
-            for (let child of person.children()) {
+            for (let child of person.children(this.settings)) {
                 if (!child.isHidden() && !q.includes(child)) {
                     child.generation = person.generation + 1;
                     q.push(child);
@@ -1686,7 +1681,7 @@ class SlippyTree extends View {
                     }
                 }
             }
-            for (let par of person.parents()) {
+            for (let par of person.parents(this.settings)) {
                 if (!par.isHidden() && !q.includes(par)) {
                     par.generation = person.generation - 1;
                     q.push(par);
@@ -1723,6 +1718,7 @@ class SlippyTree extends View {
         const PASSES = 5000; // higher=slower, lower=worse layout. Visible issues with 1000, use 5000
         const MINMOVE = 1; // higher=faster, lower=more accuracy. Difference between 0.1 and 1 seems minimal but reduces 1000 people from 22s to 12s
 
+        const settings = this.settings;
         const style = this.state.svg ? getComputedStyle(this.state.svg) : null;
         const MINWIDTH = style ? this.#evalLength(style, style.getPropertyValue("--min-person-width")) : 50;
         const SPOUSEMARGIN = style ? this.#evalLength(style, style.getPropertyValue("--spouse-margin")) : 10;
@@ -1736,8 +1732,7 @@ class SlippyTree extends View {
         const genpeople = [];
         const genwidth = [];
         const q = []; // tmp working aray
-        let miny = 99999,
-            maxy = -99999;
+        let miny = 99999, maxy = -99999;
 
         class Clump {
             #people = [];
@@ -1791,21 +1786,7 @@ class SlippyTree extends View {
                 for (let p of this.people()) {
                     count++;
                 }
-                return (
-                    "(" +
-                    count +
-                    ' from "' +
-                    this.topPerson().presentationName() +
-                    '" to "' +
-                    this.bottomPerson().presentationName() +
-                    '" f=' +
-                    this.force().toFixed(1) +
-                    " gap=[" +
-                    this.prevMargin() +
-                    " " +
-                    this.nextMargin() +
-                    "])"
-                );
+                return "(" + count + ' from "' + this.topPerson().presentationName() + '" to "' + this.bottomPerson().presentationName() + '" f=' + this.force().toFixed(1) + " gap=[" + this.prevMargin() + " " + this.nextMargin() + "])";
             }
             mergeWithNext() {
                 let first = this.#first;
@@ -1828,8 +1809,7 @@ class SlippyTree extends View {
                 }
             }
             force() {
-                let v = 0,
-                    c = 0;
+                let v = 0, c = 0;
                 for (const p of this.people()) {
                     for (const force of p.forces) {
                         let fv = force();
@@ -1870,11 +1850,9 @@ class SlippyTree extends View {
         // to each node are ignored.
         //
         // Store the unseen roots for each node in [roots]
-        const roots = [],
-            seen = [];
+        const roots = [], seen = [];
         for (let person of ordered) {
-            let n = person,
-                subroots = [];
+            let n = person, subroots = [];
             roots.push(subroots);
             while (q.length || n) {
                 if (n != null) {
@@ -1882,16 +1860,20 @@ class SlippyTree extends View {
                         n = null; // We have joined an already processed tree, go down again
                     } else {
                         seen.push(n);
-                        const mother =
-                            n.mother && !n.mother.hidden && n.mother.generation < n.generation ? n.mother : null;
-                        const father =
-                            n.father && !n.father.hidden && n.father.generation < n.generation ? n.father : null;
-                        if (mother) {
-                            q.push(mother);
-                        } else if (!father) {
+                        let temp = [];
+                        for (const par of person.parents(settings)) {
+                            if (!par.hidden && par.generation < n.generation) {
+                                temp.push(par);
+                            }
+                        }
+                        if (temp.length) { // Push to temp array to keep the order; bio parents at end
+                            while (temp.length) {
+                                q.push(temp.pop());
+                            }
+                        } else {
                             subroots.push(n);
                         }
-                        n = father;
+                        n = null;
                     }
                 } else {
                     n = q.pop();
@@ -1917,7 +1899,7 @@ class SlippyTree extends View {
             for (let j = 1; j <= person.generation; j++) {
                 person.tx += (genwidth[j - 1] + genwidth[j]) / 2 + GENERATIONMARGIN;
             }
-            for (const par of person.parents()) {
+            for (const par of person.parents(settings)) {
                 if (!par.hidden) {
                     par.forces.push(() => {
                         let v = person.ty - par.ty;
@@ -1959,8 +1941,7 @@ class SlippyTree extends View {
         //
         const func = function (owner, person) {
             const generation = person.generation;
-            let prev =
-                genpeople[generation].length == 0 ? null : genpeople[generation][genpeople[generation].length - 1];
+            let prev = genpeople[generation].length == 0 ? null : genpeople[generation][genpeople[generation].length - 1];
             if (person.hidden) {
                 return null;
             }
@@ -1991,16 +1972,15 @@ class SlippyTree extends View {
                             } else if (genpeople[generation].includes(spouse)) {
                                 reason = "already listed";
                             } else if (spousecheck.depth > 1) {
-                                if (spouse.father && spouse.father.isLoaded()) {
-                                    reason = "has father";
-                                } else if (spouse.mother && spouse.mother.isLoaded()) {
-                                    reason = "has mother";
-                                } else {
-                                    for (let child of spouse.children()) {
-                                        if (
-                                            (child.father == spouse && child.mother != spousecheck.person) ||
-                                            (child.mother == spouse && child.father != spousecheck.person)
-                                        ) {
+                                for (const par of spouse.parents(settings)) {
+                                    if (par.isLoaded()) {
+                                        reason = "has parent";
+                                        break;
+                                    }
+                                }
+                                if (!reason) {
+                                    for (let child of spouse.children(settings)) {
+                                        if (!((child.father == spouse && child.mother == spousecheck.person) || (child.mother == spource && child.father == spousecheck.person))) {
                                             reason = "different child " + child;
                                             break;
                                         }
@@ -2010,20 +1990,12 @@ class SlippyTree extends View {
                             if (!reason) {
                                 if (DEBUG) console.log("Accepting spouse " + spouse + " of " + spousecheck.person);
                                 let key = spousecheck.key + "." + order++;
-                                spouses.push({
-                                    p1: spousecheck.person,
-                                    p2: spouse,
-                                    depth: spousecheck.depth,
-                                    key: key,
-                                });
+                                spouses.push({p1: spousecheck.person, p2: spouse, depth: spousecheck.depth, key: key, });
                                 if (spousecheck.depth + 1 <= bundleSpouses) {
                                     sq.push({ depth: spousecheck.depth + 1, key: key, person: spouse });
                                 }
                             } else {
-                                if (DEBUG)
-                                    console.log(
-                                        "Skipping spouse " + spouse + " of " + spousecheck.person + ": " + reason
-                                    );
+                                if (DEBUG) console.log("Skipping spouse " + spouse + " of " + spousecheck.person + ": " + reason);
                             }
                         }
                     }
@@ -2045,9 +2017,8 @@ class SlippyTree extends View {
                 }
                 // Recursively position children, keeping track of first/last child.
                 // As we position spouses, lastchild is quite possibly a spouse
-                let firstchild = null,
-                    lastchild = null;
-                for (const child of person.children()) {
+                let firstchild = null, lastchild = null;
+                for (const child of person.children(settings)) {
                     if (child.generation > person.generation) {
                         let p = func(person, child);
                         if (p) {
@@ -2104,7 +2075,7 @@ class SlippyTree extends View {
                 // This node has been positioned, but traverse children anyway as
                 // this node might have been positioned as another's spouse, and
                 // have different children to the spouse.
-                for (const child of person.children()) {
+                for (const child of person.children(settings)) {
                     if (child.generation > person.generation) {
                         func(person, child);
                     }
@@ -2176,14 +2147,7 @@ class SlippyTree extends View {
                         }
                         if (overlap > 0) {
                             dy = Math.max(0, dy - overlap);
-                            if (DEBUG)
-                                console.log(
-                                    "  overlap! Moving " +
-                                        clump +
-                                        " by " +
-                                        dy +
-                                        (next ? " and merging down" : ", hit bottom")
-                                );
+                            if (DEBUG) console.log("  overlap! Moving " + clump + " by " + dy + (next ? " and merging down" : ", hit bottom"));
                             for (const person of clump.people()) {
                                 person.ty += dy;
                             }
@@ -2225,6 +2189,7 @@ class SlippyTree extends View {
      * Add any missing edges/labels
      */
     redrawEdges(focus) {
+        const settings = this.settings;
         const style = getComputedStyle(this.state.svg);
         const unloadedParentLength = this.#evalLength(style, style.getPropertyValue("--unloaded-parent-length"));
         const unloadedChildLength = this.#evalLength(style, style.getPropertyValue("--unloaded-child-length"));
@@ -2241,7 +2206,7 @@ class SlippyTree extends View {
             }
         }
         for (const person of people) {
-            const children = Array.from(person.children());
+            const children = Array.from(person.children(settings));
             const childAngle = Math.min(25, 140 / children.length);
             const startAngle = 91 - (childAngle * (children.length - 1)) / 2; // horz lines not painted properly in Safari
             for (const r of person.relations) {
@@ -2260,7 +2225,7 @@ class SlippyTree extends View {
                 }
                 if (add) {
                     let pathname = "edge-" + Math.min(person.id, r.person.id) + "-" + Math.max(person.id, r.person.id);
-                    let path = edges.querySelector("#" + pathname);
+                    let path = document.getElementById(pathname);
                     if (!path) {
                         path = document.createElementNS(this.#SVG, "path");
                         path.setAttribute("id", pathname);
@@ -2302,6 +2267,10 @@ class SlippyTree extends View {
                             } else {
                                 path.classList.add("parent");
                             }
+                            if (r.biological && settings.biological && settings.nonbiological) {
+                                // Add the biological marker only if we're displaying both.
+                                path.classList.add("biological");
+                            }
                             if (person.generation == r.person.generation) {
                                 path.targetSameGenerationBend = sameGenerationBend;
                             } else {
@@ -2318,7 +2287,7 @@ class SlippyTree extends View {
                 }
             }
             if (children.length == 0 && person.data.NoChildren == 1) {
-                let path = edges.querySelector("#noissue-" + person.id);
+                let path = document.getElementById("noissue-" + person.id);
                 if (!path) {
                     path = document.createElementNS(this.#SVG, "path");
                     path.classList.add("noissue");
@@ -2337,18 +2306,22 @@ class SlippyTree extends View {
                 const spouse = marriage.b;
                 for (const r of person.relations) {
                     if (r.rel == "spouse" && r.person == spouse && r.type != "inferred" && r.date) {
-                        let text = document.createElementNS(this.#SVG, "text");
-                        text.appendChild(document.createTextNode(this.formatDate(r.date)));
-                        text.classList.add("marriage");
-                        text.setAttribute("id", "label-" + person.id + "-" + spouse.id);
-                        labels.appendChild(text);
-                        // Don't really have a good idea to display multiple spouses,
-                        // at the moment it looks like each spouse marries the next one.
-                        text.person = person;
-                        text.person0 = marriage.top;
-                        text.person1 = marriage.bot;
-                        if (person == focus || r.person == focus) {
-                            text.classList.add("focus");
+                        const id = "label-" + person.id + "-" + spouse.id;
+                        let text = document.getElementById(id);
+                        if (text == null) {
+                            text = document.createElementNS(this.#SVG, "text");
+                            text.appendChild(document.createTextNode(this.formatDate(r.date)));
+                            text.classList.add("marriage");
+                            text.setAttribute("id", id);
+                            labels.appendChild(text);
+                            // Don't really have a good idea to display multiple spouses,
+                            // at the moment it looks like each spouse marries the next one.
+                            text.person = person;
+                            text.person0 = marriage.top;
+                            text.person1 = marriage.bot;
+                            if (person == focus || r.person == focus) {
+                                text.classList.add("focus");
+                            }
                         }
                     }
                 }
@@ -2386,10 +2359,7 @@ class SlippyTree extends View {
         }
         t = t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2; // Simple cubic bezier easing
 
-        let x0 = null,
-            x1,
-            y0,
-            y1;
+        let x0 = null, x1, y0, y1;
         for (const person of people) {
             person.cx = person.x + (person.tx - person.x) * t;
             person.cy = person.y + (person.ty - person.y) * t;
@@ -2588,14 +2558,10 @@ class SlippyTree extends View {
             date = date.substring(0, 4);
         } else if (date.endsWith("-00")) {
             date = date.substring(0, date.length - 2) + "27";
-            date = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeZone: "UTC" }).format(
-                Date.parse(date)
-            );
+            date = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeZone: "UTC" }).format(Date.parse(date));
             date = date.replace(/\b27[,]?\s*/, "");
         } else {
-            date = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeZone: "UTC" }).format(
-                Date.parse(date)
-            );
+            date = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeZone: "UTC" }).format(Date.parse(date));
         }
         if (state == "guess") {
             date = "c." + date;
@@ -2659,6 +2625,8 @@ class SlippyTree extends View {
                 "HasChildren",
                 "Father",
                 "Mother",
+                "BioFather",
+                "BioMother",
                 "Manager",
                 "Managers",
                 "Categories",
@@ -2689,32 +2657,25 @@ class SlippyTree extends View {
                     }
                 }
                 for (const person of newpeople) {
-                    for (const key of ["Father", "Mother"]) {
+                    console.log("add: this="+person.data.Name);
+                    for (const key of ["Father", "Mother", "BioFather", "BioMother"]) {
                         const id2 = person.data[key];
                         if (id2) {
+                            const biological = key == "BioFather" || key == "BioMother";
                             const other = this.find(id2, true);
                             let certainty = person.data.DataStatus ? person.data.DataStatus[key] : null;
                             switch (certainty) {
-                                case "30":
-                                    certainty = "dna";
-                                    break;
-                                case "20":
-                                    certainty = "confident";
-                                    break;
-                                case "10":
-                                    certainty = "uncertain";
-                                    break;
-                                case "5":
-                                    certainty = "nonbiological";
-                                    break;
-                                default:
-                                    certainty = null;
+                                case "30": certainty = "dna"; break;
+                                case "20": certainty = "confident"; break;
+                                case "10": certainty = "uncertain"; break;
+                                case "5": certainty = "nonbiological"; break;
+                                default: certainty = null;
                             }
-                            person.link(key == "Father" ? "father" : "mother", other, certainty);
+                            person.link(key == "Father" || key == "BioFather" ? "father" : "mother", other, certainty, biological, null);
                         }
                     }
                     if (person.father && person.mother) {
-                        person.father.link("spouse", person.mother, "inferred", person.data.BirthDate);
+                        person.father.link("spouse", person.mother, "inferred", false, person.data.BirthDate);
                     }
                     if (person.data.Spouses) {
                         for (const r of person.data.Spouses) {
@@ -2725,7 +2686,7 @@ class SlippyTree extends View {
                                 certainty = null;
                             }
                             let date = r.MarriageDate;
-                            person.link("spouse", other, certainty, date);
+                            person.link("spouse", other, certainty, false, date);
                         }
                     }
                 }
@@ -2776,12 +2737,7 @@ class SlippyTree extends View {
         this.#setLoading(true);
         for (const person of this.state.people) {
             if (person.data.Name == name) {
-                const url =
-                    "https://plus.wikitree.com/function/WTPath/Path.htm?WikiTreeID1=" +
-                    name +
-                    " &WikiTreeID2=" +
-                    name2 +
-                    "&relatives=0&IgnoreIDs=";
+                const url = "https://plus.wikitree.com/function/WTPath/Path.htm?WikiTreeID1=" + name + " &WikiTreeID2=" + name2 + "&relatives=0&IgnoreIDs=";
                 fetch(url)
                     .then((response) => {
                         return response.text();
@@ -2798,9 +2754,7 @@ class SlippyTree extends View {
                                 ids.push(id);
                             }
                         });
-                        console.log(
-                            'Connection between "' + name + '" and "' + name2 + '" is through ' + JSON.stringify(ids)
-                        );
+                        console.log("Connection between \"" + name + "\" and \"" + name2 + "\" is through " + JSON.stringify(ids));
                         if (ids.length > 0) {
                             this.load({ keys: ids, nuclear: nuclear, spouses: 1 - nuclear }, callback);
                         }
@@ -2859,7 +2813,7 @@ class SlippyTree extends View {
             }
         }
         if (keys.length) {
-            this.load({ keys: keys, fields: ["Father", "Mother"], descendants: 1 }, () => {
+            this.load({ keys: keys, fields: ["Father", "Mother", "BioFather", "BioMother"], descendants: 1 }, () => {
                 for (const id of keys) {
                     let person = this.find(id, false);
                     person.childrenLoaded = true;
@@ -2999,14 +2953,8 @@ class SlippyTreePerson {
 
     presentationExtra() {
         let out = "";
-        let birthDate = this.tree.formatDate(
-            this.data.BirthDate,
-            this.data.DataStatus ? this.data.DataStatus.BirthDate : null
-        );
-        let deathDate = this.tree.formatDate(
-            this.data.DeathDate,
-            this.data.DataStatus ? this.data.DataStatus.DeathDate : null
-        );
+        let birthDate = this.tree.formatDate(this.data.BirthDate, this.data.DataStatus ? this.data.DataStatus.BirthDate : null);
+        let deathDate = this.tree.formatDate(this.data.DeathDate, this.data.DataStatus ? this.data.DataStatus.DeathDate : null);
         if (birthDate && deathDate) {
             out += " (" + birthDate + " - " + deathDate + ")";
         } else if (birthDate) {
@@ -3022,23 +2970,36 @@ class SlippyTreePerson {
      * @param rel "father", "mother" or "spouse" (note "children" and "sibling" are also called, but internally)
      * @param person the other person
      * @param type the certainty to add to the relationship - "inferred" being a weak presumption of marriage between parents
+     * @param biological for parent/child/sibling relationships, false for "normal" or true for biological-only
      * @param date for spouses the marriage date
      */
-    link(rel, person, type, date) {
+    link(rel, person, type, biological, date) {
         if (!person) {
             throw Error("person is null");
         }
+        biological = !!biological;
+//        console.log("  link: rel="+rel+" bio="+biological+" this="+this.data.Name+" other="+person.data.Name);
         if (rel == "sibling" || rel == "child") {
             date = person.data.BirthDate;
         } else if (rel == "father") {
             date = this.data.BirthDate;
-            this.father = person;
-            this.father_certainty = type;
+            if (biological) {
+                this.biofather = person;
+                this.biofather_certainty = type;
+            } else {
+                this.father = person;
+                this.father_certainty = type;
+            }
             rel = "parent";
         } else if (rel == "mother") {
             date = this.data.BirthDate;
-            this.mother = person;
-            this.mother_certainty = type;
+            if (biological) {
+                this.biomother = person;
+                this.biomother_certainty = type;
+            } else {
+                this.mother = person;
+                this.mother_certainty = type;
+            }
             rel = "parent";
         } else if (rel != "spouse") {
             throw new Error("Unknown relation " + rel);
@@ -3047,17 +3008,15 @@ class SlippyTreePerson {
             date = null;
         }
         // console.log("Link " + this + " " + rel + " " + person);
-        let add = true,
-            changed = false;
+        let add = true, changed = false;
         for (let i = 0; i < this.relations.length; i++) {
             const r = this.relations[i];
             if (r.person == person && r.rel == rel) {
-                if (
-                    (r.date != date || r.type != type) &&
-                    (type != "inferred" || (this.type == "inferred" && date < r.date))
-                ) {
+                // If same relationship is presented twice, favour real over inferred spouses, inferred spouses with earlier dates, or "default" over "biological only" relationships.
+                if ((r.date != date || r.type != type) && (type != "inferred" || (this.type == "inferred" && date < r.date) || (r.biological && !biological))) {
                     r.date = date;
                     r.type = type;
+                    r.biological = biological;
                     changed = true;
                 }
                 add = false;
@@ -3065,12 +3024,14 @@ class SlippyTreePerson {
             }
         }
         if (add) {
-            this.relations.push({ rel: rel, person: person, date: date, type: type });
+            this.relations.push({ rel: rel, person: person, date: date, type: type, biological: biological });
             changed = true;
         }
         if (changed) {
             this.relations.sort((a, b) => {
-                if (a.date && b.date) {
+                if (a.biological != b.biological) {
+                    return a.biological ? 1 : -1;
+                } else if (a.date && b.date) {
                     return a.date < b.date ? -1 : a.date > b.date ? 1 : a.id - b.id;
                 } else if (a.date) {
                     return -1;
@@ -3080,34 +3041,51 @@ class SlippyTreePerson {
                     return a.id - b.id;
                 }
             });
-            if (rel == "parent") {
-                person.link("child", this, type);
-                for (let sibling of person.children()) {
-                    if (sibling != this) {
-                        this.link("sibling", sibling);
-                        sibling.link("sibling", this);
-                    }
-                }
-            } else if (rel == "spouse") {
-                person.link("spouse", this, type, date);
+            if (rel == "spouse") {
+                person.link("spouse", this, type, false, date);
             }
         }
+        if (rel == "parent") {
+            if (changed) {
+                person.link("child", this, type, biological, null);
+            }
+            let siblings = [this];
+            for (let i = 0; i < this.relations.length; i++) {
+                const r = this.relations[i];
+                if (r.rel == "sibling") {
+                    siblings.push(r.person);
+                }
+            }
+            for (const r of person.relations) {
+                if (r.rel == "child" && !siblings.includes(r.person) && (!biological || r.type != "nonbiological")) {
+                    // if person is biological parent of this, only make their biological children our biological siblings
+                    const sibling = r.person;
+                    this.link("sibling", sibling, null, biological || r.biological, null);
+                    sibling.link("sibling", this, null, biological || r.biological, null);
+                }
+            }
+        }
+        return add;
     }
 
     // Iterators for relations
 
-    *children() {
+    *children(settings) {
         for (const r of this.relations) {
             if (r.rel == "child") {
-                yield r.person;
+                if (!settings || !((r.type == "nonbiological" && !settings.nonbiological) || (r.biological && !settings.biological))) {
+                    yield r.person;
+                }
             }
         }
     }
 
-    *parents() {
+    *parents(settings) {
         for (const r of this.relations) {
             if (r.rel == "parent") {
-                yield r.person;
+                if (!settings || !((r.type == "nonbiological" && !settings.nonbiological) || (r.biological && !settings.biological))) {
+                    yield r.person;
+                }
             }
         }
     }
@@ -3150,8 +3128,7 @@ class SlippyTreePerson {
             let q = [];
             let ancestors = [];
             let s;
-            let minAncestralLength = 9999,
-                minNonAncestralLength = 9999;
+            let minAncestralLength = 9999, minNonAncestralLength = 9999;
             q.push({ person: this, len: 0 });
             q.push({ person: other, len: 0 });
             while ((s = q.shift())) {
@@ -3229,6 +3206,9 @@ class SlippyTreePerson {
                             }
                         }
                     }
+                    if (r.biological) {
+                        rel = "biological " + rel;
+                    }
                     let newpath = s.path.concat([{ rel: rel, person: r.person }]);
                     if (r.person == other) {
                         paths.push({ path: newpath, ancestral: ancestral }); // We have found path! Add it.
@@ -3240,10 +3220,7 @@ class SlippyTreePerson {
                         if (ancestral && !ancestors.includes(r.person)) {
                             ancestral = false;
                         }
-                        if (
-                            (!options.maxdistance || newpath.length < options.maxdistance) &&
-                            newpath.length < (ancestral ? minAncestralLength : minNonAncestralLength)
-                        ) {
+                        if ((!options.maxdistance || newpath.length < options.maxdistance) && newpath.length < (ancestral ? minAncestralLength : minNonAncestralLength)) {
                             q.push({ person: r.person, ancestral: ancestral, path: newpath, skip: newskip });
                         }
                     }
@@ -3314,67 +3291,35 @@ class SlippyTreePerson {
         }
         const ggg = function (n) {
             switch (n) {
-                case 0:
-                    return "";
-                case 1:
-                    return "great-";
-                case 2:
-                    return "great-great-";
-                default:
-                    return n + "×great-";
+                case 0: return "";
+                case 1: return "great-";
+                case 2: return "great-great-";
+                default: return n + "×great-";
             }
         };
         // cousins
         for (let i = 1; i + 1 < p.length; i++) {
-            if (
-                ["parent", "mother", "father"].includes(p[i - 1]) &&
-                ["sibling", "brother", "sister", "half-brother", "half-sister", "half-sibling"].includes(p[i]) &&
-                ["child", "son", "daughter"].includes(p[i + 1])
-            ) {
+            if (["parent", "mother", "father"].includes(p[i - 1]) && ["sibling", "brother", "sister", "half-brother", "half-sister", "half-sibling"].includes(p[i]) && ["child", "son", "daughter"].includes(p[i + 1])) {
                 p[i] = "cousin";
                 p.splice(--i, 1);
                 p.splice(i + 1, 1);
                 let n = 1;
-                while (
-                    i > 0 &&
-                    i + 1 < p.length &&
-                    ["parent", "mother", "father"].includes(p[i - 1]) &&
-                    ["child", "son", "daughter"].includes(p[i + 1])
-                ) {
+                while (i > 0 && i + 1 < p.length && ["parent", "mother", "father"].includes(p[i - 1]) && ["child", "son", "daughter"].includes(p[i + 1])) {
                     n++;
                     p.splice(--i, 1);
                     p.splice(i + 1, 1);
                 }
                 switch (n) {
-                    case 1:
-                        n = "first";
-                        break;
-                    case 2:
-                        n = "second";
-                        break;
-                    case 3:
-                        n = "third";
-                        break;
-                    case 4:
-                        n = "fourth";
-                        break;
-                    case 5:
-                        n = "fifth";
-                        break;
-                    case 6:
-                        n = "sixth";
-                        break;
-                    case 7:
-                        n = "seventh";
-                        break;
-                    case 8:
-                        n = "eighth";
-                        break;
-                    case 9:
-                        n = "ninth";
-                        break;
-                    default:
-                        n = n + (n < 20 ? "th" : n % 10 == 1 ? "st" : n % 10 == 2 ? "nd" : n % 10 == 3 ? "rd" : "th");
+                    case 1: n = "first"; break;
+                    case 2: n = "second"; break;
+                    case 3: n = "third"; break;
+                    case 4: n = "fourth"; break;
+                    case 5: n = "fifth"; break;
+                    case 6: n = "sixth"; break;
+                    case 7: n = "seventh"; break;
+                    case 8: n = "eighth"; break;
+                    case 9: n = "ninth"; break;
+                    default: n = n + (n < 20 ? "th" : n % 10 == 1 ? "st" : n % 10 == 2 ? "nd" : n % 10 == 3 ? "rd" : "th");
                 }
                 p[i] = n + "-cousin";
                 n = 0;
@@ -3388,14 +3333,9 @@ class SlippyTreePerson {
                 }
                 if (n > 0) {
                     switch (n) {
-                        case 1:
-                            n = "once";
-                            break;
-                        case 2:
-                            n = "twice";
-                            break;
-                        default:
-                            n += "×";
+                        case 1: n = "once"; break;
+                        case 2: n = "twice"; break;
+                        default: n += "×";
                     }
                     p[i] += " " + n + " removed";
                 }
@@ -3403,21 +3343,14 @@ class SlippyTreePerson {
         }
         // uncles/aunts
         for (let i = 0; i + 1 < p.length; i++) {
-            if (
-                ["parent", "mother", "father"].includes(p[i]) &&
-                ["sibling", "brother", "sister", "half-brother", "half-sister", "half-sibling"].includes(p[i + 1])
-            ) {
+            if (["parent", "mother", "father"].includes(p[i]) && ["sibling", "brother", "sister", "half-brother", "half-sister", "half-sibling"].includes(p[i + 1])) {
                 p.splice(i, 1);
                 let n = 0;
                 while (i > 0 && ["parent", "mother", "father"].includes(p[i - 1])) {
                     n++;
                     p.splice(--i, 1);
                 }
-                p[i] = ["brother", "half-brother"].includes(p[i])
-                    ? "uncle"
-                    : ["sister", "half-sister"].includes(p[i])
-                    ? "aunt"
-                    : "uncle/aunt";
+                p[i] = ["brother", "half-brother"].includes(p[i]) ? "uncle" : ["sister", "half-sister"].includes(p[i]) ? "aunt" : "uncle/aunt";
                 if (n > 0) {
                     p[i] = ggg(n) + p[i];
                 }
@@ -3425,10 +3358,7 @@ class SlippyTreePerson {
         }
         // nephew/niece
         for (let i = 0; i + 1 < p.length; i++) {
-            if (
-                ["sibling", "brother", "sister", "half-brother", "half-sister", "half-sibling"].includes(p[i]) &&
-                ["child", "son", "daughter"].includes(p[i + 1])
-            ) {
+            if (["sibling", "brother", "sister", "half-brother", "half-sister", "half-sibling"].includes(p[i]) && ["child", "son", "daughter"].includes(p[i + 1])) {
                 let n = 0;
                 p.splice(i, 1);
                 while (i + 1 < p.length && ["child", "son", "daughter"].includes(p[i + 1])) {
@@ -3474,22 +3404,14 @@ class SlippyTreePerson {
 
         // step-sibling: parent-spouse-child
         for (let i = 0; i + 2 < p.length; i++) {
-            if (
-                ["parent", "mother", "father"].includes(p[0]) &&
-                ["spouse", "husband", "wife"].includes(p[i + 1]) &&
-                ["child", "son", "daughter"].includes(p[i + 2])
-            ) {
+            if (["parent", "mother", "father"].includes(p[0]) && ["spouse", "husband", "wife"].includes(p[i + 1]) && ["child", "son", "daughter"].includes(p[i + 2])) {
                 p.splice(i, 2);
                 p[i] = p[i] == "child" ? "step-sibling" : p[i] == "son" ? "step-brother" : "step-sister";
             }
         }
         // sibling-in-law, case 3: spouse-sibling-spouse
         for (let i = 1; i + 1 < p.length; i++) {
-            if (
-                ["spouse", "husband", "wife"].includes(p[i - 1]) &&
-                ["sibling", "brother", "sister", "half-brother", "half-sister", "half-sibling"].includes(p[i]) &&
-                ["spouse", "husband", "wife"].includes(p[i + 1])
-            ) {
+            if (["spouse", "husband", "wife"].includes(p[i - 1]) && ["sibling", "brother", "sister", "half-brother", "half-sister", "half-sibling"].includes(p[i]) && ["spouse", "husband", "wife"].includes(p[i + 1])) {
                 p.splice(--i, 1);
                 p.splice(i, 1);
                 p[i] = p[i] == "spouse" ? "sibling-in-law" : p[i] == "husband" ? "brother-in-law" : "sister-in-law";
@@ -3511,20 +3433,14 @@ class SlippyTreePerson {
         }
         // sibling-in-law: spouse-sibling
         for (let i = 1; i < p.length; i++) {
-            if (
-                ["spouse", "husband", "wife"].includes(p[i - 1]) &&
-                ["sibling", "brother", "sister", "half-brother", "half-sister", "half-sibling"].includes(p[i])
-            ) {
+            if (["spouse", "husband", "wife"].includes(p[i - 1]) && ["sibling", "brother", "sister", "half-brother", "half-sister", "half-sibling"].includes(p[i])) {
                 p.splice(--i, 1);
                 p[i] += "-in-law";
             }
         }
         // sibling-in-law: sibling-spouse
         for (let i = 0; i + 1 < p.length; i++) {
-            if (
-                ["sibling", "brother", "sister", "half-brother", "half-sister", "half-sibling"].includes(p[i]) &&
-                ["spouse", "husband", "wife"].includes(p[i + 1])
-            ) {
+            if (["sibling", "brother", "sister", "half-brother", "half-sister", "half-sibling"].includes(p[i]) && ["spouse", "husband", "wife"].includes(p[i + 1])) {
                 p.splice(i, 1);
                 p[i] = p[i] == "spouse" ? "sibling-in-law" : p[i] == "husband" ? "brother-in-law" : "sister-in-law";
             }
@@ -3800,7 +3716,7 @@ class SlippyTreePerson {
         }
 
         let currentUserName = window?.wtViewRegistry?.session?.lm?.user?.name;
-        if (currentUserName) {
+        if (currentUserName && this.data.Managers) {
             for (let p of this.data.Managers) {
                 if (p.Name == currentUserName) {
                     categories.push(["Managed by me"]);
@@ -3898,8 +3814,7 @@ class SlippyTreePerson {
         }
 
         // Locations - single country means "born or died there", "X->Y" means "Born X, Died Y"
-        let birthCountry = null,
-            deathCountry = null;
+        let birthCountry = null, deathCountry = null;
         if (this.data.BirthLocation) {
             birthCountry = this.#countryName(this.data.BirthLocation);
         }
