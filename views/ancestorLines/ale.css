@@ -134,6 +134,11 @@ div.ale td {
   width: 4em;
 }
 
+.ale .alt-parent-icon text {
+  font-weight: 700;
+  font-size: 8px;
+}
+
 .ale #help-text {
   display: none;
   border: 3px solid forestgreen;

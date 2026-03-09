@@ -9,6 +9,10 @@ export class Couple {
     static L = -1; // a
     static R = 1; // b
 
+    // ParentMode:
+    static NORMAL = "n";
+    static BIO = "b";
+
     #peopleCache;
     constructor(idPrefix, { a, b, focus, isRoot = false } = {}, peopleCache) {
         if (!peopleCache) {
@@ -49,6 +53,9 @@ export class Couple {
             this.b = b?.getId();
             this.focus = this.focus;
         }
+        // Abssence of a couple's prefix in parentMode implies NORMAL
+        if (a) a.parentMode = a.parentMode || new Set();
+        if (b) b.parentMode = b.parentMode || new Set();
         this.setJointChildrenIds(this.getInFocus(), this.getNotInFocus());
         condLog(`new Couple: ${this.toString()}, focus=${this.focus}`, this.aPerson(), this.bPerson());
     }
@@ -125,12 +132,21 @@ export class Couple {
      * This id is used as D3 node ids and is unique for every node in the tree, regardless of pedigree collapse.
      * We append the profile id of the 2 partners in the couple as well as the number of collapsed joint children
      * (if > 0) to the couple's idPrefix to form its ID.
-     * The way we currently use idPrefixes results in the following ids:
+     * The way we currently use idPrefixes for Descendent trees results in the following ids:
      *   for decendants couples with no collapsed children:
      *     root: D-<aId>-<bId>
      *     arbitrary: D_2_0_1-<aId-<bId> (the root's 3rd child's first child's 2nd child and partner)
-     * If the above arbitrary couple has 2 collapsed children the id would be
-     *     D_2_0_1-<aId-<bId>-c2
+     *   If the above arbitrary couple has 2 collapsed children the id would be
+     *     D_2_0_1-<aId>-<bId>-c2
+     *
+     * For ancestor trees there are no collapsed children, but we append a "c" to the partner id if their parents
+     * are collapsed:
+     *   for ancestors couples with no collapsed parents:
+     *     root: A-<aId>-<bId>
+     *     arbitrary: A_b_a-<aId>-<bId> (the root's wife's father's parents)
+     *   If the above arbitrary couple has the b partner's parents collapsed, the id would be
+     *     A_b_a-<aId>-<bId>c
+     *
      * @returns The ID of the node represented by this couple
      */
     getId(withCollapse = true) {
@@ -141,8 +157,14 @@ export class Couple {
         if (withCollapse) {
             const ancestorTree = this.idPrefix.startsWith("A");
             if (ancestorTree) {
-                if (aId && this.aPerson()?.parentsCollapsed?.includes(this.idPrefix)) aId += "c";
-                if (bId && this.bPerson()?.parentsCollapsed?.includes(this.idPrefix)) bId += "c";
+                if (aId) {
+                    aId += this.getParentMode("a");
+                    if (this.aPerson()?.parentsCollapsed?.includes(this.idPrefix)) aId += "c";
+                }
+                if (bId) {
+                    bId += this.getParentMode("b");
+                    if (this.bPerson()?.parentsCollapsed?.includes(this.idPrefix)) bId += "c";
+                }
             } else {
                 const hCnt = this.collapsedChildrenCount();
                 if (hCnt) descColl = `-c${hCnt}`;
@@ -153,6 +175,7 @@ export class Couple {
 
     /**
      * @returns The unique couple id, but without the last, collapsed children count part
+     *          (and without the parent mode part for ancestor trees)
      */
     getIdSansCollapsed() {
         return this.getId(false);
@@ -249,6 +272,23 @@ export class Couple {
         return this.a && this.b
             ? this.aPerson()?.hasAChild() && this.bPerson()?.hasAChild()
             : this.aPerson()?.hasAChild() || this.bPerson()?.hasAChild();
+    }
+
+    getParentMode(side) {
+        return this.get(side)?.parentMode?.has(this.idPrefix) ? Couple.BIO : Couple.NORMAL;
+    }
+
+    toggleParentMode(side) {
+        const p = this.get(side);
+        if (!p || p.isNoSpouse) return;
+
+        // Absence of a couple's prefix in parentMode implies NORMAL
+        p.parentMode = p.parentMode || new Set();
+        if (p.parentMode.has(this.idPrefix)) {
+            p.parentMode.delete(this.idPrefix);
+        } else {
+            p.parentMode.add(this.idPrefix);
+        }
     }
 
     // jointChildrenIds is ultimately an array of ids of children that both partners have in common.

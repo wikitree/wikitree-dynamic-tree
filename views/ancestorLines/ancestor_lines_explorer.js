@@ -339,7 +339,7 @@ export class AncestorLinesExplorer {
                           <input
                             id="bioCheck"
                             type="checkbox"
-                            title="Anyone with only one parent." />
+                            title="Anyone with issues reported by Bio Check." />
                           <label
                             for="bioCheck"
                             title="Anyone with issues reported by Bio Check."
