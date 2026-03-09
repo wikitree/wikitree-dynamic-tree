@@ -29,7 +29,7 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
     // The update method takes a Person object as input
     // then makes that Person the Primary ID, Ahnentafel # 1, then
     // climbs through their ancestors to fill out the rest of the Ahnentafel
-    update(newPerson) {
+    update(newPerson, familyType = "") {
         // condLog("Update the Ahnentafel object", newPerson);
 
         if (newPerson && newPerson._data.Id) {
@@ -41,12 +41,17 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
             this.listByPerson = new Array(); // initialize the Array
             this.listByPerson[this.primaryPerson._data.Id] = 1; // add the primary person to the list
 
-            if (this.primaryPerson._data.Father && this.primaryPerson._data.Father > 0) {
+            if (familyType == "Bio" && this.primaryPerson._data.BioFather && this.primaryPerson._data.BioFather > 0) {
+                this.addToAhnenTafel(this.primaryPerson._data.BioFather, 2);
+            } else if (this.primaryPerson._data.Father && this.primaryPerson._data.Father > 0) {
                 this.addToAhnenTafel(this.primaryPerson._data.Father, 2);
             }
-            if (this.primaryPerson._data.Mother && this.primaryPerson._data.Mother > 0) {
+            if (familyType == "Bio" && this.primaryPerson._data.BioMother && this.primaryPerson._data.BioMother > 0) {
+                this.addToAhnenTafel(this.primaryPerson._data.BioMother, 3);
+            } else if (this.primaryPerson._data.Mother && this.primaryPerson._data.Mother > 0) {
                 this.addToAhnenTafel(this.primaryPerson._data.Mother, 3);
             }
+
             this.listAll(); // sends message to the condLog for validation - this could be commented out and not hurt anything
         }
     }
@@ -118,6 +123,7 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
     //     the multiple versions will not show - only the last one to be mapped to the tree
     // THIS way - using an object with a unique Ahnentafel # for each occurence of an ancestor,
     //  you can have as many as you need in the resulting Tree / Chart
+    // 7 Jan 2026 - added ahnNumPos to help track position in the Fan Chart for COMBO family trees (ADO + BIO)
 
     listOfAncestorsForFanChart(numGens = 5, primePersonNum = 0) {
         let theList = [];
@@ -127,7 +133,13 @@ AhnenTafel.Ahnentafel = class Ahnentafel {
 
         for (var i = 0; i < theMax; i++) {
             if (this.list[i] && this.list[i] > 0 && thePeopleList[this.list[i]]) {
-                let thisAncestor = { ahnNum: i, person: thePeopleList[this.list[i]], p: primePersonNum };
+                let thisAncestor = {
+                    ahnNum: i,
+                    ahnNum4Display: i,
+                    person: thePeopleList[this.list[i]],
+                    p: primePersonNum,
+                    ahnNumPos: i,
+                };
                 theList.push(thisAncestor);
 
                 // condLog("--> PUSHED !",thisAncestor.ahnNum, thisAncestor.person._data.Id);

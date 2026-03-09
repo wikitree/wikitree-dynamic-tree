@@ -49,6 +49,12 @@ import { PDFs } from "../shared/PDFs.js";
 
     const numOfBadges = 5;
 
+    // Global variables for adoption checking and placeholders for IDs
+    var theAdoDadID = "";
+    var theAdoMomID = "";
+    var theBioDadID = "";
+    var theBioMomID = "";
+
     /**
      * Constructor
      */
@@ -69,7 +75,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Fan Chart tree app";
     const AboutPreamble =
         "The Fan Chart was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "19 August 2025";
+    const AboutUpdateDate = "24 February 2026";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
@@ -267,7 +273,7 @@ import { PDFs } from "../shared/PDFs.js";
         [1, "LightCoral", "#F08080"],
         [1, "LightCyan", "#E0FFFF"],
         [1, "LightGoldenRodYellow", "#FAFAD2"],
-        [1, "LightGray", "#D3D3D3"],
+        [1, "lightgrey", "#D3D3D3"],
         [1, "LightGreen", "#90EE90"],
         [1, "LightPink", "#FFB6C1"],
         [1, "LightSalmon", "#FFA07A"],
@@ -396,7 +402,7 @@ import { PDFs } from "../shared/PDFs.js";
         [1, "LightBlue", "#ADD8E6"],
         [1, "LightCoral", "#F08080"],
         /*[1,"LightCyan","#E0FFFF"],*/ [1, "LightGoldenRodYellow", "#FAFAD2"],
-        [1, "LightGray", "#D3D3D3"],
+        [1, "lightgrey", "#D3D3D3"],
         [1, "LightGreen", "#90EE90"],
         [1, "LightPink", "#FFB6C1"],
         [1, "LightSalmon", "#FFA07A"],
@@ -478,6 +484,15 @@ import { PDFs } from "../shared/PDFs.js";
     FanChartView.maxAngle = 180;
     FanChartView.lastAngle = 180;
 
+    /** Static variable to hold the current FAMILY TYPE for the Fan Chart (Adoptive / Biological / Combination = Ado / Bio / Combo) DEFAULT = Ado
+     * Ado = Adoptive , based on Mother, Father variables from getAncestors API call
+     * Bio = Biological , based on BioMotherBio, BioFather variables from getAncestors API call (if BioMother does not exist, check Mother for DataStatus.Mother > 10, likewise BioFather)
+     * Combo = Combination , show all parents, Bio and Adoptive
+     **/
+
+    FanChartView.familyType = "Ado";
+    FanChartView.lastFamilyType = "Ado";
+
     /** Static variables to hold the state of the Number of Generations to be displayed, currently and previously  **/
     FanChartView.numGens2Display = 5;
     FanChartView.lastNumGens = 5;
@@ -493,6 +508,15 @@ import { PDFs } from "../shared/PDFs.js";
 
     /** Object to hold the Ahnentafel table for the current primary individual   */
     FanChartView.myAhnentafel = new AhnenTafel.Ahnentafel();
+    /** Objects to hold the Bonus Ahnentafel tables if there is a Biological family tree as well as an Adoptive one  */
+    FanChartView.adoAhnentafel = new AhnenTafel.Ahnentafel();
+    FanChartView.bioAhnentafel = new AhnenTafel.Ahnentafel();
+    FanChartView.comboAhnentafel = new AhnenTafel.Ahnentafel();
+
+    // Global variables to hold primary person
+    FanChartView.primaryWikiTreeNum = -1;
+    FanChartView.primaryWikiTreeID = "";
+    FanChartView.primaryPerson = {};
 
     /** Object in which to store the CURRENT settings (to be updated after clicking on SAVE CHANGES (all Tabs) inside Settings <DIV> ) */
     FanChartView.currentSettings = {};
@@ -699,6 +723,14 @@ import { PDFs } from "../shared/PDFs.js";
                     help: "https://www.wikitree.com/wiki/Space:Fan_Chart_app#Highlights",
                     comment:
                         "These options determine which, if any, cells should be highlighted (in order to stand out). ",
+                },
+                {
+                    name: "bioSettings",
+                    label: "Bio",
+                    hideSelect: true,
+                    subsections: [{ name: "BioSettings", label: "Bio-Parent Settings   " }],
+                    help: "https://www.wikitree.com/wiki/Space:Fan_Chart_app#BioSettings",
+                    comment: "These options determine how Fan Chart handles Parents and Bio-Parents. ",
                 },
             ],
             optionsGroups: [
@@ -1278,6 +1310,72 @@ import { PDFs } from "../shared/PDFs.js";
                         },
                     ],
                 },
+                {
+                    tab: "bioSettings",
+                    subsection: "BioSettings",
+                    category: "bioSettings",
+                    subcategory: "options",
+                    options: [
+                        {
+                            optionName: "AdoBioLabel",
+                            label: "Inner Label for two types of Parents to be used in Combo Fan Chart.",
+                            type: "select",
+                            values: [
+                                { value: "Adoptive", text: "Adoptive / Biological" },
+                                { value: "Parents", text: "Parents / BioParents" },
+                                { value: "Nurture", text: "Nurture / Nature" },
+                                { value: "Family", text: "Family / BioParents" },
+                            ],
+                            defaultValue: "Adoptive",
+                            comment: "(will display in inner circle at centre of Fan Chart)",
+                        },
+                        { optionName: "break1", type: "br" },
+                        {
+                            optionName: "AllCapsInnerLabel",
+                            label: "Use All Caps for Inner Label in Combo Fan Chart",
+                            type: "checkbox",
+                            defaultValue: true,
+                        },
+                        { optionName: "break1", type: "br" },
+                        { optionName: "break1", type: "br" },
+                        { optionName: "break0", comment: "OPTIONS BELOW  - NOT IMPLEMENTED YET:", type: "br" },
+
+                        {
+                            optionName: "break0",
+                            comment:
+                                "Default Family Type when creating a new Fan Chart for Primary Person with BioParent(s):",
+                            type: "br",
+                        },
+                        {
+                            optionName: "defaultFamilyType",
+                            label: "",
+                            type: "select",
+                            values: [
+                                { value: "Ado", text: "Adoptive (Mother/Father from profile)" },
+                                { value: "Bio", text: "Biological" },
+                                { value: "Combo", text: "Combo Fan Chart (showing both sets)" },
+                            ],
+                            defaultValue: "Ado",
+                            comment:
+                                "(will determine the default type of Fan Chart whenever the Primary Person has a Bio Parent entered in their profile.)",
+                        },
+                        { optionName: "break1", type: "br" },
+                        {
+                            optionName: "defaultAncestorFamilyType",
+                            type: "select",
+                            label: "Default Family Type for Ancestors with Bio Parents(s)",
+                            values: [
+                                { value: "Adoptive", text: "Adoptive" },
+                                { value: "Parents", text: "BioParents" },
+                                { value: "Match", text: "Match Primary Family Type" },
+
+                                // { value: "review", text: "Profiles needing review" },
+                            ],
+                            defaultValue: "Match",
+                            comment: "(Match = Adoptive parents on Adoptive side / Bio parents on Biological side.)",
+                        },
+                    ],
+                },
             ],
         });
 
@@ -1303,7 +1401,11 @@ import { PDFs } from "../shared/PDFs.js";
             '<div id=btnBarDIV><table border=0 style="background-color: #f8a51d80;" width="100%"><tr>' +
             '<td width="30%" style="padding-left:10px;"><A title="Display Circle Chart (360º)" onclick="FanChartView.maxAngle = 360; FanChartView.redraw();"><img style="height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan360.png" /></A> |' +
             ' <A title="Display Traditional Fan Chart (240º)" onclick="FanChartView.maxAngle = 240; FanChartView.redraw();"><img style="height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan240.png" /></A> |' +
-            ' <A title="Display Semi-Circle Fan Chart (180º)" onclick="FanChartView.maxAngle = 180; FanChartView.redraw();"><img style="height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></A></td>' +
+            ' <A title="Display Semi-Circle Fan Chart (180º)" onclick="FanChartView.maxAngle = 180; FanChartView.redraw();"><img style="height:30px;" src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" /></A>' +
+            "&nbsp;&nbsp;&nbsp;<span id=ABCfamTypeSpan><label><input type=radio name=famTypeRadio value=Ado id=familyTypeAdoRadio checked onclick=\"FanChartView.familyType='Ado'; FanChartView.redraw();\"> Ado</label> " +
+            "&nbsp; <label><input type=radio name=famTypeRadio value=Bio id=familyTypeBioRadio  onclick=\"FanChartView.familyType='Bio'; FanChartView.redraw();\"> Bio</label> " +
+            "&nbsp; <label><input type=radio name=famTypeRadio value=Combo id=familyTypeComboRadio  onclick=\"FanChartView.familyType='Combo'; FanChartView.redraw();\"> Combo</label></span> " +
+            "</td>" +
             '<td width="5%">&nbsp;' +
             '<span id=legendASCII style="display:inline-block;"><A title="Hide/Show Legend" onclick="FanChartView.toggleLegend();"><font size=+2>' +
             LEGEND_CLIPBOARD +
@@ -1458,6 +1560,9 @@ import { PDFs } from "../shared/PDFs.js";
             let numGens2PDF = FanChartView.numGens2Display;
             // ***** TEMPORARY DRAFT VERSION *******
             numGens2PDF = Math.min(10, numGens2PDF);
+            if (FanChartView.familyType === "Combo") {
+                numGens2PDF++;
+            }
 
             let tmpPDF = new jsPDF("l", "pt", [2595.28, 1841.89]);
             document.getElementById("PDFgenButton").setAttribute("disabled", true);
@@ -1517,7 +1622,7 @@ import { PDFs } from "../shared/PDFs.js";
                         } else {
                             thisWedgeFillColour = thisWedgeStyleFill;
                         }
-                        // console.log("Wedge fill colour:", thisWedgeFillColour);
+                        console.log("Wedge fill colour:", thisWedgeFillColour);
                     }
                     if (thisSVGpathD > "") {
                         let Acoords = thisSVGpathD
@@ -2160,7 +2265,11 @@ import { PDFs } from "../shared/PDFs.js";
                 //     latestRRect[3] = thisY - latestRRect[1];
                 //     latestRect[3] = latestRRect[3] - 30;
                 // }
-            }
+            } // END the BIG LOOP through ALL the SECTORS in the FAN CHART to ADD the CONTENT from INSIDE the FAN CHART
+
+            // ==========================================
+            // Optional:  Add the Adoptive / Biological ID labels
+            // ==========================================
 
             // ADD SOME ARC SECTORS
             // cx, cy, r, startAngle, endAngle, style, options
@@ -2472,6 +2581,7 @@ import { PDFs } from "../shared/PDFs.js";
                 // customBadgeLabels;
 
                 FanChartView.removeBadges("DNA");
+                FanChartView.adjustAdoBioLabelText();
 
                 if (
                     showBadges ||
@@ -2891,6 +3001,140 @@ import { PDFs } from "../shared/PDFs.js";
                 }
             }
         }
+
+        // LET'S add the ADOPTIVE label
+        let adoptiveLabel = "ADOPTIVE";
+        for (let i = 0; i < adoptiveLabel.length; i++) {
+            gPersons
+                .append("g")
+                .attr("class", "adoptiveLabel")
+                .attr("id", "adoptiveLabelG-" + i)
+                .attr("transform", "translate(" + -25 * 0 + "," + -25 * 0 + ") rotate(" + (275 + 10 * i) + ") ")
+                .append("foreignObject")
+                .attrs({
+                    id: "adoptiveLabel-" + i,
+                    class: "AdoBioLabelXYWH",
+                    width: 30,
+                    height: 30,
+                    x: -0,
+                    y: -115,
+                })
+                .style("overflow", "visible")
+
+                .append("xhtml:div")
+                .attrs({
+                    id: "adoptiveLabel-" + i + "-text",
+                    class: "centered adoptiveLabelBox",
+                })
+                .html(adoptiveLabel[i]);
+        }
+
+        // LET'S add the BIOLOGICAL label
+        let biologicalLabel = "BIOLOGICAL";
+        for (let i = 0; i < biologicalLabel.length; i++) {
+            gPersons
+                .append("g")
+                .attr("class", "biologicalLabel")
+                .attr("id", "biologicalLabelG-" + i)
+                .attr("transform", "translate(" + 25 * 0 + "," + -25 * 0 + ") rotate(" + (4 + 8 * i) + ") ")
+                .append("foreignObject")
+                .attrs({
+                    id: "biologicalLabel-" + i,
+                    class: "AdoBioLabelXYWH",
+                    width: 30,
+                    height: 30,
+                    x: 0,
+                    y: -115,
+                })
+                .style("overflow", "visible")
+
+                .append("xhtml:div")
+                .attrs({
+                    id: "biologicalLabel-" + i + "-text",
+                    class: "centered biologicalLabelBox",
+                })
+                .html(biologicalLabel[i]);
+        }
+    };
+
+    function adjustAdoBioLabelText() {
+        let textSetting = FanChartView.currentSettings["bioSettings_options_AdoBioLabel"];
+        let allCapsSetting = FanChartView.currentSettings["bioSettings_options_AllCapsInnerLabel"];
+
+        let comboSettings = {
+            Adoptive: { Ado: "Adoptive", Bio: "Biological" },
+            Parents: { Ado: "Parents ", Bio: "BioParents" },
+            Nurture: { Ado: "Nurture ", Bio: "  Nature  " },
+            Family: { Ado: " Family ", Bio: "BioParents" },
+        };
+
+        if (FanChartView.primaryPerson._data.BioFather && !FanChartView.primaryPerson._data.BioMother) {
+            comboSettings.Parents.Bio = "BioFather ";
+            comboSettings.Family.Bio = "BioFather ";
+        } else if (!FanChartView.primaryPerson._data.BioFather && FanChartView.primaryPerson._data.BioMother) {
+            comboSettings.Parents.Bio = "BioMother ";
+            comboSettings.Family.Bio = "BioMother ";
+        }
+
+        if (allCapsSetting == true) {
+            comboSettings[textSetting].Ado = comboSettings[textSetting].Ado.toUpperCase();
+            comboSettings[textSetting].Bio = comboSettings[textSetting].Bio.toUpperCase();
+        }
+
+        for (let index = 0; index < comboSettings[textSetting].Ado.length; index++) {
+            const thisLtr = document.getElementById("adoptiveLabel-" + index + "-text");
+            thisLtr.innerHTML = comboSettings[textSetting].Ado[index];
+        }
+        for (let index = 0; index < comboSettings[textSetting].Bio.length; index++) {
+            const thisLtr = document.getElementById("biologicalLabel-" + index + "-text");
+            thisLtr.innerHTML = comboSettings[textSetting].Bio[index];
+        }
+
+        // optionName: "AdoBioLabel",
+        //                     label: "Label for two types of Parents to be used in Combo Fan Chart.",
+        //                     type: "select",
+        //                     values: [
+        //                         { value: "Adoptive", text: "Adoptive / Biological" },
+        //                         { value: "Parents", text: "Parents / BioParents" },
+        //                         { value: "Nurture", text: "Nurture / Nature" },
+        //                         { value: "Family", text: "Family / BioParents" },
+        //                     ],
+    }
+
+    FanChartView.adjustAdoBioLabelText = adjustAdoBioLabelText;
+
+    function hideAdoBioLabels() {
+        d3.selectAll(".adoptiveLabel").each(function () {
+            document.getElementById("SVGgraphics").append(this);
+            this.style.display = "none";
+        });
+        d3.selectAll(".biologicalLabel").each(function () {
+            document.getElementById("SVGgraphics").append(this);
+            this.style.display = "none";
+        });
+    }
+    function bringToFrontAdoBioLabels() {
+        // Bring ADOPTIVE and BIOLOGICAL labels to front
+        d3.selectAll(".adoptiveLabel").each(function () {
+            document.getElementById("SVGgraphics").append(this);
+            this.style.display = "revert";
+        });
+        d3.selectAll(".biologicalLabel").each(function () {
+            document.getElementById("SVGgraphics").append(this);
+            this.style.display = "revert";
+        });
+
+        let r = document.getElementById("ctrCirc").getAttribute("r") * 1.0; // radius of central circle
+        let newY = 0 - r - 40; // new Y position for the labels
+        FanChartView.adjustAdoBioLabelXYWH(newY);
+    }
+
+    FanChartView.bringToFrontAdoBioLabels = bringToFrontAdoBioLabels;
+
+    FanChartView.adjustAdoBioLabelXYWH = function (newY) {
+        d3.selectAll(".AdoBioLabelXYWH").each(function () {
+            this.setAttribute("y", newY);
+        });
     };
 
     function showRefreshInLegend() {
@@ -3209,6 +3453,8 @@ import { PDFs } from "../shared/PDFs.js";
                     "DeathLocation",
                     "Mother",
                     "Father",
+                    "BioMother",
+                    "BioFather",
                     "Children",
                     "Parents",
                     "Spouses",
@@ -3263,8 +3509,14 @@ import { PDFs } from "../shared/PDFs.js";
                             thePeopleList[thePerson.getProfileId()]["bioHasSources"] = hasSources;
                         }
                     }
+                    if (FanChartView.familyType == "Ado") {
+                        FanChartView.myAhnentafel.update(FanChartView.primaryPerson, "Ado"); // update the AhnenTafel with the latest ancestors
+                    } else if (FanChartView.familyType == "Bio") {
+                        // FanChartView.myAhnentafel.update(FanChartView.primaryPerson, "Bio"); // update the AhnenTafel with the latest ancestors
+                    }
+                    FanChartView.adoAhnentafel.update(FanChartView.primaryPerson, "Ado"); // update the AhnenTafel with the latest ancestors
+                    FanChartView.bioAhnentafel.update(FanChartView.primaryPerson, "Bio"); // update the AhnenTafel with the latest ancestors
 
-                    FanChartView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
                     updateMyAhentafelMarriages();
                     FanChartView.workingMaxNumGens = Math.min(
                         FanChartView.maxNumGens,
@@ -3286,6 +3538,9 @@ import { PDFs } from "../shared/PDFs.js";
             if (fanGenRadii[g] < minimumRingRadius) {
                 fanGenRadii[g] = minimumRingRadius;
             }
+            if (FanChartView.familyType == "Combo" && g == 1) {
+                // fanGenRadii[g] = 30; // narrow ring for labels of Adoptive and Biological parents
+            }
             if (g <= 4 || (g == 5 && FanChartView.maxAngle == 360)) {
                 condLog("CUMUL CALC:", g, currCumulativeRadius, "+ radius", fanGenRadii[g]);
                 currCumulativeRadius += fanGenRadii[g];
@@ -3297,6 +3552,28 @@ import { PDFs } from "../shared/PDFs.js";
             cumulativeGenRadii[g] = currCumulativeRadius;
         }
         // console.log("FINAL CUMUL CALC:", currCumulativeRadius, "based on", fanGenRadii);
+
+        if (FanChartView.familyType == "Combo") {
+            // insert narrow ring for labels of Adoptive and Biological parents
+            fanGenRadii.splice(1, 0, 30);
+            fanGenRadii[2] = 350; // give first two rings some real depth
+            fanGenRadii[3] = 350; // give first two rings some real depth
+
+            let prevCumGenRad3 = cumulativeGenRadii[3];
+
+            cumulativeGenRadii.splice(1, 0, cumulativeGenRadii[0] + 30);
+            cumulativeGenRadii[2] = cumulativeGenRadii[1] + 350;
+            cumulativeGenRadii[3] = cumulativeGenRadii[2] + 350;
+
+            for (let g = 4; g < cumulativeGenRadii.length; g++) {
+                cumulativeGenRadii[g] = Math.max(
+                    cumulativeGenRadii[g - 1] + 350,
+                    cumulativeGenRadii[g] + cumulativeGenRadii[3] - prevCumGenRad3
+                );
+            }
+
+            // redoWedgesForFanChart();
+        }
 
         if (FanChartView.currentSettings) {
             updateOuterRimNeeds();
@@ -3397,10 +3674,36 @@ import { PDFs } from "../shared/PDFs.js";
 
     FanChartView.getTextWidth = getTextWidth;
 
+    function clearWedges() {
+        let startingGen = 1;
+        if (FanChartView.familyType == "Combo") {
+            startingGen = 2;
+        }
+        for (let gen = startingGen; gen < FanChartView.maxNumGens; gen++) {
+            // console.log("GEN " + gen);
+            let starter = 2 ** gen;
+            for (let i = 0; i < 2 ** gen; i++) {
+                document.getElementById("wedge" + starter + "n" + i).style.fill = "white";
+            }
+        }
+        for (let ahnNum = 2; ahnNum < 2 ** (FanChartView.maxNumGens + 1); ahnNum += 2) {
+            const mDateDIV = document.getElementById("mDateFor-" + ahnNum + "inner");
+            if (mDateDIV) {
+                mDateDIV.style.display = "none";
+            }
+            // for (let b = 1; b <= numOfBadges; b++) {
+            //     const badgeDIVid = "badge" + b + "-" + ahnNum + "svg";
+            //     let badgeDIV = document.getElementById(badgeDIVid);
+
+            //     badgeDIV.parentNode.style.display = "block"; // CHANGED FOR BADGE TESTING
+            // }
+        }
+    }
+
     function recalculateMaxWidthsForCellsTest() {
         // Need to run this AFTER the wedges have been drawn, so that the widths of the cells are accurate
-        condLog(
-            "Time to recalculate the max widths for the cells in the Fan Chart",
+        console.log(
+            "RECALCULATEMAXWIDTHSFORCELLSTEST : Time to recalculate the max widths for the cells in the Fan Chart",
             "FanChartView.currentScaleFactor;:",
             FanChartView.currentScaleFactor
         );
@@ -3722,22 +4025,36 @@ import { PDFs } from "../shared/PDFs.js";
             FanChartView.lastAngle != FanChartView.maxAngle ||
             FanChartView.lastNumGens != FanChartView.numGens2Display ||
             forceReDoWedges == true
+
+            // || FanChartView.familyType == "Combo"
         ) {
             // ONLY REDO the WEDGES IFF the maxAngle has changed (360 to 240 to 180 or some combo like that) - OR - if being forced to!
             drawWedgesForFanChart();
+        } else {
+            console.log(
+                "No need to re-do the wedges for the Fan Chart, as the angle and number of generations being displayed haven't changed."
+            );
+            if (FanChartView.familyType != FanChartView.lastFamilyType) {
+                console.log(
+                    "But we DO need to re-do the wedges for the Fan Chart, as the family type has changed from",
+                    FanChartView.lastFamilyType,
+                    "to",
+                    FanChartView.familyType
+                );
+                clearWedges();
+            }
         }
     }
 
     // Draw the wedges for the fan chart
+    //  + 0 * (FanChartView.familyType == "Combo" ? 1.0 : 0)
     function drawWedgesForFanChart(g) {
-        for (
-            let genIndex = (g ? FanChartView.maxNumGens : FanChartView.numGens2Display) - 1;
-            genIndex >= 0;
-            genIndex--
-        ) {
+        let maxNum2DisplayNow = FanChartView.numGens2Display - 1 + 1 * (FanChartView.familyType == "Combo" ? 1.0 : 0);
+        for (let genIndex = g ? FanChartView.maxNumGens : maxNum2DisplayNow; genIndex >= 0; genIndex--) {
+            console.log("Drawing Wedges for Generation ", { genIndex });
             for (let index = 0; index < 2 ** genIndex; index++) {
                 let SVGcode = "";
-                if (genIndex <= 1) {
+                if (genIndex <= 2) {
                     // Use a SECTOR for the parents
                     // 3rd parameter is radius of Sector (pointy triangle with curved side opposite centre of circle)
                     // To make Cells more fluid to adjust to size of content, replace calculation of 270 * genIndex with some other calculation
@@ -3815,7 +4132,8 @@ import { PDFs } from "../shared/PDFs.js";
         }
 
         // HIDE all the unused Wedges in the outer rims that we don't need yet
-        for (let genIndex = FanChartView.maxNumGens - 1; genIndex > FanChartView.numGens2Display - 1; genIndex--) {
+        for (let genIndex = FanChartView.maxNumGens; genIndex > maxNum2DisplayNow; genIndex--) {
+            console.log("Hiding Wedges for Generation ", { genIndex });
             for (let index = 0; index < 2 ** genIndex; index++) {
                 d3.select("#" + "wedge" + 2 ** genIndex + "n" + index).attrs({ display: "none" });
                 let dnaImgX = document.getElementById("imgDNA-x-" + genIndex + "i" + index + "inner");
@@ -4329,22 +4647,22 @@ import { PDFs } from "../shared/PDFs.js";
         }
     }
 
-    function updateMyAhentafelMarriages() {
-        if (FanChartView.myAhnentafel.marriageList) {
+    function updateMyAhentafelMarriages(whichAhnentafel = FanChartView.myAhnentafel) {
+        if (whichAhnentafel.marriageList) {
             // OK - no problem - this exists!
         } else {
-            FanChartView.myAhnentafel.marriageList = [];
+            whichAhnentafel.marriageList = [];
         }
 
-        for (let index in FanChartView.myAhnentafel.list) {
+        for (let index in whichAhnentafel.list) {
             if (index % 2 == 0 && index > 0) {
                 const GuyIndex = index * 1.0;
                 const GalIndex = GuyIndex + 1;
-                const Guy = FanChartView.myAhnentafel.list[GuyIndex];
-                const Gal = FanChartView.myAhnentafel.list[GalIndex];
+                const Guy = whichAhnentafel.list[GuyIndex];
+                const Gal = whichAhnentafel.list[GalIndex];
                 let stillLookingForMarriage = true;
                 let thisMarriage = "";
-                FanChartView.myAhnentafel.marriageList[GuyIndex] = thisMarriage;
+                whichAhnentafel.marriageList[GuyIndex] = thisMarriage;
 
                 if (Guy && Gal && thePeopleList[Guy] && thePeopleList[Gal] && thePeopleList[Guy]._data.Spouses) {
                     for (
@@ -4355,8 +4673,8 @@ import { PDFs } from "../shared/PDFs.js";
                         thisMarriage = thePeopleList[Guy]._data.Spouses[mNum];
                         if (thisMarriage.Id == Gal) {
                             // HURRAY  - we found it!!!
-                            FanChartView.myAhnentafel.marriageList[GuyIndex] = thisMarriage;
-                            FanChartView.myAhnentafel.marriageList[GalIndex] = thisMarriage;
+                            whichAhnentafel.marriageList[GuyIndex] = thisMarriage;
+                            whichAhnentafel.marriageList[GalIndex] = thisMarriage;
                             stillLookingForMarriage = false;
                         }
                     }
@@ -4400,9 +4718,81 @@ import { PDFs } from "../shared/PDFs.js";
         }
     };
 
+    function getShortNameMyBioListNum(MyBio, ancNum) {
+        let theID = 0;
+        if (MyBio == "my") {
+            theID = FanChartView.myAhnentafel.list[ancNum];
+        } else if (MyBio == "bio") {
+            theID = FanChartView.bioAhnentafel.list[ancNum];
+        }
+        return getShortName(thePeopleList[theID]);
+    }
+
+    function consoleLogDrawFamilyType() {
+        if (FanChartView.familyType == "Ado" || FanChartView.familyType == "Combo") {
+            console.log("\t\t\t\t\t" + getShortNameMyBioListNum("my", 4));
+            console.log("\t\t\t\t" + getShortNameMyBioListNum("my", 2));
+            console.log("\t\t\t\t\t" + getShortNameMyBioListNum("my", 5));
+            if (FanChartView.familyType == "Ado") {
+                console.log("\t\t\t" + getShortNameMyBioListNum("my", 1));
+            } else {
+                console.log("\t\tADOPTIVE");
+            }
+            console.log("\t\t\t\t\t" + getShortNameMyBioListNum("my", 6));
+            console.log("\t\t\t\t" + getShortNameMyBioListNum("my", 3));
+            console.log("\t\t\t\t\t" + getShortNameMyBioListNum("my", 7));
+        }
+
+        if (FanChartView.familyType == "Combo") {
+            console.log("\t" + getShortNameMyBioListNum("my", 1));
+        }
+        if (FanChartView.familyType == "Bio" || FanChartView.familyType == "Combo") {
+            console.log("\t\t\t\t\t" + getShortNameMyBioListNum("bio", 4));
+            console.log("\t\t\t\t" + getShortNameMyBioListNum("bio", 2));
+            console.log("\t\t\t\t\t" + getShortNameMyBioListNum("bio", 5));
+            if (FanChartView.familyType == "Bio") {
+                console.log("\t\t\t" + getShortNameMyBioListNum("my", 1));
+            } else {
+                console.log("\t\tBIOLOGICAL");
+            }
+            console.log("\t\t\t\t\t" + getShortNameMyBioListNum("bio", 6));
+            console.log("\t\t\t\t" + getShortNameMyBioListNum("bio", 3));
+            console.log("\t\t\t\t\t" + getShortNameMyBioListNum("bio", 7));
+        }
+    }
+
     /** FUNCTION used to force a redraw of the Fan Chart, used when called from Button Bar after a parameter has been changed */
     FanChartView.redraw = function () {
         condLog("FanChartView.redraw");
+        console.log("FanChartView.familyType:", FanChartView.familyType);
+        consoleLogDrawFamilyType();
+        if (FanChartView.familyType == "Combo") {
+            bringToFrontAdoBioLabels();
+            // CHANGE the Parents Wedge to become the Labels for two types of family
+            document.getElementById("wedge2n0").style.fill = "darkgreen";
+            document.getElementById("wedge2n1").style.fill = "red";
+
+            // HIDE the original parents' wedges for now
+            if (document.getElementById("wedgeInfoFor2")) {
+                document.getElementById("wedgeInfoFor2").parentElement.parentElement.parentElement.style.display =
+                    "none";
+                document.getElementById("wedgeInfoFor3").parentElement.parentElement.parentElement.style.display =
+                    "none";
+            }
+            // HIDE the original parents' mDate boxes for now
+            if (document.getElementById("mDateFor-2")) {
+                document.getElementById("mDateFor-2").style.display = "none";
+            }
+        } else {
+            hideAdoBioLabels();
+            if (document.getElementById("wedgeInfoFor2")) {
+                document.getElementById("wedgeInfoFor2").parentElement.parentElement.parentElement.style.display =
+                    "revert";
+                document.getElementById("wedgeInfoFor3").parentElement.parentElement.parentElement.style.display =
+                    "revert";
+            }
+        }
+
         // listStyleRules();
         // condLog(document.styleSheets[0].cssRules);
         // condLog("Now theAncestors = ", FanChartView.theAncestors);
@@ -4424,6 +4814,7 @@ import { PDFs } from "../shared/PDFs.js";
             //     FanChartView.myAncestorTree.draw();
             // }
         }
+        FanChartView.lastFamilyType = FanChartView.familyType;
     };
 
     FanChartView.cancelSettings = function () {
@@ -4538,9 +4929,39 @@ import { PDFs } from "../shared/PDFs.js";
                 screen.pixelDepth
         );
 
-        self._load(id).then(function (person) {
-            // condLog("FanChartView.prototype.load : self._load(id) ");
+        self._load(id).then(async function (person) {
+            console.log("FanChartView.prototype.load (line:4749) : self._load(id) ", person);
             person._data.AhnNum = 1;
+
+            // await checkBio4Adoption(person._data.bio);
+
+            // person._data.Mother = theAdoMomID;
+            // person._data.Father = theAdoDadID;
+
+            // if (theBioMomID > 0) {
+            //     console.log("adding BioMother ID:", theBioMomID);
+            //     person._data.BioMother = theBioMomID;
+            // }
+            // if (theBioDadID > 0) {
+            //     console.log("adding BioFather ID:", theBioDadID);
+            //     person._data.BioFather = theBioDadID;
+            // }
+
+            if (!person._data.BioFather && !person._data.BioMother) {
+                document.getElementById("ABCfamTypeSpan").style.display = "none";
+                FanChartView.familyType = "Ado";
+                document.getElementById("familyTypeAdoRadio").checked = true;
+            } else {
+                document.getElementById("ABCfamTypeSpan").style.display = "revert";
+                if (FanChartView.familyType == "Ado") {
+                    document.getElementById("familyTypeAdoRadio").checked = true;
+                } else if (FanChartView.familyType == "Bio") {
+                    document.getElementById("familyTypeBioRadio").checked = true;
+                } else if (FanChartView.familyType == "Combo") {
+                    document.getElementById("familyTypeComboRadio").checked = true;
+                }
+            }
+
             thePeopleList.add(person);
             thePeopleList.listAll();
 
@@ -4588,6 +5009,8 @@ import { PDFs } from "../shared/PDFs.js";
                     "DeathLocation",
                     "Mother",
                     "Father",
+                    "BioMother",
+                    "BioFather",
                     "Children",
                     "Parents",
                     "Spouses",
@@ -4716,6 +5139,8 @@ import { PDFs } from "../shared/PDFs.js";
                             "DeathLocation",
                             "Mother",
                             "Father",
+                            "BioMother",
+                            "BioFather",
                             "Children",
                             "Parents",
                             "Spouses",
@@ -4779,7 +5204,29 @@ import { PDFs } from "../shared/PDFs.js";
 
                                 thePeopleList.add(anc);
                             }
+
+                            console.log("person._data.Id = ", person._data.Id, { person });
+                            // INITIAL LOAD OF MY AHNENTAFEL .
                             FanChartView.myAhnentafel.update(person);
+                            FanChartView.adoAhnentafel.update(person);
+
+                            // if (person._data.Id == 19066309 || person._data.Id == 38777743) {
+                            //     console.log("Updating BIO ID #s for TEST PERSON !!!");
+                            //     person._data.BioFather = 19107478;
+                            //     person._data.BioMother = 19115981;
+                            // if (theBioDadID > 0) {
+                            //     thePeopleList[person._data.Id]._data.BioFather = theBioDadID; //19107478;
+                            // }
+
+                            // if (theBioMomID > 0) {
+                            //     thePeopleList[person._data.Id]._data.BioMother = theBioMomID; //19115981;
+                            // }
+
+                            FanChartView.bioAhnentafel.update(person, "Bio");
+
+                            if (FanChartView.familyType == "Bio") {
+                                // FanChartView.myAhnentafel.update(person, "Bio"); // update the AhnenTafel with the latest ancestors
+                            }
 
                             let relativeName = [
                                 "kid",
@@ -4801,6 +5248,20 @@ import { PDFs } from "../shared/PDFs.js";
                             ];
 
                             // GO through the first chunk  (up to great-grandparents) - and swap out TBD! for their relaionship names
+                            for (var a = 1; a < 16; a++) {
+                                let thisPeep = thePeopleList[FanChartView.bioAhnentafel.list[a]];
+                                // condLog("Peep ",a, thisPeep);
+                                if (thisPeep && thisPeep._data["LastNameAtBirth"] == "TBD!") {
+                                    thisPeep._data["LastNameAtBirth"] = "Bio " + relativeName[a];
+                                    if (a % 2 == 0) {
+                                        thisPeep._data["Gender"] = "Male";
+                                    } else {
+                                        thisPeep._data["Gender"] = "Female";
+                                    }
+                                    // condLog("FOUND a TBD!", thisPeep);
+                                }
+                            }
+
                             for (var a = 1; a < 16; a++) {
                                 let thisPeep = thePeopleList[FanChartView.myAhnentafel.list[a]];
                                 // condLog("Peep ",a, thisPeep);
@@ -4872,7 +5333,35 @@ import { PDFs } from "../shared/PDFs.js";
                 }
 
                 // PUT everyone into the Ahnentafel order ... which will include the private TBD! peeps if any
-                FanChartView.myAhnentafel.update(person);
+                FanChartView.myAhnentafel.update(person, "Ado"); // update the AhnenTafel with the latest ancestors
+                // if (FanChartView.familyType == "Ado") {
+                //     // FanChartView.myAhnentafel.update(person, "Ado"); // update the AhnenTafel with the latest ancestors
+                // } else if (FanChartView.familyType == "Bio") {
+                //     // FanChartView.myAhnentafel.update(person, "Bio"); // update the AhnenTafel with the latest ancestors
+                // }
+                FanChartView.adoAhnentafel.update(person);
+                FanChartView.bioAhnentafel.update(person, "Bio");
+
+                FanChartView.primaryWikiTreeNum = person._data.Id;
+                FanChartView.primaryWikiTreeID = person._data.Name;
+                FanChartView.primaryPerson = person;
+
+                // if (person._data.Id == 19066309 || person._data.Id == 38777743) {
+                //     console.log("Updating BIO ID #s for TEST PERSON !!!");
+                //     person._data.BioFather = 19107478;
+                //     person._data.BioMother = 19115981;
+                //     thePeopleList[person._data.Id]._data.BioFather = 19107478;
+                //     thePeopleList[person._data.Id]._data.BioMother = 19115981;
+                // }
+                if (theBioDadID > 0) {
+                    thePeopleList[person._data.Id]._data.BioFather = theBioDadID; //19107478;
+                }
+
+                if (theBioMomID > 0) {
+                    thePeopleList[person._data.Id]._data.BioMother = theBioMomID; //19115981;
+                }
+
+                FanChartView.bioAhnentafel.update(person, "Bio");
 
                 let relativeName = [
                     "kid",
@@ -4912,6 +5401,9 @@ import { PDFs } from "../shared/PDFs.js";
                 // condLog(thePeopleList);
 
                 updateMyAhentafelMarriages();
+                updateMyAhentafelMarriages(FanChartView.bioAhnentafel);
+                adjustAdoBioLabelText();
+
                 self.drawTree(person);
                 calculateFontMetrics();
                 clearMessageBelowButtonBar();
@@ -4963,6 +5455,8 @@ import { PDFs } from "../shared/PDFs.js";
                                 "DeathLocation",
                                 "Mother",
                                 "Father",
+                                "BioMother",
+                                "BioFather",
                                 "Children",
                                 "Parents",
                                 "Spouses",
@@ -5009,8 +5503,23 @@ import { PDFs } from "../shared/PDFs.js";
                                 // condLog("ADDED ", thePerson);
                             }
 
-                            FanChartView.myAhnentafel.update(person);
+                            if (FanChartView.familyType == "Ado") {
+                                FanChartView.myAhnentafel.update(FanChartView.primaryPerson, "Ado"); // update the AhnenTafel with the latest ancestors
+                            } else if (FanChartView.familyType == "Bio") {
+                                // FanChartView.myAhnentafel.update(FanChartView.primaryPerson, "Bio"); // update the AhnenTafel with the latest ancestors
+                            }
+                            FanChartView.adoAhnentafel.update(FanChartView.primaryPerson, "Ado"); // update the AhnenTafel with the latest ancestors
+                            FanChartView.bioAhnentafel.update(FanChartView.primaryPerson, "Bio"); // update the AhnenTafel with the latest ancestors
                             updateMyAhentafelMarriages();
+
+                            // if (person._data.Id == 19066309 || person._data.Id == 38777743) {
+                            //     console.log("Updating BIO ID #s for TEST PERSON after Marriages !!!");
+                            //     person._data.BioFather = 19107478;
+                            //     person._data.BioMother = 19115981;
+                            //     thePeopleList[person._data.Id]._data.BioFather = 19107478;
+                            //     thePeopleList[person._data.Id]._data.BioMother = 19115981;
+                            // }
+
                             // GO through the first chunk  (up to great-grandparents) - and swap out TBD! for their relaionship names
                             for (var a = 1; a < 16; a++) {
                                 let thisPeep = thePeopleList[FanChartView.myAhnentafel.list[a]];
@@ -5112,7 +5621,7 @@ import { PDFs } from "../shared/PDFs.js";
             "MiddleInitial",
             "MiddleName",
             "RealName",
-            // "Bio",
+            "Bio",
             "IsLiving",
             "Nicknames",
             "Prefix",
@@ -5125,6 +5634,8 @@ import { PDFs } from "../shared/PDFs.js";
             "DeathLocation",
             "Mother",
             "Father",
+            "BioMother",
+            "BioFather",
             "Children",
             "Parents",
             "Spouses",
@@ -5225,8 +5736,106 @@ import { PDFs } from "../shared/PDFs.js";
     Tree.prototype.draw = function () {
         // condLog("Tree.prototype.draw");
         if (this.root) {
-            // var nodes = thePeopleList.listAllPersons();// [];//this.tree.nodes(this.root);
+            // ORIGINAL CODING : var nodes = thePeopleList.listAllPersons();// [];//this.tree.nodes(this.root);
+
+            // =========
+            // var nodes  is the MOST important data structure of the whole Fan Chart.
+            // =========
+            // Each PERSON in the chart is represented as a NODE in this NODES array.
+            // Each NODE has an Ahnentafel number, and a pointer to the PERSON it represents, among other things.
+            // The NODES array is what D3 uses to draw the boxes and the links between them.  So getting this right is critical.
+
+            // DEFAULT:  create the NODES array from the myAhnentafel list of ancestors, which is the "Ado" family line. / Primary Family of Mother & Father .
             var nodes = FanChartView.myAhnentafel.listOfAncestorsForFanChart(FanChartView.numGens2Display); // [];//this.tree.nodes(this.root);
+
+            if (FanChartView.familyType == "Bio") {
+                // If we are showing the "Bio" family line, then we want to create the NODES array from the bioAhnentafel list of ancestors instead, which is the "Bio" family line.
+                // This will include the BIO parents and grandparents if they are different from the ADO parents and grandparents.
+                nodes = FanChartView.bioAhnentafel.listOfAncestorsForFanChart(FanChartView.numGens2Display); // [];//this.tree.nodes(this.root);
+            } else if (FanChartView.familyType == "Combo") {
+                // If we are showing the "Combo" family line, then we want to create the NODES array from BOTH the ADO and BIO Ahnentafel lists of ancestors,
+                // which is the "Combo" family line.
+
+                // NOTE:  We don't want to repeat parents on the BIO side who are both part of the Primary Fammily (Mother or Father)
+                nodes = [];
+                if (!FanChartView.comboAhnentafel.marriageList) {
+                    FanChartView.comboAhnentafel.marriageList = [];
+                }
+                let ADOnodes = FanChartView.myAhnentafel.listOfAncestorsForFanChart(FanChartView.numGens2Display * 1); // [];//this.tree.nodes(this.root);
+                ADOnodes.forEach(function (n) {
+                    let thisGenNum = Math.floor(Math.log2(n.ahnNum));
+                    let newAhnNumPos = n.ahnNum + Math.pow(2, thisGenNum);
+                    if (n.ahnNum > 1) {
+                        n.ahnNum4Display = n.ahnNum;
+                        n.ahnNumPos = newAhnNumPos;
+                        n.ahnNum = newAhnNumPos;
+                        n.fam = "my";
+
+                        if (FanChartView.myAhnentafel.marriageList[n.ahnNum4Display]) {
+                            FanChartView.comboAhnentafel.marriageList[newAhnNumPos] =
+                                FanChartView.myAhnentafel.marriageList[n.ahnNum4Display];
+                        }
+                    }
+                    // console.log("ADO:", n.ahnNum, " becomes ", n.ahnNumPos);
+                    nodes.push(n);
+                });
+                let BIOnodes = FanChartView.bioAhnentafel.listOfAncestorsForFanChart(FanChartView.numGens2Display * 1); // [];//this.tree.nodes(this.root);
+                BIOnodes.forEach(function (n) {
+                    let thisGenNum = Math.floor(Math.log2(n.ahnNum));
+                    let newAhnNumPos = n.ahnNum + 2 * Math.pow(2, thisGenNum);
+                    let isFathersLine = false;
+                    let showThisNode = false;
+                    let compareNum = n.ahnNum - Math.pow(2, thisGenNum) - Math.pow(2, thisGenNum - 1);
+                    if (compareNum < 0) {
+                        isFathersLine = true;
+                    }
+
+                    if (
+                        (isFathersLine && FanChartView.primaryPerson._data.BioFather) ||
+                        (!isFathersLine && FanChartView.primaryPerson._data.BioMother)
+                    ) {
+                        showThisNode = true;
+                    }
+                    if (n.ahnNum > 1 && showThisNode == true) {
+                        n.ahnNum4Display = n.ahnNum;
+                        n.ahnNumPos = newAhnNumPos;
+                        n.ahnNum = newAhnNumPos;
+                        n.fam = "bio";
+                        if (FanChartView.bioAhnentafel.marriageList[n.ahnNum4Display]) {
+                            FanChartView.comboAhnentafel.marriageList[newAhnNumPos] =
+                                FanChartView.bioAhnentafel.marriageList[n.ahnNum4Display];
+                        }
+                        nodes.push(n);
+                        console.log(
+                            "BIO:",
+                            n.ahnNum,
+                            " becomes ",
+                            n.ahnNumPos,
+                            "old / actual Ahn# " + n.ahnNum4Display,
+                            { thisGenNum },
+                            { newAhnNumPos },
+                            2 ** thisGenNum,
+                            2 ** (thisGenNum - 1),
+                            { isFathersLine },
+                            { showThisNode }
+                        );
+                    } else {
+                        console.log(
+                            "BIO:",
+                            n.ahnNum,
+                            { thisGenNum },
+                            { newAhnNumPos },
+                            { isFathersLine },
+                            { showThisNode },
+                            { compareNum }
+                        );
+                    }
+                });
+
+                nodes.sort(function (a, b) {
+                    return a.ahnNumPos > b.ahnNumPos ? 1 : -1;
+                });
+            }
 
             condLog("Tree.prototype.draw -> ready the NODES , count = ", nodes.length);
             // links = this.tree.links(nodes);
@@ -5236,6 +5845,7 @@ import { PDFs } from "../shared/PDFs.js";
             updateDNAlinks(nodes);
             hideMDateDIVs();
             updateFontsIfNeeded();
+            FanChartView.adjustAdoBioLabelText();
         } else {
             throw new Error("Missing root");
         }
@@ -5262,7 +5872,7 @@ import { PDFs } from "../shared/PDFs.js";
      * Draw the person boxes.  NodeMagic happens here.
      */
     Tree.prototype.drawNodes = function (nodes) {
-        // condLog("Tree.prototpe.DRAW NODES", nodes);
+        console.log("Tree.prototpe.DRAW NODES", nodes);
         var self = this;
 
         // condLog("this.selector = ", this.selector);
@@ -5307,9 +5917,9 @@ import { PDFs } from "../shared/PDFs.js";
             .html((ancestorObject) => {
                 let person = ancestorObject.person; //thePeopleList[ person.id ];
                 // Calculate which Generation Number THIS node belongs to (0 = central person, 1 = parents, etc..)
-                let thisGenNum = Math.floor(Math.log2(ancestorObject.ahnNum));
+                let thisGenNum = Math.floor(Math.log2(ancestorObject.ahnNumPos));
                 // Calculate which position # (starting lower left and going clockwise around the fan chart) (0 is father's father's line, largest number is mother's mother's line)
-                let thisPosNum = ancestorObject.ahnNum - 2 ** thisGenNum;
+                let thisPosNum = ancestorObject.ahnNumPos - 2 ** thisGenNum;
                 // Calculate how many positions there are in this current Ring of Relatives
                 let numSpotsThisGen = 2 ** thisGenNum;
 
@@ -5327,7 +5937,7 @@ import { PDFs } from "../shared/PDFs.js";
                 condLog("extraInfo setting:", FanChartView.currentSettings["general_options_extraInfo"]);
                 if (FanChartView.currentSettings["general_options_extraInfo"] == "ahnNum") {
                     //FanChartView.currentSettings["general_options_colourizeRepeats"] == false) {
-                    extraInfoForThisAnc = "[ " + ancestorObject.ahnNum + " ]";
+                    extraInfoForThisAnc = "[ " + ancestorObject.ahnNum4Display + " ]";
                     extraBR = "<br/>";
                 } else if (FanChartView.currentSettings["general_options_extraInfo"] == "WikiTreeID") {
                     extraInfoForThisAnc = ancestorObject.Name;
@@ -5338,7 +5948,11 @@ import { PDFs } from "../shared/PDFs.js";
                 let theClr = "none";
 
                 // SETUP the FanChartView.repeatAncestorTracker
-                if (FanChartView.myAhnentafel.listByPerson[ancestorObject.person._data.Id].length > 1) {
+
+                if (
+                    FanChartView.familyType == "Ado" &&
+                    FanChartView.myAhnentafel.listByPerson[ancestorObject.person._data.Id].length > 1
+                ) {
                     condLog(
                         "new repeat ancestor:",
                         FanChartView.myAhnentafel.listByPerson[ancestorObject.person._data.Id]
@@ -5352,6 +5966,25 @@ import { PDFs } from "../shared/PDFs.js";
                         FanChartView.repeatAncestorTracker[ancestorObject.person._data.Id] = theClr;
                     }
                 }
+
+                if (
+                    FanChartView.familyType == "Bio" &&
+                    FanChartView.bioAhnentafel.listByPerson[ancestorObject.person._data.Id].length > 1
+                ) {
+                    condLog(
+                        "new repeat ancestor:",
+                        FanChartView.bioAhnentafel.listByPerson[ancestorObject.person._data.Id]
+                    );
+                    if (FanChartView.repeatAncestorTracker[ancestorObject.person._data.Id]) {
+                        theClr = FanChartView.repeatAncestorTracker[ancestorObject.person._data.Id];
+                    } else {
+                        numRepeatAncestors++;
+                        theClr = ColourArray[numRepeatAncestors % ColourArray.length];
+                        theClr = LightColoursArray[numRepeatAncestors % LightColoursArray.length][1];
+                        FanChartView.repeatAncestorTracker[ancestorObject.person._data.Id] = theClr;
+                    }
+                }
+
                 // BUT ... if we have colourizeRepeats turned off - ignore theClr ...
                 if (FanChartView.currentSettings["general_options_colourizeRepeats"] == false) {
                     theClr = "none";
@@ -5364,11 +5997,11 @@ import { PDFs } from "../shared/PDFs.js";
                 if (thisGenNum >= 9) {
                     return `
                         <div  id=wedgeBoxFor${
-                            ancestorObject.ahnNum
+                            ancestorObject.ahnNumPos
                         } class="box staticPosition" style="background-color: ${theClr} ; border:0; padding: 0px;">
                         <div class="name fontBold font${font4Name}"    id=nameDivFor${
-                        ancestorObject.ahnNum
-                    } style="font-size: 10px;" >${getSettingsName(person)}</div>
+                            ancestorObject.ahnNumPos
+                        } style="font-size: 10px;" >${getSettingsName(person)}</div>
                         </div>
                     `;
                 } else if (thisGenNum == 8) {
@@ -5379,15 +6012,15 @@ import { PDFs } from "../shared/PDFs.js";
 
                     return `
                         <div  id=wedgeBoxFor${
-                            ancestorObject.ahnNum
+                            ancestorObject.ahnNumPos
                         } class="box staticPosition" style="background-color: ${theClr} ; border:0; padding: 0px;">
                         <div class="extraInfoBox  font${font4Extras}"  id=extraInfoFor${
-                        ancestorObject.ahnNum
-                    }  style="text-align:${floatDirection}; line-height:10px;">${extraInfoForThisAnc}</div>
+                            ancestorObject.ahnNumPos
+                        }  style="text-align:${floatDirection}; line-height:10px;">${extraInfoForThisAnc}</div>
                         <div class="name fontBold font${font4Name}"   id=nameDivFor${
-                        ancestorObject.ahnNum
-                    }  style="font-size: 14px;" >${getSettingsName(person)}</div>
-                    <div class="birth vital centered font${font4Info}" id=birthDivFor${ancestorObject.ahnNum}></div>
+                            ancestorObject.ahnNumPos
+                        }  style="font-size: 14px;" >${getSettingsName(person)}</div>
+                    <div class="birth vital centered font${font4Info}" id=birthDivFor${ancestorObject.ahnNumPos}></div>
                         </div>
                     `;
                 } else if (thisGenNum == 7) {
@@ -5398,22 +6031,22 @@ import { PDFs } from "../shared/PDFs.js";
 
                     return `
                         <div  id=wedgeBoxFor${
-                            ancestorObject.ahnNum
+                            ancestorObject.ahnNumPos
                         } class="box staticPosition" style="background-color: ${theClr} ; border:0; padding: 3px;">
                         <div class="extraInfoBox  font${font4Extras}"  id=extraInfoFor${
-                        ancestorObject.ahnNum
-                    }  style="text-align:${floatDirection}; line-height:10px;">${extraInfoForThisAnc}${extraBR}</div>
+                            ancestorObject.ahnNumPos
+                        }  style="text-align:${floatDirection}; line-height:10px;">${extraInfoForThisAnc}${extraBR}</div>
                         <div class="name fontBold font${font4Name}"  id=nameDivFor${
-                        ancestorObject.ahnNum
-                    }>${getSettingsName(person)}</div>
+                            ancestorObject.ahnNumPos
+                        }>${getSettingsName(person)}</div>
                     <div class="birth vital centered font${font4Info}" id=birthDivFor${
-                        ancestorObject.ahnNum
+                        ancestorObject.ahnNumPos
                     }>${lifespanFull(person)}</div>
-                    <div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}></div>
+                    <div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNumPos}></div>
                         </div>
                     `;
                 } else if (thisGenNum == 6) {
-                    // console.log("SHOULD be in GEN 6", {thisGenNum},ancestorObject.ahnNum ,  FanChartView.maxAngle);
+                    // console.log("SHOULD be in GEN 6", {thisGenNum},ancestorObject.ahnNumPos ,  FanChartView.maxAngle);
                     // genNum 6 --> Full dates only + first location field (before ,)
                     let photoUrl = person.getPhotoUrl(75),
                         treeUrl = window.location.pathname + "?id=" + person.getName();
@@ -5436,8 +6069,8 @@ import { PDFs } from "../shared/PDFs.js";
                         floatDirection = "right";
                     }
                     if (photoUrl) {
-                        photoDiv = `<img id=photoFor${ancestorObject.ahnNum} class="image-box" src="https://www.wikitree.com/${photoUrl}" style="float:${floatDirection}; line-height:10px;" />`;
-                        // photoDiv = `<div  id=photoFor${ancestorObject.ahnNum} class="image-box" style="text-align: center; display:inline-block;"><img src="https://www.wikitree.com/${photoUrl}"></div>`;
+                        photoDiv = `<img id=photoFor${ancestorObject.ahnNumPos} class="image-box" src="https://www.wikitree.com/${photoUrl}" style="float:${floatDirection}; line-height:10px;" />`;
+                        // photoDiv = `<div  id=photoFor${ancestorObject.ahnNumPos} class="image-box" style="text-align: center; display:inline-block;"><img src="https://www.wikitree.com/${photoUrl}"></div>`;
                     }
 
                     let containerClass = "staticPosition photoInfoContainer";
@@ -5446,20 +6079,22 @@ import { PDFs } from "../shared/PDFs.js";
                     }
                     return `
                         <div  id=wedgeBoxFor${
-                            ancestorObject.ahnNum
+                            ancestorObject.ahnNumPos
                         } class="${containerClass} box" style="background-color: ${theClr} ; border:0;   ">
                         <div class="extraInfoBox  font${font4Extras}"  id=extraInfoFor${
-                        ancestorObject.ahnNum
-                    } style="text-align:${floatDirection};">${extraInfoForThisAnc}${extraBR}</div>
+                            ancestorObject.ahnNumPos
+                        } style="text-align:${floatDirection};">${extraInfoForThisAnc}${extraBR}</div>
                         <div class="item">${photoDiv}</div>
                         <div class="item flexGrow1">
-                            <div class="name centered fontBold font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
+                            <div class="name centered fontBold font${font4Name}" id=nameDivFor${
+                                ancestorObject.ahnNumPos
+                            }>
                                 ${getSettingsName(person)}
                             </div>
                         <div class="birth vital centered font${font4Info}" id=birthDivFor${
-                        ancestorObject.ahnNum
-                    }>${lifespanFull(person)}</div>
-						<div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}></div>
+                            ancestorObject.ahnNumPos
+                        }>${lifespanFull(person)}</div>
+						<div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNumPos}></div>
                     </div>
                     </div>
                     `;
@@ -5467,7 +6102,7 @@ import { PDFs } from "../shared/PDFs.js";
                     condLog(
                         "SHOULD be in GEN 5 ONLY if < 360º",
                         { thisGenNum },
-                        ancestorObject.ahnNum,
+                        ancestorObject.ahnNumPos,
                         FanChartView.maxAngle
                     );
                     // genNum 5 ==> Full details (last ring that can hold it, with tweaks needed for 180º)
@@ -5493,9 +6128,9 @@ import { PDFs } from "../shared/PDFs.js";
                     }
                     let photoDiv = "";
                     if (photoUrl) {
-                        photoDiv = `<img id=photoFor${ancestorObject.ahnNum} class="image-box" src="https://www.wikitree.com/${photoUrl}" style="float:${floatDirection}; line-height:10px;" />`;
+                        photoDiv = `<img id=photoFor${ancestorObject.ahnNumPos} class="image-box" src="https://www.wikitree.com/${photoUrl}" style="float:${floatDirection}; line-height:10px;" />`;
 
-                        // photoDiv = `<div  id=photoFor${ancestorObject.ahnNum} class="image-box" style="text-align: center; display:inline-block;"><img src="https://www.wikitree.com/${photoUrl}"></div>`;
+                        // photoDiv = `<div  id=photoFor${ancestorObject.ahnNumPos} class="image-box" style="text-align: center; display:inline-block;"><img src="https://www.wikitree.com/${photoUrl}"></div>`;
                     }
 
                     let containerClass = "staticPosition photoInfoContainer";
@@ -5504,20 +6139,20 @@ import { PDFs } from "../shared/PDFs.js";
                     }
                     return `
                         <div  id=wedgeBoxFor${
-                            ancestorObject.ahnNum
+                            ancestorObject.ahnNumPos
                         } class="${containerClass} box" style="background-color: ${theClr} ; border:0;   ">
                         <div class="extraInfoBox  font${font4Extras}"  id=extraInfoFor${
-                        ancestorObject.ahnNum
-                    }  style="text-align:${floatDirection};">${extraInfoForThisAnc}${extraBR}</div>
+                            ancestorObject.ahnNumPos
+                        }  style="text-align:${floatDirection};">${extraInfoForThisAnc}${extraBR}</div>
                         <div class="item">${photoDiv}</div>
                         <div class="item flexGrow1">
                             <div class="name centered fontBold font${font4Name}" id=nameDivFor${
-                        ancestorObject.ahnNum
-                    }>${getSettingsName(person)}</div>
+                                ancestorObject.ahnNumPos
+                            }>${getSettingsName(person)}</div>
                         <div class="birth vital centered font${font4Info}" id=birthDivFor${
-                        ancestorObject.ahnNum
-                    }>${getSettingsDateAndPlace(person, "B", thisGenNum)}</div>
-						<div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}>
+                            ancestorObject.ahnNumPos
+                        }>${getSettingsDateAndPlace(person, "B", thisGenNum)}</div>
+						<div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNumPos}>
                         ${getSettingsDateAndPlace(person, "D", thisGenNum)}</div>
                     </div>
                     </div>
@@ -5526,7 +6161,7 @@ import { PDFs } from "../shared/PDFs.js";
                     condLog(
                         "SHOULD be in GEN 4 - OR - in GEN 5 ONLY if == 360º",
                         { thisGenNum },
-                        ancestorObject.ahnNum,
+                        ancestorObject.ahnNumPos,
                         FanChartView.maxAngle
                     );
                     let photoUrl = person.getPhotoUrl(75),
@@ -5545,27 +6180,28 @@ import { PDFs } from "../shared/PDFs.js";
                         }
                     }
                     let photoDiv = "";
+                    // 2025-01-07 - moved ID into IMG instead of surrounding DIV tag
                     if (photoUrl) {
-                        photoDiv = `<div  id=photoFor${ancestorObject.ahnNum} class="image-box" style="text-align: center"><img src="https://www.wikitree.com/${photoUrl}"></div>`;
+                        photoDiv = `<div class="image-box" style="text-align: center"><img  id=photoFor${ancestorObject.ahnNumPos} src="https://www.wikitree.com/${photoUrl}"></div>`;
                     }
                     return `
                     <div  id=wedgeBoxFor${
-                        ancestorObject.ahnNum
+                        ancestorObject.ahnNumPos
                     } class="box staticPosition" style="background-color: ${theClr} ; border:0; ">
                     <div class="extraInfoBox  font${font4Extras}"  id=extraInfoFor${
-                        ancestorObject.ahnNum
+                        ancestorObject.ahnNumPos
                     }>${extraInfoForThisAnc}${extraBR}</div>
                     ${photoDiv}
                     <div class="name centered fontBold font${font4Name}" id=nameDivFor${
-                        ancestorObject.ahnNum
+                        ancestorObject.ahnNumPos
                     }>${getSettingsName(person)}</div>
                         <div class="birth vital centered font${font4Info}" id=birthDivFor${
-                        ancestorObject.ahnNum
-                    }>${getSettingsDateAndPlace(person, "B")}</div>
-						<div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(
-                        person,
-                        "D"
-                    )}</div>
+                            ancestorObject.ahnNumPos
+                        }>${getSettingsDateAndPlace(person, "B")}</div>
+						<div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNumPos}>${getSettingsDateAndPlace(
+                            person,
+                            "D"
+                        )}</div>
                     </div>
                     `;
                 } else {
@@ -5573,8 +6209,8 @@ import { PDFs } from "../shared/PDFs.js";
                         treeUrl = window.location.pathname + "?id=" + person.getName();
 
                     let mDateDIV = "";
-                    // if (ancestorObject.ahnNum % 2 == 0) {
-                    //     mDateDIV =  '<div class="centered mDateBox" id=mDateFor${ancestorObject.ahnNum}>m.<br/>28 Aug<br/>1987</div>';
+                    // if (ancestorObject.ahnNumPos % 2 == 0) {
+                    //     mDateDIV =  '<div class="centered mDateBox" id=mDateFor${ancestorObject.ahnNumPos}>m.<br/>28 Aug<br/>1987</div>';
                     // }
                     // Use generic gender photos if there is not profile photo available
                     if (!photoUrl) {
@@ -5586,30 +6222,28 @@ import { PDFs } from "../shared/PDFs.js";
                     }
                     let photoDiv = "";
                     if (photoUrl) {
-                        photoDiv = `<div  id=photoFor${ancestorObject.ahnNum} class="image-box" style="text-align: center"><img src="https://www.wikitree.com/${photoUrl}"></div>`;
+                        photoDiv = `<div  class="image-box" style="text-align: center"><img  id=photoFor${ancestorObject.ahnNumPos} src="https://www.wikitree.com/${photoUrl}"></div>`;
                     }
                     if (theClr == "none") {
                         theClr = "#00000000";
                     }
                     return `<div class="box staticPosition centered" id=wedgeInfoFor${
-                        ancestorObject.ahnNum
+                        ancestorObject.ahnNumPos
                     } style="background-color: ${theClr} ; border:0; ">
                      <div class="extraInfoBox  font${font4Extras}"  id=extraInfoFor${
-                        ancestorObject.ahnNum
-                    }>${extraInfoForThisAnc}${extraBR}</div>
+                         ancestorObject.ahnNumPos
+                     }>${extraInfoForThisAnc}${extraBR}</div>
                      <div class="vital-info">
 						${photoDiv}
-						  <div class="name centered fontBold font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
+						  <div class="name centered fontBold font${font4Name}" id=nameDivFor${ancestorObject.ahnNumPos}>
 						    ${getSettingsName(person)}
 						  </div>
-						  <div class="birth vital centered font${font4Info}" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(
-                        person,
-                        "B"
-                    )}</div>
-						  <div class="death vital centered font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(
-                        person,
-                        "D"
-                    )}</div>
+						  <div class="birth vital centered font${font4Info}" id=birthDivFor${
+                              ancestorObject.ahnNumPos
+                          }>${getSettingsDateAndPlace(person, "B")}</div>
+						  <div class="death vital centered font${font4Info}" id=deathDivFor${
+                              ancestorObject.ahnNumPos
+                          }>${getSettingsDateAndPlace(person, "D")}</div>
 						</div>
 					</div>${mDateDIV}
                     `;
@@ -5654,7 +6288,7 @@ import { PDFs } from "../shared/PDFs.js";
             let thisRadius = 270; // default value - NEED TO CHANGE THIS FROM BEING HARD CODED EVENTUALLY
 
             // Calculate which Generation Number THIS node belongs to (0 = central person, 1 = parents, etc..)
-            let thisGenNum = Math.floor(Math.log2(ancestorObject.ahnNum));
+            let thisGenNum = Math.floor(Math.log2(ancestorObject.ahnNumPos));
             thisRadius = fanGenRadii[thisGenNum];
             let thisCrossSpan = fanGenCrossSpan[thisGenNum];
             let thisCumulativeRadius = cumulativeGenRadii[thisGenNum];
@@ -5663,10 +6297,19 @@ import { PDFs } from "../shared/PDFs.js";
                 prevCumulativeRadius = 0;
             }
             // Calculate which position # (starting lower left and going clockwise around the fan chart) (0 is father's father's line, largest number is mother's mother's line)
-            let thisPosNum = ancestorObject.ahnNum - 2 ** thisGenNum;
+            let thisPosNum = ancestorObject.ahnNumPos - 2 ** thisGenNum;
             // Calculate how many positions there are in this current Ring of Relatives
             let numSpotsThisGen = 2 ** thisGenNum;
 
+            // console.log(
+            //     "TRANSFORM for:",
+            //     getSettingsName(d),
+            //     "ahnNumPos",
+            //     ancestorObject.ahnNumPos,
+            //     { thisGenNum },
+            //     { thisPosNum },
+            //     { ancestorObject }
+            // );
             let luminance = 0.501;
             let thisBkgdClr = "white";
             let settingForSpecifyByLocation = FanChartView.currentSettings["colour_options_specifyByLocation"];
@@ -5685,12 +6328,12 @@ import { PDFs } from "../shared/PDFs.js";
                 }
             } else {
                 let thisPersonsWedge = document.getElementById("wedge" + 2 ** thisGenNum + "n" + thisPosNum);
-                let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
-                let theWedgeInfoForBox = document.getElementById("wedgeInfoFor" + ancestorObject.ahnNum);
+                let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNumPos);
+                let theWedgeInfoForBox = document.getElementById("wedgeInfoFor" + ancestorObject.ahnNumPos);
 
                 // marriage date calc
                 if (thisPosNum % 2 == 0) {
-                    let mdateIDstarter = "mDateFor-" + ancestorObject.ahnNum;
+                    let mdateIDstarter = "mDateFor-" + ancestorObject.ahnNumPos;
                     let mdateID = mdateIDstarter + "-date";
                     theMDateDIV = document.getElementById(mdateID);
                     if (theMDateDIV) {
@@ -5853,17 +6496,17 @@ import { PDFs } from "../shared/PDFs.js";
             }
 
             // NEXT - LET'S DO SOME POSITIONING TO GET EVERYONE IN PLACE !
-            let theInfoBox = document.getElementById("wedgeInfoFor" + ancestorObject.ahnNum);
-            let theNameDIV = document.getElementById("nameDivFor" + ancestorObject.ahnNum);
+            let theInfoBox = document.getElementById("wedgeInfoFor" + ancestorObject.ahnNumPos);
+            let theNameDIV = document.getElementById("nameDivFor" + ancestorObject.ahnNumPos);
 
             let doDebug = false;
-            if (ancestorObject.ahnNum == 40) {
+            if (ancestorObject.ahnNumPos == 40) {
                 // doDebug = true;
             }
             if (doDebug) {
                 condLog(
                     "POSITION node ",
-                    ancestorObject.ahnNum,
+                    ancestorObject.ahnNumPos,
                     { thisGenNum },
                     { thisRadius },
                     { prevCumulativeRadius },
@@ -5975,9 +6618,9 @@ import { PDFs } from "../shared/PDFs.js";
                     theInfoBox.parentNode.parentNode.setAttribute("width", 320);
                 } */
                 //  theInfoBox.style.backgroundColor = "orange";
-            } else {
+            } else if (theNameDIV) {
                 theNameDIV.innerHTML = getSettingsName(d); //getShortName(d);
-                theInfoBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
+                theInfoBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNumPos);
 
                 let maxBoxWidthForThisGen = 250;
                 let crossSpanToUse = maxBoxWidthForThisGen;
@@ -6011,10 +6654,10 @@ import { PDFs } from "../shared/PDFs.js";
                 let mDateDIVdate = null; // document.getElementById("mDateFor-" + ancestorObject.ahnNum + "-date");
                 let mDateDIVinner = null; // document.getElementById("mDateFor-" + ancestorObject.ahnNum + "-date");
 
-                if (thisGenNum >= 5 && ancestorObject.ahnNum % 2 == 0) {
+                if (thisGenNum >= 5 && ancestorObject.ahnNumPos % 2 == 0) {
                     // condLog("mDateDIVdate:", mDateDIVdate);
-                    mDateDIVdate = document.getElementById("mDateFor-" + ancestorObject.ahnNum + "-date");
-                    mDateDIVinner = document.getElementById("mDateFor-" + ancestorObject.ahnNum + "inner");
+                    mDateDIVdate = document.getElementById("mDateFor-" + ancestorObject.ahnNumPos + "-date");
+                    mDateDIVinner = document.getElementById("mDateFor-" + ancestorObject.ahnNumPos + "inner");
                 }
                 if (thisGenNum == 5 && FanChartView.maxAngle == 360) {
                     theInfoBox.classList.remove("photoInfoContainer");
@@ -6073,6 +6716,8 @@ import { PDFs } from "../shared/PDFs.js";
                         theInfoBox.style.backgroundColor = "yellow";
                     }
                 }
+            } else {
+                console.log("WARNING - no Name Div or InfoBox for ", ancestorObject.ahnNumPos, d);
             }
 
             // Placement Angle = the angle at which the person's name card should be placed. (in degrees, where 0 = facing due east, thus the starting point being 180, due west, with modifications)
@@ -6092,7 +6737,7 @@ import { PDFs } from "../shared/PDFs.js";
                 }
 
                 // hide photos as well (for now at least)
-                let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
+                let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNumPos);
                 if (thePhotoDIV) {
                     thePhotoDIV.style.display = "none";
                 }
@@ -6124,6 +6769,21 @@ import { PDFs } from "../shared/PDFs.js";
 
             // OK - now that the POSITION ISSUES have been dealt with - LET'S TALK FAMILY PHOTOS !
             let photoUrl = d.getPhotoUrl(75);
+
+            if (!photoUrl) {
+                if (d.getGender() === "Male") {
+                    photoUrl = "images/icons/male.gif";
+                } else {
+                    photoUrl = "images/icons/female.gif";
+                }
+            }
+
+            let photoSRC = "https://www.wikitree.com/" + photoUrl;
+
+            if (document.getElementById("photoFor" + ancestorObject.ahnNumPos)) {
+                document.getElementById("photoFor" + ancestorObject.ahnNumPos).src = photoSRC;
+            }
+
             if (
                 !photoUrl &&
                 FanChartView.currentSettings["photo_options_useSilhouette"] == true &&
@@ -6132,7 +6792,7 @@ import { PDFs } from "../shared/PDFs.js";
                     (FanChartView.currentSettings["photo_options_showPicsToN"] == true &&
                         thisGenNum < FanChartView.currentSettings["photo_options_showPicsToValue"]))
             ) {
-                let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
+                let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNumPos);
                 if (thePhotoDIV) {
                     thePhotoDIV.style.display = "inline-block";
                 }
@@ -6143,12 +6803,12 @@ import { PDFs } from "../shared/PDFs.js";
                 (FanChartView.currentSettings["photo_options_showPicsToN"] == true &&
                     thisGenNum >= FanChartView.currentSettings["photo_options_showPicsToValue"])
             ) {
-                let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
+                let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNumPos);
                 if (thePhotoDIV) {
                     thePhotoDIV.style.display = "none";
                 }
-            } else if (ancestorObject.ahnNum > 1) {
-                let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
+            } else if (ancestorObject.ahnNumPos > 1) {
+                let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNumPos);
 
                 if (thePhotoDIV && FanChartView.currentSettings["photo_options_showAllPics"] == true) {
                     // Check to see if there are restrictions
@@ -6168,9 +6828,9 @@ import { PDFs } from "../shared/PDFs.js";
                 }
             }
 
-            let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
+            let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNumPos);
             if (thePhotoDIV && thePhotoDIV.style.display == "inline-block") {
-                let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNum);
+                let theWedgeBox = document.getElementById("wedgeBoxFor" + ancestorObject.ahnNumPos);
                 if (theWedgeBox) {
                     theWedgeBox.style["vertical-align"] = "top";
                 }
@@ -6212,7 +6872,7 @@ import { PDFs } from "../shared/PDFs.js";
             }
 
             if (ancestorObject.ahnNum == 1) {
-                let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNum);
+                let thePhotoDIV = document.getElementById("photoFor" + ancestorObject.ahnNumPos);
                 if (thePhotoDIV && FanChartView.currentSettings["photo_options_showCentralPic"] == true) {
                     if (!photoUrl && FanChartView.currentSettings["photo_options_useSilhouette"] == false) {
                         thePhotoDIV.style.display = "none";
@@ -6238,12 +6898,12 @@ import { PDFs } from "../shared/PDFs.js";
 
             // AND ... FINALLY, LET'S TALK DATES & PLACES:
             // e.g.  <div class="birth vital centered" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(person, "B")}</div>
-            let theBirthDIV = document.getElementById("birthDivFor" + ancestorObject.ahnNum);
+            let theBirthDIV = document.getElementById("birthDivFor" + ancestorObject.ahnNumPos);
             if (theBirthDIV) {
                 theBirthDIV.innerHTML = getSettingsDateAndPlace(d, "B", thisGenNum); // remember that d = ancestorObject.person
                 switchFontColour(theBirthDIV, theTextFontClr);
             }
-            let theDeathDIV = document.getElementById("deathDivFor" + ancestorObject.ahnNum);
+            let theDeathDIV = document.getElementById("deathDivFor" + ancestorObject.ahnNumPos);
             if (theDeathDIV) {
                 theDeathDIV.innerHTML = getSettingsDateAndPlace(d, "D", thisGenNum); // remember that d = ancestorObject.person
                 switchFontColour(theDeathDIV, theTextFontClr);
@@ -6264,13 +6924,13 @@ import { PDFs } from "../shared/PDFs.js";
             // FanChartView.addNewBadge(newX, newY, thisGenNum,  nameAngle);
 
             // LET'S UPDATE THOSE EXTRAS TOO ... OK ?
-            let theExtraDIV = document.getElementById("extraInfoFor" + ancestorObject.ahnNum);
+            let theExtraDIV = document.getElementById("extraInfoFor" + ancestorObject.ahnNumPos);
             let extraInfoForThisAnc = "";
             let extraBR = "";
             condLog("extraInfo setting:", FanChartView.currentSettings["general_options_extraInfo"]);
             if (FanChartView.currentSettings["general_options_extraInfo"] == "ahnNum") {
                 //FanChartView.currentSettings["general_options_colourizeRepeats"] == false) {
-                extraInfoForThisAnc = "[ " + ancestorObject.ahnNum + " ]";
+                extraInfoForThisAnc = "[ " + ancestorObject.ahnNum4Display + " ]";
                 extraBR = "<br/>";
             } else if (FanChartView.currentSettings["general_options_extraInfo"] == "WikiTreeID") {
                 extraInfoForThisAnc = d._data.Name;
@@ -6279,19 +6939,26 @@ import { PDFs } from "../shared/PDFs.js";
             if (theExtraDIV) {
                 theExtraDIV.innerHTML = extraInfoForThisAnc + extraBR;
                 theExtraDIV.className = "extraInfoBox font" + font4Extras;
-            }
 
-            if (thisGenNum == 5 && FanChartView.maxAngle == 360) {
-                theExtraDIV.style.textAlign = "center";
-            } else if (thisGenNum == 5 && FanChartView.maxAngle < 360) {
-                if (thisPosNum < numSpotsThisGen / 2) {
-                    theExtraDIV.style.textAlign = "left";
-                } else {
-                    theExtraDIV.style.textAlign = "right";
+                if (thisGenNum == 5 && FanChartView.maxAngle == 360) {
+                    theExtraDIV.style.textAlign = "center";
+                } else if (thisGenNum == 5 && FanChartView.maxAngle < 360) {
+                    if (thisPosNum < numSpotsThisGen / 2) {
+                        theExtraDIV.style.textAlign = "left";
+                    } else {
+                        theExtraDIV.style.textAlign = "right";
+                    }
                 }
             }
 
             if (theMDateDIV) {
+                FanChartView.thisAhnentafel = FanChartView.myAhnentafel;
+                if (FanChartView.familyType == "Bio") {
+                    FanChartView.thisAhnentafel = FanChartView.bioAhnentafel;
+                } else if (FanChartView.familyType == "Combo") {
+                    FanChartView.thisAhnentafel = FanChartView.comboAhnentafel;
+                }
+
                 // condLog("Marriage", d._data.Spouses);
                 let mDateAngle = nameAngle + FanChartView.maxAngle / 2 / numSpotsThisGen;
 
@@ -6306,7 +6973,7 @@ import { PDFs } from "../shared/PDFs.js";
 
                 let mDateX = dateScaleFactor * mDateRadius * Math.cos(((mDateAngle - tweakAngle - 90) * Math.PI) / 180);
                 let mDateY = dateScaleFactor * mDateRadius * Math.sin(((mDateAngle - tweakAngle - 90) * Math.PI) / 180);
-                if (ancestorObject.ahnNum >= 64 || (ancestorObject.ahnNum >= 32 && FanChartView.maxAngle < 360)) {
+                if (ancestorObject.ahnNumPos >= 64 || (ancestorObject.ahnNumPos >= 32 && FanChartView.maxAngle < 360)) {
                     tweakAngle = (Math.atan(10 / (thisGenNum * thisRadius)) * 180) / Math.PI;
                     let mDateRadius = (thisCumulativeRadius + prevCumulativeRadius) / 2 + 70;
                     if (thisPosNum < numSpotsThisGen / 2) {
@@ -6340,22 +7007,22 @@ import { PDFs } from "../shared/PDFs.js";
                     FanChartView.currentSettings["date_options_showMarriage"] == false ||
                     FanChartView.currentSettings["date_options_dateTypes"] == "none" ||
                     thisGenNum >= 8 ||
-                    (FanChartView.myAhnentafel.marriageList[ancestorObject.ahnNum] &&
-                        FanChartView.myAhnentafel.marriageList[ancestorObject.ahnNum].MarriageDate &&
-                        FanChartView.myAhnentafel.marriageList[ancestorObject.ahnNum].MarriageDate == "0000-00-00")
+                    (FanChartView.thisAhnentafel.marriageList[ancestorObject.ahnNumPos] &&
+                        FanChartView.thisAhnentafel.marriageList[ancestorObject.ahnNumPos].MarriageDate &&
+                        FanChartView.thisAhnentafel.marriageList[ancestorObject.ahnNumPos].MarriageDate == "0000-00-00")
                 ) {
                     theMDateDIV.parentNode.style.display = "none";
                 } else {
                     if (
-                        FanChartView.myAhnentafel.marriageList[ancestorObject.ahnNum] &&
-                        FanChartView.myAhnentafel.marriageList[ancestorObject.ahnNum].MarriageDate &&
-                        FanChartView.myAhnentafel.list[ancestorObject.ahnNum] &&
-                        FanChartView.myAhnentafel.list[ancestorObject.ahnNum + 1]
+                        FanChartView.thisAhnentafel.marriageList[ancestorObject.ahnNumPos] &&
+                        FanChartView.thisAhnentafel.marriageList[ancestorObject.ahnNumPos].MarriageDate &&
+                        FanChartView.thisAhnentafel.list[ancestorObject.ahnNumPos] &&
+                        FanChartView.thisAhnentafel.list[ancestorObject.ahnNumPos + 1]
                     ) {
                         condLog(
                             "mDateDIV display:",
                             theMDateDIV.parentNode.style.display,
-                            FanChartView.myAhnentafel.marriageList[ancestorObject.ahnNum].MarriageDate
+                            FanChartView.thisAhnentafel.marriageList[ancestorObject.ahnNumPos].MarriageDate
                         );
                         theMDateDIV.parentNode.style.display = "block";
 
@@ -6364,8 +7031,8 @@ import { PDFs } from "../shared/PDFs.js";
                         }
                         let mDotBreak = "m.<br/>";
                         if (
-                            ancestorObject.ahnNum >= 64 ||
-                            (ancestorObject.ahnNum >= 32 && FanChartView.maxAngle < 360)
+                            ancestorObject.ahnNumPos >= 64 ||
+                            (ancestorObject.ahnNumPos >= 32 && FanChartView.maxAngle < 360)
                         ) {
                             mDotBreak = " m. ";
                             // if (thisPosNum < numSpotsThisGen / 2) {
@@ -6377,10 +7044,11 @@ import { PDFs } from "../shared/PDFs.js";
                         theMDateDIV.innerHTML =
                             mDotBreak +
                             getCleanDateString(
-                                FanChartView.myAhnentafel.marriageList[ancestorObject.ahnNum].MarriageDate,
+                                FanChartView.thisAhnentafel.marriageList[ancestorObject.ahnNumPos].MarriageDate,
                                 dateStyle
                             ).replace(",", " ") +
-                            (ancestorObject.ahnNum >= 64 || (ancestorObject.ahnNum >= 32 && FanChartView.maxAngle < 360)
+                            (ancestorObject.ahnNumPos >= 64 ||
+                            (ancestorObject.ahnNumPos >= 32 && FanChartView.maxAngle < 360)
                                 ? " "
                                 : "");
                         // .replace(/\-/g, " "); // On second thought - leave the dashes in, if that's the format chosen
@@ -7692,7 +8360,10 @@ import { PDFs } from "../shared/PDFs.js";
      */
     function getShortName(person) {
         const maxLength = 20;
-
+        if (!person) {
+            console.log("WARNING: getShortName called with no person");
+            return "";
+        }
         const birthName = person.getDisplayName();
         const middleInitialName = `${person._data.FirstName} ${person._data.MiddleInitial} ${person._data.LastNameAtBirth}`;
         const noMiddleInitialName = `${person._data.FirstName} ${person._data.LastNameAtBirth}`;
@@ -8525,7 +9196,7 @@ import { PDFs } from "../shared/PDFs.js";
 
         // SHOW THE Descendants Link icon  BADGE (green)
         // ---- --- ----------- ---- ----  -----  -----
-        if (1 == 1) {
+        if (1 == 2) {
             let theLink =
                 "https://www.wikitree.com/treewidget/" +
                 safeName(thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.Name) +
@@ -8568,7 +9239,7 @@ import { PDFs } from "../shared/PDFs.js";
 
         // SHOW THE Ancestors Link icon  BADGE (green)
         // ---- --- ----------- ---- ----  -----  -----
-        if (1 == 1) {
+        if (1 == 2) {
             let theLink =
                 "https://www.wikitree.com/treewidget/" +
                 safeName(thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.Name) +
@@ -8610,7 +9281,7 @@ import { PDFs } from "../shared/PDFs.js";
 
         // SHOW THE DNA Confirmation BADGE (orange)
         // ---- --- ---------------- -----  ------
-        if (1 == 1) {
+        if (1 == 2) {
             let theLink =
                 "https://www.wikitree.com/treewidget/" +
                 safeName(thePeopleList[FanChartView.myAhnentafel.list[ahnNum]]._data.Name) +
@@ -9616,6 +10287,7 @@ import { PDFs } from "../shared/PDFs.js";
     }
 
     function getBackgroundColourFor(gen, pos, ahnNum) {
+        // console.log("getBackgroundColourFor:", gen, pos, ahnNum);
         // GET the settings that determine what the colouring should look like (if at all)
         let settingForColourBy = FanChartView.currentSettings["colour_options_colourBy"];
         // WHILE we're here, might as well get the sub-settings if Family or Location colouring is being used ...
@@ -9629,6 +10301,14 @@ import { PDFs } from "../shared/PDFs.js";
         let overRideByHighlight = false; //
         if (FanChartView.currentSettings["highlight_options_showHighlights"] == true) {
             overRideByHighlight = doHighlightFor(gen, pos, ahnNum);
+        }
+
+        if (FanChartView.familyType == "Combo") {
+            if (gen == 1 && pos == 0) {
+                return "darkgreen";
+            } else if (gen == 1 && pos == 1) {
+                return "red";
+            }
         }
         if (overRideByHighlight == true) {
             return "yellow";
@@ -9644,17 +10324,28 @@ import { PDFs } from "../shared/PDFs.js";
 
         let numThisGen = 2 ** gen;
 
+        if (FanChartView.familyType == "Ado" && !FanChartView.myAhnentafel.list[ahnNum]) {
+            return "white";
+        } else if (FanChartView.familyType == "Bio" && !FanChartView.bioAhnentafel.list[ahnNum]) {
+            return "white";
+        }
+
         if (settingForColourBy == "Gender") {
             return thisColourArray[1 + (ahnNum % 2)];
         } else if (settingForColourBy == "Generation") {
+            let thisGen = gen - (FanChartView.familyType == "Combo" ? 1 : 0);
             if (settingForPalette == "Rainbow") {
                 for (var i = 0; i < FanChartView.numGens2Display; i++) {
                     thisColourArray[FanChartView.numGens2Display - i] = Rainbow8[i];
                 }
             }
-            return thisColourArray[1 + (gen % thisColourArray.length)];
+            return thisColourArray[1 + (thisGen % thisColourArray.length)];
         } else if (settingForColourBy == "Grand") {
-            return thisColourArray[1 + (Math.floor((4 * pos) / numThisGen) % thisColourArray.length)];
+            if (FanChartView.familyType == "Combo") {
+                return thisColourArray[1 + ((Math.floor((4 * pos) / (numThisGen / 2)) % 4) % thisColourArray.length)];
+            } else {
+                return thisColourArray[1 + (Math.floor((4 * pos) / numThisGen) % thisColourArray.length)];
+            }
         } else if (settingForColourBy == "GGrand") {
             return thisColourArray[1 + (Math.floor((8 * pos) / numThisGen) % thisColourArray.length)];
         } else if (settingForColourBy == "GGGrand") {
@@ -10393,7 +11084,7 @@ import { PDFs } from "../shared/PDFs.js";
         }
         let DNAbadgeClr = { X: "green", Y: "blue", MT: "red", As: "white", Ds: "white", DNAconf: "orange" };
         let DNAbadgeFill = {
-            X: "lightgray",
+            X: "lightgrey",
             Y: "lightblue",
             MT: "pink",
             As: "white",
@@ -10493,4 +11184,201 @@ import { PDFs } from "../shared/PDFs.js";
     // };
 
     $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
+
+    // Adoption checking function - taken from Six Degrees app (standalone version), and adapted for use here
+    // to be used until the full API for BioFather and BioMother is available
+    // uses the {{Adopted Child}} template in the bio to find the adoptive parents' IDs
+
+    FanChartView.check4Adoption = check4Adoption;
+    FanChartView.checkBio4Adoption = checkBio4Adoption;
+
+    function cleanBracketsFrom(messyID) {
+        let tidyID = messyID.replace(/\[/g, "").replace(/\]/g, "");
+        return tidyID;
+    }
+
+    async function checkBio4Adoption(theBio = "") {
+        console.log("Doing the checkBio4Adoption now");
+        // assume there are NO bio parents if we're checking a bio in the first place
+        theAdoDadID = "";
+        theAdoMomID = "";
+
+        if (theBio > "") {
+            // let theBio = data[0].bio;
+            // alert ("There is person data - "+ data[0].status + ": " + data[0].person.Name+ " " + data[0].person.Id+ " " + data[0].person.FirstName+ " " + data[0].person.LastNameAtBirth + " " + data[0].person.BirthDate + " " + data[0].person.Father + " " + data[0].person.Mother);
+            let whereAdoptedTemplateBegins = theBio.indexOf("{{Adopted Child");
+            if (whereAdoptedTemplateBegins > -1) {
+                let whereAdoptedTemplateEnds = theBio.indexOf("}}", whereAdoptedTemplateBegins);
+                let theAdoptedTemplate = theBio.substring(whereAdoptedTemplateBegins, whereAdoptedTemplateEnds + 2);
+                // console.log(data[0].bio);
+                console.log("ADOPTION REPORT:  this person IS adopted", theAdoptedTemplate);
+
+                let whereAdoDadBegins = theAdoptedTemplate.indexOf("Adopted Father=");
+                let whereAdoDadEnds = theAdoptedTemplate.indexOf("|", whereAdoDadBegins);
+                theAdoDadID = cleanBracketsFrom(theAdoptedTemplate.substring(whereAdoDadBegins + 17, whereAdoDadEnds));
+
+                let whereAdoMomBegins = theAdoptedTemplate.indexOf("Adopted Mother=");
+                let whereAdoMomEnds = theAdoptedTemplate.indexOf("|", whereAdoMomBegins);
+                theAdoMomID = cleanBracketsFrom(theAdoptedTemplate.substring(whereAdoMomBegins + 17, whereAdoMomEnds));
+
+                let whereBioDadBegins = theAdoptedTemplate.indexOf("Biological Father=");
+                let whereBioDadEnds = theAdoptedTemplate.indexOf("|", whereBioDadBegins);
+                theBioDadID = cleanBracketsFrom(theAdoptedTemplate.substring(whereBioDadBegins + 20, whereBioDadEnds));
+
+                let whereDashInBioDad = theBioDadID.indexOf("-");
+                if (theBioDadID.length < 3 || whereBioDadEnds == -1 || whereDashInBioDad == -1) {
+                    theBioDadID = "";
+                }
+
+                let whereBioMomBegins = theAdoptedTemplate.indexOf("Biological Mother=");
+                let whereBioMomEnds = theAdoptedTemplate.indexOf("|", whereBioMomBegins);
+                theBioMomID = cleanBracketsFrom(theAdoptedTemplate.substring(whereBioMomBegins + 20, whereBioMomEnds));
+
+                let whereDashInBioMom = theBioMomID.indexOf("-");
+                if (theBioMomID.length < 3 || whereBioMomEnds == -1 || whereDashInBioMom == -1) {
+                    theBioMomID = "";
+                }
+
+                console.log(
+                    "ADOPTION REPORT:  PARENTS have IDs: ",
+                    theAdoDadID,
+                    theAdoMomID,
+                    "|",
+                    whereBioDadBegins,
+                    theBioDadID,
+                    theBioDadID.length,
+                    whereBioDadEnds,
+                    "|",
+                    whereBioMomBegins,
+                    theBioMomID,
+                    whereBioMomEnds
+                );
+
+                theBioDadID = 19107478;
+                theBioMomID = 19115981;
+            } else {
+                console.log("ADOPTION REPORT:  this person is NOT adopted");
+                theAdoDadID = "";
+                theAdoMomID = "";
+            }
+        } else {
+            console.log("Empty Bio provided to checkBio4Adoption - assumption no Bio Parents");
+        }
+    }
+
+    async function check4Adoption(newID) {
+        // function check4Adoption(newID) {
+        // let newID = this.WikiTree_UserName1;
+        console.log("Doing the check4Adoption now for ", newID);
+        theAdoDadID = "";
+        theAdoMomID = "";
+        // otherProfileID = "";
+
+        var appID = "fanChart";
+
+        var API_URL = "https://api.wikitree.com/api.php"; // declared in globalVars.php
+        var request = $.ajax({
+            url: API_URL,
+            crossDomain: true,
+            xhrFields: { withCredentials: true },
+            type: "POST",
+            dataType: "json",
+
+            // LOAD ALL THE BIO for the CENTRAL PERSON
+            data: { action: "getBio", appId: appID, key: newID, format: "json" },
+
+            success: function (data) {
+                // alert("Success - in ready function!");
+                var theJason = JSON.stringify(data);
+
+                if (data[0]) {
+                    // alert ("There is data");
+                    if (data[0].bio) {
+                        let theBio = data[0].bio;
+                        // alert ("There is person data - "+ data[0].status + ": " + data[0].person.Name+ " " + data[0].person.Id+ " " + data[0].person.FirstName+ " " + data[0].person.LastNameAtBirth + " " + data[0].person.BirthDate + " " + data[0].person.Father + " " + data[0].person.Mother);
+                        let whereAdoptedTemplateBegins = theBio.indexOf("{{Adopted Child");
+                        if (whereAdoptedTemplateBegins > -1) {
+                            let whereAdoptedTemplateEnds = theBio.indexOf("}}", whereAdoptedTemplateBegins);
+                            let theAdoptedTemplate = theBio.substring(
+                                whereAdoptedTemplateBegins,
+                                whereAdoptedTemplateEnds + 2
+                            );
+                            // console.log(data[0].bio);
+                            console.log("ADOPTION REPORT:  this person IS adopted", theAdoptedTemplate);
+
+                            let whereAdoDadBegins = theAdoptedTemplate.indexOf("Adopted Father=");
+                            let whereAdoDadEnds = theAdoptedTemplate.indexOf("|", whereAdoDadBegins);
+                            theAdoDadID = cleanBracketsFrom(
+                                theAdoptedTemplate.substring(whereAdoDadBegins + 17, whereAdoDadEnds)
+                            );
+
+                            let whereAdoMomBegins = theAdoptedTemplate.indexOf("Adopted Mother=");
+                            let whereAdoMomEnds = theAdoptedTemplate.indexOf("|", whereAdoMomBegins);
+                            theAdoMomID = cleanBracketsFrom(
+                                theAdoptedTemplate.substring(whereAdoMomBegins + 17, whereAdoMomEnds)
+                            );
+
+                            let whereBioDadBegins = theAdoptedTemplate.indexOf("Biological Father=");
+                            let whereBioDadEnds = theAdoptedTemplate.indexOf("|", whereBioDadBegins);
+                            theBioDadID = cleanBracketsFrom(
+                                theAdoptedTemplate.substring(whereBioDadBegins + 20, whereBioDadEnds)
+                            );
+
+                            let whereDashInBioDad = theBioDadID.indexOf("-");
+                            if (theBioDadID.length < 3 || whereBioDadEnds == -1 || whereDashInBioDad == -1) {
+                                theBioDadID = "";
+                            }
+
+                            let whereBioMomBegins = theAdoptedTemplate.indexOf("Biological Mother=");
+                            let whereBioMomEnds = theAdoptedTemplate.indexOf("|", whereBioMomBegins);
+                            theBioMomID = cleanBracketsFrom(
+                                theAdoptedTemplate.substring(whereBioMomBegins + 20, whereBioMomEnds)
+                            );
+
+                            let whereDashInBioMom = theBioMomID.indexOf("-");
+                            if (theBioMomID.length < 3 || whereBioMomEnds == -1 || whereDashInBioMom == -1) {
+                                theBioMomID = "";
+                            }
+
+                            console.log(
+                                "ADOPTION REPORT:  PARENTS have IDs: ",
+                                theAdoDadID,
+                                theAdoMomID,
+                                "|",
+                                whereBioDadBegins,
+                                theBioDadID,
+                                theBioDadID.length,
+                                whereBioDadEnds,
+                                "|",
+                                whereBioMomBegins,
+                                theBioMomID,
+                                whereBioMomEnds
+                            );
+                        } else {
+                            console.log("ADOPTION REPORT:  this person is NOT adopted");
+                            theAdoDadID = "";
+                            theAdoMomID = "";
+                        }
+                    } else {
+                        if (data[0].status.indexOf("Permission denied") > -1) {
+                            console.log("No bio readable");
+                            theAdoDadID = "";
+                            theAdoMomID = "";
+                        } else {
+                            alert("There is NO person data at all - line 1164  - " + data[0].status);
+                        }
+                    }
+                } else {
+                    alert("There is no data called PERSON");
+                }
+
+                return false;
+            },
+
+            // On failed POST/server error, act like a failed login.
+            error: function (xhr, status) {
+                alert("OOPS - something unexpected happened! - " + status);
+            },
+        }); // end var request";
+    }
 })();
