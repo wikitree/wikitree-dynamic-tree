@@ -31,9 +31,12 @@ class SlippyTree extends View {
     #SCROLLSTEP_KEYS = 1.1; // Was 1.2
     #PATHPREFIX;
     static loadCount = 0;
-    LIVINGPEOPLE = "Highlight living people";
+    H_LIVINGPEOPLE = "Highlight living people";
+    H_MANAGEDBYME = "Managed by me";
+    H_NOPROFILEMANAGER = "No profile manager";
+    H_PROFILENOTPUBLIC = "Profile not public";
     #VIEWPARAM = "slippyTreeState"; // Param to store details of current view in window location
-    #VERSION = 0; // URLs may last over time, plan for extension
+    #VERSION = 1; // URLs may last over time, plan for extension
     #APIURL = "https://api.wikitree.com/api.php";
     #APPID = "SlippyTree";
     #HTML = "http://www.w3.org/1999/xhtml";
@@ -501,7 +504,10 @@ class SlippyTree extends View {
                             }
                         }
                         if (e.currentTarget == this.state.svg) {
-                            this.setDescriptionFocus(found);
+                            if (found != this.state.lastMouseOver) {
+                                this.setDescriptionFocus(found);
+                                this.state.lastMouseOver = found;
+                            }
                         }
                         this.state.hoverScreenX = e.screenX;
                         this.state.hoverScreenY = e.screenY;
@@ -771,11 +777,7 @@ class SlippyTree extends View {
         document.querySelectorAll("header, footer, .tabs--wrapper").forEach((e) => {
             e.style.setProperty("--slippy-computed-height", null);
         });
-        if (this.#VIEWPARAM) {
-            let v = new URLSearchParams(window.location.hash.substring(1));
-            v.delete(this.#VIEWPARAM);
-            window.history.replaceState(null, null, "#" + v);
-        }
+        this.saveState();
         delete this.state;
     }
 
@@ -804,7 +806,7 @@ class SlippyTree extends View {
      */
     setCategory(category) {
         if (category == null) {
-            category = this.LIVINGPEOPLE;
+            category = this.H_LIVINGPEOPLE;
         }
         this.#rebuildCategories();
         for (const person of this.state.people) {
@@ -820,6 +822,7 @@ class SlippyTree extends View {
             }
         }
         this.state.highlightCategory = category;
+        this.saveState();
     }
 
     #resetCategories() {
@@ -850,7 +853,7 @@ class SlippyTree extends View {
                             if (typeof c == "string") {
                                 cats[j] = c = [c];
                             }
-                            if (c.length == 1 && c[0] == this.LIVINGPEOPLE) {
+                            if (c.length == 1 && c[0] == this.H_LIVINGPEOPLE) {
                                 continue; // special
                             }
                             let found = false;
@@ -879,7 +882,7 @@ class SlippyTree extends View {
                     }
                 }
             });
-            categories.unshift([this.LIVINGPEOPLE]);
+            categories.unshift([this.H_LIVINGPEOPLE]);
             for (const cat of categories) {
                 let elt = catmenu;
                 for (let i = 0; i + 1 < cat.length; i++) {
@@ -965,7 +968,14 @@ class SlippyTree extends View {
         document.querySelector(".slippy-settings-nonbiological").checked = this.settings.nonbiological;
         document.querySelector(".slippy-settings-wheel[value=\"" + this.settings.wheel + "\"]").checked = true;
         searchFamily.classList.toggle("selected", this.settings.search != "individual");
-        window.localStorage.setItem("slippyTree-settings", JSON.stringify(this.settings));
+        // Actually we DON'T want male/female/bio/nonbio to be stored across sessions - these are transient.
+        let dup = JSON.parse(JSON.stringify(this.settings));
+        delete dup.male;
+        delete dup.female;
+        delete dup.biological;
+        delete dup.nonbiological;
+        window.localStorage.setItem("slippyTree-settings", JSON.stringify(dup));
+        this.saveState();
     }
 
     downloadTree() {
@@ -1066,69 +1076,115 @@ class SlippyTree extends View {
     }
 
     /**
-     * Serialize the current state of the view to a string, suitable for include in a URL parameter.
+     * Serialize the current state of the view to the URL.
      * The reverse operion is "restoreState"
      */
     saveState() {
-        // sort into order
-        // store id as 32 bits
-        // if next id - prev id < 256, store delta, otherwise store 0 and then 32-bit id.
-        //
-        let data = [];
-        for (let pass = 0; pass < 2; pass++) {
-            let ids = [];
-            for (const person of this.state.people) {
-                if (!person.isHidden()) {
-                    let acl = person.childrenLoaded;
-                    for (let child of person.children()) {
-                        if (!child.isLoaded()) {
-                            acl = false;
+        try {
+            if (this.#VIEWPARAM && this.state.people) {
+                // sort into order
+                // store id as 32 bits
+                // if next id - prev id < 256, store delta, otherwise store 0 and then 32-bit id.
+                //
+                let data = [];
+                for (let pass = 0; pass < 2; pass++) {
+                    let ids = [];
+                    for (const person of this.state.people) {
+                        if (!person.isHidden()) {
+                            let acl = person.childrenLoaded;
+                            for (let child of person.children()) {
+                                if (!child.isLoaded()) {
+                                    acl = false;
+                                }
+                            }
+                            if (pass == 0 ? acl : !acl) {
+                                ids.push(parseInt(person.id));
+                            }
                         }
                     }
-                    if (pass == 0 ? acl : !acl) {
-                        ids.push(parseInt(person.id));
+                    ids.sort();
+                    data[pass] = ids;
+                }
+                if (data[0].length == 0 || !this.state.focus || !this.state.focus.id) {
+                    return;
+                }
+                while (data[data.length - 1].length == 0) {
+                    data.length--;
+                }
+                let out = [];
+
+                // For format details see restoreState()
+                out.push(this.#VERSION); // Plan for expansion!
+                out.push(1);
+                out.push((this.state.focus.id >> 24) & 0xff);
+                out.push((this.state.focus.id >> 16) & 0xff);
+                out.push((this.state.focus.id >> 8) & 0xff);
+                out.push((this.state.focus.id >> 0) & 0xff);
+                if (this.state.secondaryFocus) {
+                    out.push(2);
+                    out.push((this.state.secondaryFocus.id >> 24) & 0xff);
+                    out.push((this.state.secondaryFocus.id >> 16) & 0xff);
+                    out.push((this.state.secondaryFocus.id >> 8) & 0xff);
+                    out.push((this.state.secondaryFocus.id >> 0) & 0xff);
+                }
+                if (!this.settings.male || !this.settings.female || !this.settings.biological || !this.settings.nonbiological) {
+                    let flags = (this.settings.male ? 1 : 0) | (this.settings.female ? 2 : 0) | (this.settings.biological ? 4 : 0) | (this.settings.nonbiological ? 8 : 0);
+                    out.push(3);
+                    out.push(flags);
+                }
+                if (this.state.highlightCategory == this.H_LIVINGPEOPLE) {
+                    out.push(5);
+                } else if (this.state.highlightCategory == this.H_MANAGEDBYME) {
+                    out.push(6);
+                } else if (this.state.highlightCategory == this.H_NOPROFILEMANAGER) {
+                    out.push(7);
+                } else if (this.state.highlightCategory == this.H_PROFILENOTPUBLIC) {
+                    out.push(8);
+                } else if (this.state.highlightCategory) {
+                    let encoded = new TextEncoder().encode(Array.isArray(this.state.highlightCategory) ? this.state.highlightCategory.join("\n") : this.state.highlightCategory);
+                    out.push(4);
+                    out.push(encoded.length);
+                    for (let i=0;i<encoded.length;i++) {
+                        out.push(encoded[i]);
                     }
                 }
-            }
-            ids.sort();
-            data[pass] = ids;
-        }
-        while (data[data.length - 1].length == 0) {
-            data.length--;
-        }
-        let out = [];
-        out.push(this.#VERSION); // Plan for expansion!
-        out.push((this.state.focus.id >> 24) & 0xff);
-        out.push((this.state.focus.id >> 16) & 0xff);
-        out.push((this.state.focus.id >> 8) & 0xff);
-        out.push((this.state.focus.id >> 0) & 0xff);
-        for (let j = 0; j < data.length; j++) {
-            const ids = data[j];
-            if (j > 0) {
                 out.push(0);
-                out.push(0);
-                out.push(0);
-                out.push(0);
-            }
-            for (let i = 0; i < ids.length; i++) {
-                let delta = i == 0 ? 0 : ids[i] - ids[i - 1];
-                if (i == 0 || delta < 0 || delta > 255) {
-                    if (i > 0) {
+                for (let j = 0; j < data.length; j++) {
+                    const ids = data[j];
+                    if (j > 0) {
+                        out.push(0);
+                        out.push(0);
+                        out.push(0);
                         out.push(0);
                     }
-                    out.push((ids[i] >> 24) & 0xff);
-                    out.push((ids[i] >> 16) & 0xff);
-                    out.push((ids[i] >> 8) & 0xff);
-                    out.push((ids[i] >> 0) & 0xff);
-                } else {
-                    out.push(delta);
+                    for (let i = 0; i < ids.length; i++) {
+                        let delta = i == 0 ? 0 : ids[i] - ids[i - 1];
+                        if (i == 0 || delta < 0 || delta > 255) {
+                            if (i > 0) {
+                                out.push(0);
+                            }
+                            out.push((ids[i] >> 24) & 0xff);
+                            out.push((ids[i] >> 16) & 0xff);
+                            out.push((ids[i] >> 8) & 0xff);
+                            out.push((ids[i] >> 0) & 0xff);
+                        } else {
+                            out.push(delta);
+                        }
+                    }
+                    out.push(0);
                 }
+                let s = out.map((b) => String.fromCodePoint(b)).join("");
+                data = btoa(s).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+                // return data;
+
+                // Set the value directly
+                let v = new URLSearchParams(window.location.hash.substring(1));
+                v.set(this.#VIEWPARAM, data);
+                window.history.replaceState(null, null, "#" + v);
             }
-            out.push(0);
+        } catch (e) {
+            console.log(e);
         }
-        // console.log("SAVE: D="+JSON.stringify(data));
-        let s = out.map((b) => String.fromCodePoint(b)).join("");
-        return btoa(s).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
     }
 
     /**
@@ -1142,11 +1198,66 @@ class SlippyTree extends View {
             val = atob(val.replaceAll("-", "+").replaceAll("_", "/"));
             let data = [[]];
             let i = 0;
+            // Formats! Evolving over time. First byte is always version
+            //
+            // version=0
+            //   focus id (4 bytes)
+            //   list of ids in simple delta format (variable)
+            //
+            // version=1
+            //   [key,value]+, where key is single byte and value depends on key. Only key 1 is required. Keys are:
+            //    1: focus id (4 bytes, required)
+            //    2: secondary focus id (4 bytes)
+            //    3: flags (1 byte: bits are [x,x,x,x,nonbiological,biological,female,male]
+            //    4: highlight (pascal unicode string)
+            //    5: highlight is "Living people"
+            //    6: highlight is "Managed by me"
+            //    7: highlight is "No profile manager"
+            //    8: highlight is "Not public"
+            //    0: list of ids follows in simple delta format (required, must come last)
+            //   
             let version = val.codePointAt(i++);
-            if (version != this.#VERSION) {
+            let focusId = 0, secondaryFocusId = 0, newsettings = null, highlight = null;
+            if (version == 0) {
+                focusId = (val.codePointAt(i++) << 24) | (val.codePointAt(i++) << 16) | (val.codePointAt(i++) << 8) | val.codePointAt(i++);
+            } else if (version == 1) {
+                let key;
+                do {
+                    key = val.codePointAt(i++);
+                    if (key == 1) {
+                        focusId = (val.codePointAt(i++) << 24) | (val.codePointAt(i++) << 16) | (val.codePointAt(i++) << 8) | val.codePointAt(i++);
+                    } else if (key == 2) {
+                        secondaryFocusId = (val.codePointAt(i++) << 24) | (val.codePointAt(i++) << 16) | (val.codePointAt(i++) << 8) | val.codePointAt(i++);
+                    } else if (key == 3) {
+                        let b = val.codePointAt(i++);
+                        newsettings = {};
+                        newsettings.male = (b & 1) != 0;
+                        newsettings.female = (b & 2) != 0;
+                        newsettings.biological = (b & 4) != 0;
+                        newsettings.nonbiological = (b & 8) != 0;
+                    } else if (key == 4) {
+                        let len = val.codePointAt(i++);
+                        let a = [];
+                        while (len-- > 0) {
+                            a.push(val.codePointAt(i++));
+                        }
+                        highlight = new TextDecoder().decode(new Uint8Array(a));
+                        if (highlight.includes("\n")) {
+                            highlight = highlight.split("\n");
+                        }
+                    } else if (key == 5) {
+                       highlight = this.H_LIVINGPEOPLE;
+                    } else if (key == 6) {
+                       highlight = this.H_MANAGEDBYME;
+                    } else if (key == 7) {
+                       highlight = this.H_NOPROFILEMANAGER;
+                    } else if (key == 8) {
+                       highlight = this.H_PROFILENOTPUBLIC;
+                    }
+                } while (key != 0);
+            } else {
                 return false;
             }
-            let focusid = (val.codePointAt(i++) << 24) | (val.codePointAt(i++) << 16) | (val.codePointAt(i++) << 8) | val.codePointAt(i++);
             let id = 0, pass = 0;
             while (i < val.length) {
                 if (id == 0) {
@@ -1167,14 +1278,29 @@ class SlippyTree extends View {
                     }
                 }
             }
-            // console.log("RESTORE: D="+JSON.stringify(data));
+            // console.log("RESTORE DONE: version="+version+" focus="+focusId+" secondary="+secondaryFocusId+" set="+JSON.stringify(newsettings)+" h="+highlight+" data="+JSON.stringify(data));
             this.reset();
+            // Restore. Load specified people, then focus, then set secondary/settings/highlight
             this.load({ keys: data.flat() }, () => {
                 for (const id of data[0]) {
                     const person = this.find(id, true);
                     person.childrenLoaded = true;
                 }
-                this.setFocus(this.find(focusid, true), callback);
+                this.setFocus(this.find(focusId, true), () => {
+                    if (secondaryFocusId != 0) {
+                        this.setSecondaryFocus(this.find(secondaryFocusId, true));
+                    }
+                    if (newsettings) {
+                        this.setSettings(newsettings);
+                    }
+                    if (highlight) {
+                        this.state.highlightCategory = highlight;
+                        this.setCategory(highlight);
+                    }
+                    if (callback) {
+                        callback();
+                    }
+                });
             });
             return true;
         } catch (e) {
@@ -1349,6 +1475,7 @@ class SlippyTree extends View {
             this.setEdgeFocus(this.state.focus, this.state.secondaryFocus);
             this.state.view.keyboardFocus = focus;
         }
+        this.saveState();
     }
 
     /**
@@ -1623,11 +1750,7 @@ class SlippyTree extends View {
                 // of which will be to add new paths. This can be done safely
                 // during or after the draw callbacks
                 this.checkForUnloadedChildren();
-                if (this.#VIEWPARAM) {
-                    let v = new URLSearchParams(window.location.hash.substring(1));
-                    v.set(this.#VIEWPARAM, this.saveState());
-                    window.history.replaceState(null, null, "#" + v);
-                }
+                this.saveState();
             } else {
                 if (callback) {
                     callback();
@@ -2530,8 +2653,10 @@ class SlippyTree extends View {
         y1 += 50;
         this.reposition({ x0: x0, y0: y0, x1: x1, y1: y1, cx: cx, cy: cy });
         if (t == 1 && this.state.view.callback) {
+            const callback = this.state.view.callback;
+            delete this.state.view.callback;
             setTimeout(() => {
-                this.state.view.callback();
+                callback();
             }, 0);
         }
     }
@@ -2657,7 +2782,7 @@ class SlippyTree extends View {
                     }
                 }
                 for (const person of newpeople) {
-                    console.log("add: this="+person.data.Name);
+//                    console.log("add: this="+person.data.Name);
                     for (const key of ["Father", "Mother", "BioFather", "BioMother"]) {
                         const id2 = person.data[key];
                         if (id2) {
@@ -3712,24 +3837,24 @@ class SlippyTreePerson {
         let categories = [];
 
         if (this.data.IsLiving) {
-            categories.push(this.tree.LIVINGPEOPLE);
+            categories.push(this.tree.H_LIVINGPEOPLE);
         }
 
         let currentUserName = window?.wtViewRegistry?.session?.lm?.user?.name;
         if (currentUserName && this.data.Managers) {
             for (let p of this.data.Managers) {
                 if (p.Name == currentUserName) {
-                    categories.push(["Managed by me"]);
+                    categories.push([this.tree.H_MANAGEDBYME]);
                 }
             }
         }
         if (this.data.Manager === 0) {
             // If manager is private, "Managers" will return an empty list.
             // But "Manager" will be null (meaning private), as opposed to 0 (meaning no manager)
-            categories.push(["No profile manager"]);
+            categories.push([this.tree.H_NOPROFILEMANAGER]);
         }
         if (this.data.Privacy < 50) {
-            categories.push(["Profile not public"]);
+            categories.push([this.tree.H_PROFILENOTPUBLIC]);
         }
 
         if (this.data.Templates) {
