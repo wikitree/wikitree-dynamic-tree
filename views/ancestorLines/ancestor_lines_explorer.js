@@ -43,7 +43,7 @@ export class AncestorLinesExplorer {
                 The names of people marked as a <b>Brick Wall</b> (see below) are displayed in the selected colour.
             </li><li>
                 If a person has a biological and adoptive parent, the adoptive parent will be shown by deafult and a 
-                <small><strike>DNA</strike></small> button will appear at the start of thelink to that parent. 
+                <small><strike>DNA</strike></small> button will appear at the start of the link to that parent. 
                 Clicking the button will cycle through displaying the biological parent and their ancestors, 
                 both sets of parents, or just the adoptive parent. The button's label will change, showing which parent(s) are
                 currently being displayed. In addition, the links to adoptive parents and their subtree will be dotted lines, 
