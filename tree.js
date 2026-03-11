@@ -265,15 +265,15 @@ window.ViewRegistry = class ViewRegistry {
                 }
             }
 
-            // try {
-            this.currentView = view;
-            view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"], filteredParams);
-            // } catch (err) {
-            //     // If we have an unhandleable error from a view, display the error message and hide away
-            //     // the "info panel", since it's probably incomplete/broken.
-            //     this.showError(err.message);
-            //     this.hideInfoPanel();
-            // }
+            try {
+                this.currentView = view;
+                view.init(this.VIEW_CONTAINER, data[0]["person"]["Id"], filteredParams);
+            } catch (err) {
+                // If we have an unhandleable error from a view, display the error message and hide away
+                // the "info panel", since it's probably incomplete/broken.
+                this.showError(err.message);
+                this.hideInfoPanel();
+            }
         } else {
             infoPanel.classList.add("hidden");
             if (wtID) {

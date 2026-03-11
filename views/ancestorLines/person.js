@@ -110,7 +110,7 @@ export class Person {
         return [+this._data.BioFather, +this._data.BioMother];
     }
     hasABioParent() {
-        return this.getBioFatherId() || this.getBioMotherId();
+        return !!this.getBioFatherId() || !!this.getBioMotherId();
     }
     getName() {
         return this._data.Name;

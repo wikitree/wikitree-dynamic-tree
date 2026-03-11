@@ -41,6 +41,13 @@ export class AncestorLinesExplorer {
                 If you hover your pointer over a person, the birth- and death date and location of that person is displayed.
             </li><li>
                 The names of people marked as a <b>Brick Wall</b> (see below) are displayed in the selected colour.
+            </li><li>
+                If a person has a biological and adoptive parent, the adoptive parent will be shown by deafult and a 
+                <small><strike>DNA</strike></small> button will appear at the start of thelink to that parent. 
+                Clicking the button will cycle through displaying the biological parent and their ancestors, 
+                both sets of parents, or just the adoptive parent. The button's label will change, showing which parent(s) are
+                currently being displayed. In addition, the links to adoptive parents and their subtree will be dotted lines, 
+                with each different adoptive subree of ancestors using different coloured links.
             </li>
         </ul>
         <h3>Options</h3>
@@ -727,15 +734,10 @@ export class AncestorLinesExplorer {
         let fullTreelevel = document.getElementById("maxLevel").value;
         if (fullTreelevel == 0) fullTreelevel = Number.MAX_SAFE_INTEGER;
         AncestorLinesExplorer.clearDisplay();
-        const otherWtIds = $("#otherWtIds")
-            .val()
-            .trim()
-            .split(",")
-            .map((s) => s.trim())
-            .map((s) => s.replaceAll(" ", "_"))
-            .filter((s) => s.length > 0);
 
-        const [pathsRoot, nodes, links, pathEndpoints, pathGens] = AncestorTree.findPaths(otherWtIds);
+        const [pathsRoot, nodes, links, pathEndpoints, pathGens] = AncestorTree.findPaths(
+            AncestorLinesExplorer.getIdsOfInterest()
+        );
         showTree(
             AncestorTree,
             nodes,
@@ -750,6 +752,16 @@ export class AncestorLinesExplorer {
             labelsLeftOnly
         );
         $("#theSvg").floatingScroll("update");
+    }
+
+    static getIdsOfInterest() {
+        return $("#otherWtIds")
+            .val()
+            .trim()
+            .split(",")
+            .map((s) => s.trim())
+            .map((s) => s.replaceAll(" ", "_"))
+            .filter((s) => s.length > 0);
     }
 
     static async retrieveAncestorsFromWT(wtId, nrGenerations) {

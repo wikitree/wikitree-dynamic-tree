@@ -9,10 +9,10 @@ import { D3Node } from "./D3Node.js";
 
 export function showTree(
     theTree,
-    loiNodes,
-    loiLinks,
-    loiEndpoints,
-    genCountsInLOI,
+    loiNodes, // lines of interest nodes
+    loiLinks, // lines of interest links
+    loiEndpoints, // lines of inbterest endpoiints
+    genCountsInLOI, // heneration counts in lines of interest
     maxGenToShow,
     expandLOIs,
     showOnlyLOIs,
@@ -131,36 +131,7 @@ export function showTree(
     d3Root.x0 = treeHeight / 2;
     d3Root.y0 = 0;
     // console.log("d3Root", d3Root);
-
-    // Collapse after the maxGen level
-    const q = [d3Root];
-    while (q.length > 0) {
-        const n = q.shift();
-        const wtId = n.data.getWtId();
-
-        if (showOnlyLOIs) {
-            if (loiNodes.has(wtId) && !loiEndpoints.includes(wtId) && (expandLOIs || n.depth < maxGenToShow - 1)) {
-                if (n.children) {
-                    for (const c of n.children) {
-                        q.push(c);
-                    }
-                }
-            } else {
-                collapseSubtree(n);
-            }
-        } else {
-            if (n.depth < maxGenToShow - 1 || (expandLOIs && loiNodes.has(wtId) && !loiEndpoints.includes(wtId))) {
-                if (n.children) {
-                    for (const c of n.children) {
-                        q.push(c);
-                    }
-                }
-            } else {
-                collapseSubtree(n);
-            }
-        }
-    }
-
+    // collapseAfterMaxGen();
     update(d3Root);
 
     function genHeader(level) {
@@ -198,6 +169,37 @@ export function showTree(
                 return `${n}rd`;
             default:
                 return `${n}th`;
+        }
+    }
+
+    // Collapse after the maxGen level
+    function collapseAfterMaxGen() {
+        const q = [d3Root];
+        while (q.length > 0) {
+            const n = q.shift();
+            const wtId = n.data.getWtId();
+
+            if (showOnlyLOIs) {
+                if (loiNodes.has(wtId) && !loiEndpoints.includes(wtId) && (expandLOIs || n.depth < maxGenToShow - 1)) {
+                    if (n.children) {
+                        for (const c of n.children) {
+                            q.push(c);
+                        }
+                    }
+                } else {
+                    collapseSubtree(n);
+                }
+            } else {
+                if (n.depth < maxGenToShow - 1 || (expandLOIs && loiNodes.has(wtId) && !loiEndpoints.includes(wtId))) {
+                    if (n.children) {
+                        for (const c of n.children) {
+                            q.push(c);
+                        }
+                    }
+                } else {
+                    collapseSubtree(n);
+                }
+            }
         }
     }
 
@@ -303,6 +305,7 @@ export function showTree(
         // Rebuild hierarchy so getD3Children() runs again
         const inTree = connectors ? new Set() : undefined;
         d3Root = d3.hierarchy(theRoot, (d3node) => AncestorTree.getD3Children(d3node, inTree));
+        collapseAfterMaxGen();
 
         const nodeIndex = new Map();
         d3Root.descendants().forEach((n) => nodeIndex.set(n.data.getId(), n));
@@ -423,7 +426,7 @@ export function showTree(
         labelGroup.append("title").text((d) => birthAndDeathData(d.data));
 
         function formLabel(p, name) {
-            const lbl = p.type && p.type.startsWith(D3Node.ParentMode.BIO) ? "[bio] " : "";
+            const lbl = p.isBioParent() ? "[bio] " : "";
             return lbl + name;
         }
         function getPersonName(p) {
@@ -587,7 +590,7 @@ export function showTree(
             .attr("width", DUP_MARK_HEIGHT)
             .attr("height", DUP_MARK_HEIGHT)
             .style("fill", function (d) {
-                return aColour(duplicates.get(d.data.getNumId()));
+                return aDupNodeColour(duplicates.get(d.data.getNumId()));
             })
             .attr("cursor", "pointer");
 
@@ -635,6 +638,9 @@ export function showTree(
                 event.stopPropagation();
                 const node = d3.select(this.parentNode.parentNode).datum();
                 node.data.toggleParentMode(icon.side);
+                [, loiNodes, loiLinks, loiEndpoints, genCountsInLOI] = AncestorTree.findPaths(
+                    AncestorLinesExplorer.getIdsOfInterest()
+                );
                 update(node);
             });
 
@@ -785,14 +791,6 @@ export function showTree(
         const linkEnter = link
             .enter()
             .insert("path", "g")
-            .attr("class", function (d) {
-                const lnkId = `${d.parent.data.getWtId()}:${d.data.getWtId()}`;
-                let klass = loiLinks.has(lnkId) ? "link ofinterest" : "link";
-                for (const m of markedPaths.values()) {
-                    if (m.has(lnkId)) return `${klass} marked`;
-                }
-                return klass;
-            })
             .attr("d", function (d) {
                 const o = srcNode || d.parent || d;
                 return diagonal(o, o);
@@ -806,6 +804,21 @@ export function showTree(
 
         // Transition back to the parent element position
         linkUpdate
+            .attr("class", function (d) {
+                const lnkId = `${d.parent.data.getWtId()}:${d.data.getWtId()}`;
+                let klass = "link";
+                if (loiLinks.has(lnkId)) klass += " ofinterest";
+                if (d.data.isOnAdoptiveLine()) klass += " dotted";
+                for (const m of markedPaths.values()) {
+                    if (m.has(lnkId)) return `${klass} marked`;
+                }
+                return klass;
+            })
+            .style("stroke", (d) => {
+                const id = d.data.adoptiveSubtreeId;
+                if (!id) return "#ccc";
+                return subtreeColour(id);
+            })
             .transition()
             .duration(duration)
             .ease(d3.easeCubicInOut)
@@ -993,10 +1006,7 @@ export function showTree(
     }
 }
 
-function aColour(n) {
-    return ColourArray[n % ColourArray.length];
-}
-export const ColourArray = [
+const DupNodeColours = [
     "Gold",
     "HotPink",
     "LightCyan",
@@ -1042,6 +1052,31 @@ export const ColourArray = [
     "MediumSpringGreen",
     "Orange",
 ];
+const aDupNodeColour = d3.scaleOrdinal(DupNodeColours);
+
+const SubtreeColours = [
+    "#1f77b4",
+    "#ff7f0e",
+    "#2ca02c",
+    "#d62728",
+    "#9467bd",
+    "#8c564b",
+    "#e377c2",
+    "#7f7f7f",
+    "#bcbd22",
+    "#17becf",
+    "#4e79a7",
+    "#f28e2b",
+    "#59a14f",
+    "#e15759",
+    "#b07aa1",
+    "#9c755f",
+    "#edc948",
+    "#76b7b2",
+    "#a0cbe8",
+    "#ff9da7",
+];
+const subtreeColour = d3.scaleOrdinal(SubtreeColours);
 
 /**
  * Generate text that display when and where the person was born

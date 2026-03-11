@@ -436,14 +436,14 @@ export class AncestorTree {
     static getD3Children(d3Node, alreadyInTree) {
         if (d3Node.person instanceof LinkToPerson) return [];
         const ids = d3Node.getD3ChildrenIds();
-        const objs = ids.map(([id, type]) => {
+        const objs = ids.map(([id, type, adoptiveSubtreeId]) => {
             if (AncestorTree.#people.has(id)) {
                 const person = AncestorTree.#people.get(id);
                 if (alreadyInTree && alreadyInTree.has(id)) {
-                    return new D3Node(`${d3Node.idPrefix}_${type}`, new LinkToPerson(person), type);
+                    return new D3Node(`${d3Node.idPrefix}_${type}`, new LinkToPerson(person), type, adoptiveSubtreeId);
                 } else {
                     if (alreadyInTree) alreadyInTree.add(id);
-                    return new D3Node(`${d3Node.idPrefix}_${type}`, person, type);
+                    return new D3Node(`${d3Node.idPrefix}_${type}`, person, type, adoptiveSubtreeId);
                 }
             }
         });
