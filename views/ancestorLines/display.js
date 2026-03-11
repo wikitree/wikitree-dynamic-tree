@@ -40,9 +40,9 @@ export function showTree(
     const edgeFactor = +$("#edgeFactor").val() || 180;
     const heightFactor = +$("#tHFactor").val() || 34;
     const brickWallColour = $("#aleBrickWallColour").val() || "#ff0000";
-    var currentMaxShowDepth = initialMaxShowDepth();
+    var currentMaxShowGen = initialMaxShowGen();
 
-    function initialMaxShowDepth() {
+    function initialMaxShowGen() {
         return Math.max(Math.min(theTree.maxGeneration, maxGenToShow), expandLOIs ? genCountsInLOI.length : 0);
     }
 
@@ -52,7 +52,7 @@ export function showTree(
     }
 
     function calculateTreeWidth() {
-        const result = currentMaxShowDepth * edgeFactor + (labelsLeftOnly ? 0 : 2 * edgeFactor);
+        const result = currentMaxShowGen * edgeFactor + (labelsLeftOnly ? 0 : 2 * edgeFactor);
         // console.log(
         //     `treeWidth: currentMaxShowDepth:${currentMaxShowDepth} * eF:${edgeFactor} + ${
         //         labelsLeftOnly ? 0 : edgeFactor * 2
@@ -100,24 +100,6 @@ export function showTree(
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    if (!hideTreeHeader) {
-        const tbl = d3
-            .select("#theSvg")
-            .insert("table", ":first-child")
-            .attr("class", "treeHeader table-borderless")
-            .attr("width", edgeFactor * (currentMaxShowDepth - 1))
-            .style("margin-left", `${margin.left}px`);
-        const tr = tbl.append("tr");
-        for (let lvl = 2; lvl <= currentMaxShowDepth; ++lvl) {
-            tr.append("td").style("width", `${edgeFactor}px`).attr("align", "right").text(genHeader(lvl));
-        }
-        // console.log(
-        //     `tbl width = edgeFactor:${edgeFactor} * (currentMaxShowDepth:${currentMaxShowDepth}-1) = ${
-        //         edgeFactor * (currentMaxShowDepth - 1)
-        //     }`
-        // );
-    }
-
     const duration = 750;
 
     // declares a tree layout and assigns the size
@@ -133,6 +115,41 @@ export function showTree(
     // console.log("d3Root", d3Root);
     // collapseAfterMaxGen();
     update(d3Root);
+
+    function drawHeader(maxShowGen) {
+        if (hideTreeHeader) return;
+
+        const generations = d3.range(2, maxShowGen + 1);
+
+        // Ensure the table exists
+        const tbl = d3
+            .select("#theSvg")
+            .selectAll("table.treeHeader")
+            .data([null])
+            .join(
+                (enter) => enter.insert("table", ":first-child").attr("class", "treeHeader table-borderless"),
+                (update) => update
+            )
+            .style("margin-left", `${margin.left}px`);
+
+        // Update width
+        tbl.attr("width", edgeFactor * (maxShowGen - 1));
+
+        // Ensure one row exists
+        const tr = tbl.selectAll("tr").data([null]).join("tr");
+
+        // Join columns
+        const cells = tr.selectAll("td").data(generations, (d) => d);
+
+        // Remove unused columns
+        cells.exit().remove();
+
+        // Add new columns
+        const cellsEnter = cells.enter().append("td").style("width", `${edgeFactor}px`).attr("align", "right");
+
+        // Update all columns
+        cellsEnter.merge(cells).text((d) => genHeader(d));
+    }
 
     function genHeader(level) {
         let relType = "";
@@ -296,6 +313,7 @@ export function showTree(
     }
 
     function update(srcNode) {
+        drawHeader(currentMaxShowGen);
         if (d3Root) {
             capturePositions(d3Root);
         }
@@ -340,7 +358,7 @@ export function showTree(
         const links = treeData.descendants().slice(1);
 
         // Calculate y position of each node.
-        const tWidth = edgeFactor * (currentMaxShowDepth - 1);
+        const tWidth = edgeFactor * (currentMaxShowGen - 1);
         const maxYear = +AncestorTree.root.getBirthYear() || +new Date().getFullYear();
         const ageSpan = maxYear - AncestorTree.minBirthYear;
         const birthScale = document.getElementById("birthScale").checked;
@@ -857,7 +875,8 @@ export function showTree(
             if (event.shiftKey) {
                 expandSubtree(d);
                 const newDepth = d.depth + d.data.getNrOlderGenerations();
-                currentMaxShowDepth = Math.max(currentMaxShowDepth, newDepth);
+                currentMaxShowGen = Math.max(currentMaxShowGen, newDepth + 1);
+                maxGenToShow = currentMaxShowGen;
             } else if (d.children) {
                 // contract
                 d._children = d.children;
@@ -867,7 +886,10 @@ export function showTree(
                 d.children = d._children;
                 d._children = null;
                 const newDepth = d.depth + d.data.getNrOlderGenerations();
-                currentMaxShowDepth = Math.max(currentMaxShowDepth, newDepth);
+                currentMaxShowGen = Math.max(currentMaxShowGen, newDepth + 1);
+                maxGenToShow = currentMaxShowGen;
+            } else {
+                return;
             }
             update(d);
         }
