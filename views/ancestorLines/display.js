@@ -113,7 +113,6 @@ export function showTree(
     d3Root.x0 = treeHeight / 2;
     d3Root.y0 = 0;
     // console.log("d3Root", d3Root);
-    // collapseAfterMaxGen();
     update(d3Root);
 
     function drawHeader(maxShowGen) {
@@ -392,8 +391,6 @@ export function showTree(
                 const origin = srcNode || d.parent || d;
                 return `translate(${origin.y0 || 0},${origin.x0 || 0})`;
             });
-        // .attr("transform", (d) => `translate(${srcNode.y0},${srcNode.x0})`);
-        // .attr("transform", (d) => `translate(${d.y0 || d3Root.x0 || d3Root.x},${d.x0 || d3Root.y0 || d3Root.y})`);
 
         // Add Circle for the nodes
         nodeEnter
@@ -743,8 +740,6 @@ export function showTree(
                 strike
                     .attr("y1", strikeRow.y + 2)
                     .attr("y2", strikeRow.y - 2)
-                    // .attr("y1", strikeRow.y)
-                    // .attr("y2", strikeRow.y2)
                     .attr("stroke-linecap", "round")
                     .style("display", null);
             } else {

@@ -165,7 +165,6 @@ export class AncestorTree {
             console.log(`Added ${nrAdded} people to the tree`);
 
             // Check if we're done
-            // if (profiles.length < API.GET_PERSON_LIMIT) break;
             if (!getMore) break;
 
             // We have more paged profiles to fetch
