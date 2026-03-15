@@ -143,7 +143,11 @@ export class CachedPerson {
         return this._data.DeathLocation;
     }
     getDisplayName() {
-        return this._data.BirthName ? this._data.BirthName : this._data.BirthNamePrivate;
+        return this._data.BirthName
+            ? this._data.BirthName
+            : this._data.BirthNamePrivate
+              ? this._data.BirthNamePrivate
+              : "Private";
     }
 
     // -----------------------------------
@@ -159,6 +163,18 @@ export class CachedPerson {
     }
     async getFatherWithLoad() {
         const fId = this.getFatherId();
+        return fId ? await this.#peopleCache.getWithLoad(fId) : CachedPerson.aPromiseFor(undefined);
+    }
+    getBioFather() {
+        // Get the actualbio father person object, not their id
+        const fId = this.getBioFatherId();
+        return fId ? this.#peopleCache.getIfPresent(fId) : undefined;
+    }
+    getBioFatherId() {
+        return this._data.BioFather;
+    }
+    async getBioFatherWithLoad() {
+        const fId = this.getBioFatherId();
         return fId ? await this.#peopleCache.getWithLoad(fId) : CachedPerson.aPromiseFor(undefined);
     }
 
@@ -236,6 +252,18 @@ export class CachedPerson {
         const mId = this.getMotherId();
         return mId ? await this.#peopleCache.getWithLoad(mId) : CachedPerson.aPromiseFor(undefined);
     }
+    getBioMother() {
+        // Get the actual bio mother person object, not their id
+        const mId = this.getBioMotherId();
+        return mId ? this.#peopleCache.getIfPresent(mId) : undefined;
+    }
+    getBioMotherId() {
+        return this._data.BioMother;
+    }
+    async getBioMotherWithLoad() {
+        const mId = this.getBioMotherId();
+        return mId ? await this.#peopleCache.getWithLoad(mId) : CachedPerson.aPromiseFor(undefined);
+    }
 
     // -----------------------------------
     // Parents
@@ -247,12 +275,7 @@ export class CachedPerson {
     getLoadedParentIds() {
         // Get the ids of parents that are present in the cache regardless of whether this person has been
         // "full-loaded"
-        const pIds = [];
-        let pId = this.getFatherId();
-        if (pId && this.#peopleCache.has(pId)) pIds.push(pId);
-        pId = this.getMotherId();
-        if (pId && this.#peopleCache.has(pId)) pIds.push(pId);
-        return pIds;
+        return this.getParentIds().filter((id) => this.#peopleCache.has(id));
     }
     getParentIds() {
         // Get the parent ids regardles of whether loaded or pesent in the cache
@@ -263,8 +286,24 @@ export class CachedPerson {
         if (pId) pIds.push(pId);
         return pIds;
     }
+    getBioParentIds() {
+        // Get the bio parent ids regardles of whether loaded or pesent in the cache
+        const pIds = [];
+        let pId = this.getBioFatherId();
+        if (pId) pIds.push(pId);
+        pId = this.getBioMotherId();
+        if (pId) pIds.push(pId);
+        return pIds;
+    }
+    getLoadedBioParentIds() {
+        // Get the ids of bio parents that are present in the cache
+        return this.getBioParentIds().filter((id) => this.#peopleCache.has(id));
+    }
     hasAParent() {
         return this.getFatherId() || this.getMotherId();
+    }
+    hasABioParent() {
+        return this.getBioFatherId() || this.getBioMotherId();
     }
 
     // -----------------------------------

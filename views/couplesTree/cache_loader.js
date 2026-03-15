@@ -1,6 +1,8 @@
 export class CacheLoader {
     static APP_ID = "CacheLoader";
     static DEFAULT_PRIMARY_FIELDS = [
+        "BioFather",
+        "BioMother",
         "BirthDate",
         "BirthLocation",
         "DataStatus",
