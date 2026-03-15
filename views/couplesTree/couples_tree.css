@@ -150,6 +150,11 @@
   background: #f9f9f9;
 }
 
+.cvtc .alt-parent-icon text {
+  font-weight: 700;
+  font-size: 8px;
+}
+
 .cvtc .minus {
   fill: #fff;
   cursor: pointer;

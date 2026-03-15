@@ -59,7 +59,8 @@ export class Person {
     }
 
     // Basic "getters" for the data elements.
-    getId() {
+    getNumId() {
+        // We use NumId so as not to confuse it with the D3-expected getId()
         return this._data.Id;
     }
     getWtId() {
@@ -91,13 +92,25 @@ export class Person {
         return this._data.DeathLocation;
     }
     getFatherId() {
-        return this._data.Father;
+        return +this._data.Father;
     }
     getMotherId() {
-        return this._data.Mother;
+        return +this._data.Mother;
     }
     getParentIds() {
-        return [this._data.Father, this._data.Mother];
+        return [+this._data.Father, +this._data.Mother];
+    }
+    getBioFatherId() {
+        return +this._data.BioFather;
+    }
+    getBioMotherId() {
+        return +this._data.BioMother;
+    }
+    getBioParentIds() {
+        return [+this._data.BioFather, +this._data.BioMother];
+    }
+    hasABioParent() {
+        return !!this.getBioFatherId() || !!this.getBioMotherId();
     }
     getName() {
         return this._data.Name;
@@ -186,7 +199,7 @@ export class Person {
     }
 
     toString() {
-        return `${this.getWtId()} (${this.getId()}) ${this.getDisplayName()}`;
+        return `${this.getWtId()} (${this.getNumId()}) ${this.getDisplayName()}`;
     }
 
     handleClick() {
@@ -238,6 +251,7 @@ export class LinkToPerson extends Person {
         super(p._data, true);
         this.generations = p.generations;
         this.nrOlderGenerations = 0;
+        this.isLink = true;
     }
     getDisplayName() {
         return "See " + super.getDisplayName();

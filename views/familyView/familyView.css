@@ -40,6 +40,12 @@
   text-align: center;
   justify-content: center;
 }
+.fv_Family tr {
+  vertical-align: top;
+}
+.fv_Family tr td {
+  padding: 5px;
+}
 
 .fv_Parents td {
   width: 50%;
@@ -152,7 +158,7 @@
   font-weight: bold;
 }
 
-#family_group .wt-id {
+#family_group .fv_wt-id {
   font-size: 0.8em;
   color: #666;
 }
