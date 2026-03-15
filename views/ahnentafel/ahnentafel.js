@@ -1979,6 +1979,54 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         this.setReportUiState({ busy: true });
 
         this.buildReportShell(people[0]);
+        // Prefetch the first person's bio so the report title/profile shows immediately if possible
+        try {
+            const first = people[0];
+            if (first) {
+                const cached = window.ahnentafelReportCache[first.id] || window.ahnentafelReportCache[first.wtid];
+                if (!cached) {
+                    let batchMap = {};
+                    try {
+                        batchMap = await this.fetchReportBatch([first]);
+                    } catch (err) {
+                        batchMap = {};
+                    }
+
+                    let apiPerson = batchMap[first.id] || batchMap[String(first.id)] || batchMap[first.wtid];
+                    if (!apiPerson && first.wtid) {
+                        // Fallback to fetching by wtid/name
+                        try {
+                            const [, , peopleObj] =
+                                (await this.callWithRetry(() =>
+                                    WikiTreeAPI.getPeople(
+                                        "TA_AhnReport",
+                                        first.wtid,
+                                        AhnentafelAncestorList.REPORT_FIELDS,
+                                        {
+                                            bioFormat: "both",
+                                            resolveRedirect: 1,
+                                        }
+                                    )
+                                )) || [];
+                            apiPerson = peopleObj ? Object.values(peopleObj)[0] : null;
+                        } catch (err) {
+                            apiPerson = null;
+                        }
+                    }
+
+                    const data = this.processReportPersonData(apiPerson, first, {}, batchMap || null);
+                    // Cache under both id and wtid when available
+                    try {
+                        if (first.id) window.ahnentafelReportCache[first.id] = data;
+                        if (first.wtid) window.ahnentafelReportCache[first.wtid] = data;
+                    } catch (err) {
+                        // ignore cache errors
+                    }
+                }
+            }
+        } catch (err) {
+            console.error(`[startReportBuild] Unexpected error prefetching first person:`, err);
+        }
         try {
             await this.processReportQueue(people);
         } catch (error) {
@@ -2090,12 +2138,18 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             const wtidList = toFetch.map((p) => p.wtid).join(", ");
             this.updateReportStatus(`Fetching bios for: ${wtidList}...`);
 
-            const batchMap = await this.fetchReportBatch(toFetch);
+            let batchMap = {};
+            try {
+                batchMap = await this.fetchReportBatch(toFetch);
+            } catch (err) {
+                // swallow errors to avoid noisy logs; fetchReportBatch already increments error counts
+                batchMap = {};
+            }
 
             // Fetch spouses for this batch (skip IDs we already have in the batch).
             const spouseIds = new Set();
             Object.values(batchMap).forEach((p) => {
-                if (p.Spouses) {
+                if (p && p.Spouses) {
                     Object.values(p.Spouses).forEach((s) => {
                         if (s.Id) spouseIds.add(String(s.Id));
                     });
@@ -2115,16 +2169,20 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             if (missingSpouseIds.length > 0) {
                 this.updateReportStatus(`Fetching spouse details for: ${wtidList}...`);
                 const spouseIdList = missingSpouseIds.join(",");
-                const [, , spouses] =
-                    (await this.callWithRetry(() =>
-                        WikiTreeAPI.getPeople(
-                            "TA_AhnReportSpouses",
-                            spouseIdList,
-                            AhnentafelAncestorList.REPORT_FIELDS,
-                            { resolveRedirect: 1 }
-                        )
-                    )) || [];
-                spouseMap = { ...spouseMap, ...(spouses || {}) };
+                try {
+                    const [, , fetchedSpouses] =
+                        (await this.callWithRetry(() =>
+                            WikiTreeAPI.getPeople(
+                                "TA_AhnReportSpouses",
+                                spouseIdList,
+                                AhnentafelAncestorList.REPORT_FIELDS,
+                                { resolveRedirect: 1 }
+                            )
+                        )) || [];
+                    spouseMap = { ...spouseMap, ...(fetchedSpouses || {}) };
+                } catch (err) {
+                    // ignore fetch spouse errors silently
+                }
             }
 
             toFetch.forEach((person) => {
@@ -2171,7 +2229,17 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
 
     processReportPersonData(apiPerson, person, spouseMap, batchMap = null) {
         if (!apiPerson) {
-            return window.ahnentafelReportCache[person.id] || window.ahnentafelReportCache[person.wtid];
+            const cached = window.ahnentafelReportCache[person.id] || window.ahnentafelReportCache[person.wtid];
+            if (cached) return cached;
+            // Return a safe default object so callers don't blow up when API data is missing
+            return {
+                id: person.id || null,
+                bioHtml: "",
+                endnotes: [],
+                photoUrl: null,
+                spouses: [],
+                children: [],
+            };
         }
 
         const bioRaw = apiPerson.bioHTML || apiPerson.bio_html || apiPerson.bioHtml || apiPerson.Bio || "";
@@ -2320,7 +2388,20 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
     }
 
     renderReportAncestor(person, data) {
-        const personData = this.ancestors.find((a) => a.Id === person.id);
+        let personData = this.ancestors.find((a) => a.Id === person.id);
+        if (!personData) {
+            personData = {
+                Id: person.id || null,
+                Name: person.wtid || String(person.id || "Unknown"),
+                FirstName: "",
+                LastNameAtBirth: "",
+                BirthDate: "",
+                BirthLocation: "",
+                DeathDate: "",
+                DeathLocation: "",
+                Gender: "Unknown",
+            };
+        }
         const name = this.getName(personData).theName;
         const wtIdInline = ` <span class="wt-id">(${personData.Name})</span>`;
         const gender = personData.Gender;
