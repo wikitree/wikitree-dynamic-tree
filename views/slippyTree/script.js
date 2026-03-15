@@ -2862,33 +2862,30 @@ class SlippyTree extends View {
         this.#setLoading(true);
         for (const person of this.state.people) {
             if (person.data.Name == name) {
-                const url = "https://plus.wikitree.com/function/WTPath/Path.htm?WikiTreeID1=" + name + " &WikiTreeID2=" + name2 + "&relatives=0&IgnoreIDs=";
-                fetch(url)
-                    .then((response) => {
-                        return response.text();
-                    })
-                    .then((html) => {
-                        this.#setLoading(false);
-                        //                    console.log(html);
-                        const doc = new DOMParser().parseFromString(html, "text/html");
+                let usedparams = {
+                    action: "getConnections",
+                    keys: [name, name2],
+                    fields: [ "Id", "Name" ],
+                    relation: 0,                // Shortest path
+                    appId: this.#APPID
+                };
+                WikiTreeAPI.postToAPI(usedparams).then((data) => {
+                    this.#setLoading(false);
+                    try {
                         let ids = [];
-                        doc.querySelectorAll("tbody td:nth-child(3) a").forEach((e) => {
-                            let href = e.href;
-                            if (href.includes("/wiki/")) {
-                                let id = href.substring(href.lastIndexOf("/") + 1);
-                                ids.push(id);
-                            }
-                        });
+                        for (let p of data[0].path) {
+                            ids.push(p.Name);
+                        }
                         console.log("Connection between \"" + name + "\" and \"" + name2 + "\" is through " + JSON.stringify(ids));
                         if (ids.length > 0) {
                             this.load({ keys: ids, nuclear: nuclear, spouses: 1 - nuclear }, callback);
                         }
-                    })
-                    .catch((error) => {
-                        this.#setLoading(false);
-                        console.log(url);
+                    } catch (error) {
+                        console.log("Tx: " + JSON.stringify(usedparams));
+                        console.log("Rx: " + JSON.stringify(data));
                         console.log(error);
-                    });
+                    }
+                });
             }
         }
     }
