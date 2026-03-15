@@ -399,6 +399,30 @@
   margin-bottom: 0.8em;
 }
 
+/* Parent mode toggle buttons styling */
+.parentModeToggle {
+  display: inline-flex;
+  gap: 0.25em;
+  margin-left: 0.5em;
+}
+.parentModeToggle .parentModeButton {
+  min-width: 90px;
+  padding: 0.2em 0.4em;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+  border-radius: 3px;
+}
+.parentModeToggle .parentModeButton.small {
+  font-size: 0.85em;
+}
+.parentModeToggle .parentModeButton.active {
+  background-color: #25422d;
+  color: #fff !important;
+  font-weight: bold;
+  border-color: #1f3b2a;
+}
+
 #ahnentafelAncestorList .ahnentafelPerson > span.personText,
 #ahnentafelAncestorList .ahnentafelPersonShort > span.personText {
   margin-left: 0.3em; /* Space between number and name */
@@ -406,31 +430,32 @@
 
 #ahnentafelAncestorList .ahnentafelPerson,
 #ahnentafelAncestorList .ahnentafelPersonShort {
+  background-color: #fff;
+  border-color: #ccc;
+}
+
+.gender-colors #ahnentafelAncestorList .ahnentafelPerson,
+.gender-colors #ahnentafelAncestorList .ahnentafelPersonShort {
   background-color: #efe;
+  border-color: transparent;
 }
 
 #ahnentafelAncestorList .ahnentafelPerson.Male,
 #ahnentafelAncestorList .ahnentafelPersonShort.Male {
   background-color: #f2f1ff;
-  border: 1px solid transparent;
 }
-
+#ahnentafelAncestorList .ahnentafelPerson,
+#ahnentafelAncestorList .ahnentafelPersonShort {
+  border: 3px solid transparent;
+}
 #ahnentafelAncestorList .ahnentafelPerson.Female,
 #ahnentafelAncestorList .ahnentafelPersonShort.Female {
   background-color: #ffeeee;
-  border: 1px solid transparent;
 }
 
 #ahnentafelAncestorList .ahnentafelPerson.Unknown,
 #ahnentafelAncestorList .ahnentafelPersonShort.Unknown {
   background-color: #eeffee;
-  border: 1px solid transparent;
-}
-
-#ahnentafelAncestorList .ahnentafelPerson,
-#ahnentafelAncestorList .ahnentafelPersonShort {
-  background-color: transparent;
-  border: 1px solid #666;
 }
 
 #ahnentafelAncestorList div.ahnentafelPerson.highlighted,
@@ -438,7 +463,7 @@
 #ahnentafelAncestorList div.ahnentafelPersonShort.highlighted,
 #ahnentafelAncestorList div.ahnentafelPersonShort.highlightedClick {
   border: 3px solid gold;
-  padding: 0;
+  padding: 3px;
 }
 #ahnentafelAncestorList .ahnentafelLink,
 #ahnentafelAncestorList .childOf,
@@ -675,10 +700,6 @@
   #ahnentafelOptions,
   #ahnentafelReportStatus {
     display: none;
-  }
-  header,
-  main {
-    display: none !important;
   }
   html,
   body {
