@@ -35,6 +35,7 @@ class SlippyTree extends View {
     H_MANAGEDBYME = "Managed by me";
     H_NOPROFILEMANAGER = "No profile manager";
     H_PROFILENOTPUBLIC = "Profile not public";
+    H_NOLOCATION = "- no birth or death location -";    // How much do I hate this? A lot.
     #VIEWPARAM = "slippyTreeState"; // Param to store details of current view in window location
     #VERSION = 1; // URLs may last over time, plan for extension
     #APIURL = "https://api.wikitree.com/api.php";
@@ -4034,6 +4035,9 @@ class SlippyTreePerson {
         }
         if (deathCountry && deathCountry != birthCountry) {
             categories.push(["Location", deathCountry]);
+        }
+        if (!birthCountry && !deathCountry) {
+            categories.push(["Location", this.tree.H_NOLOCATION]);
         }
 
         return categories;
