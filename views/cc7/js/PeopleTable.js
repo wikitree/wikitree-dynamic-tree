@@ -631,12 +631,12 @@ class PeopleTable {
             PeopleTable.addPeopleTable();
         }
 
-        function drawMissingLinksTable() {
+        async function drawMissingLinksTable() {
             // We have to redraw every time here because this might be called as result of the user changing the filter
             if ($("#missingLinksTable").length > 0) {
                 $("#missingLinksTable").remove();
             }
-            MissingLinksView.buildView();
+            await MissingLinksView.buildView();
 
             // determine how many people are missing relationships and show it on the page
             const missingLinksCount = $(`#missingLinksTable tbody tr`).length;
@@ -1100,8 +1100,8 @@ class PeopleTable {
         const headerRow = hasThead
             ? table.querySelector("thead tr:first-child")
             : hasTbody
-            ? table.querySelector("tbody tr:first-child")
-            : table.querySelector("tr:first-child");
+              ? table.querySelector("tbody tr:first-child")
+              : table.querySelector("tr:first-child");
 
         let headerCells = headerRow.querySelectorAll("th");
         const isFirstRowHeader = headerCells.length > 0;
