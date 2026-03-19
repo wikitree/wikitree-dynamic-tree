@@ -127,7 +127,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         this.monthName = ["Unk", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         this.blankPerson = { Id: 0, FirstName: "Unknown" };
         this.profileFields =
-            "Id,Name,FirstName,LastNameAtBirth,LastNameCurrent,MiddleName,RealName,Nicknames,Suffix,BirthDate,DeathDate,BirthLocation,DeathLocation,Gender,DataStatus,Privacy,Father,Mother,Derived.BirthName,Derived.BirthNamePrivate,Photo,PhotoData";
+            "Id,Name,FirstName,LastNameAtBirth,LastNameCurrent,MiddleName,RealName,Nicknames,Suffix,BirthDate,DeathDate,BirthLocation,DeathLocation,Gender,DataStatus,Privacy,Father,Mother,BioFather,BioMother,Derived.BirthName,Derived.BirthNamePrivate,Photo,PhotoData";
         this.profileFieldsArray = this.profileFields.split(",");
         this.ancestors = [];
 
@@ -158,6 +158,78 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         $(this.selector).on("click", ".profileLink", function (e) {
             e.preventDefault();
             window.open($(this).attr("href"), "_blank");
+        });
+
+        // Track per-person parent display mode ("adoptive" or "bio")
+        this.parentModeMap = new Map();
+
+        // Delegated click handler for bio/adoptive parent buttons
+        $(this.selector).on("click", ".parentModeButton", async (e) => {
+            e.preventDefault();
+            const $btn = $(e.currentTarget);
+            const personId = parseInt($btn.data("person-id"), 10);
+            if (!personId) return;
+            const selectedMode = $btn.data("mode") || "adoptive";
+            const current = this.parentModeMap.get(personId) || "adoptive";
+            const next = selectedMode;
+            this.parentModeMap.set(personId, next);
+
+            // Immediate visual feedback
+            this.updateParentModeButtonStates();
+
+            if (next === "bio") {
+                const person = this.ancestors.find((p) => p.Id === personId);
+                if (person) {
+                    const personGen =
+                        person.Generation && person.Generation.length > 0 ? Math.min(...person.Generation) : 1;
+                    const remainingGenerations = Math.max(1, this.maxGeneration - personGen + 1);
+                    const toFetch = [];
+                    if (person.BioFather && !this.ancestors.some((a) => a.Id === person.BioFather))
+                        toFetch.push(person.BioFather);
+                    if (person.BioMother && !this.ancestors.some((a) => a.Id === person.BioMother))
+                        toFetch.push(person.BioMother);
+
+                    for (let id of toFetch) {
+                        try {
+                            const ancestorData = await WikiTreeAPI.getPeople(
+                                AhnentafelView.APP_ID,
+                                id,
+                                this.profileFieldsArray,
+                                {
+                                    ancestors: remainingGenerations,
+                                    start: 0,
+                                    limit: 1000,
+                                }
+                            );
+                            if (ancestorData) {
+                                const newAncestors = this.processReceivedAncestors(ancestorData);
+                                for (let na of newAncestors) {
+                                    if (!this.ancestors.some((a) => a.Id === na.Id)) {
+                                        this.ancestors.push(na);
+                                    }
+                                }
+                            }
+                        } catch (err) {
+                            console.error(`Error loading bio ancestor ${id}:`, err);
+                        }
+                    }
+                }
+            }
+
+            // Always recompute generation/ahnentafel assignments from the root (respecting parentModeMap)
+            this.ancestors.forEach((a) => {
+                a.Generation = [];
+                a.AhnentafelNumber = [];
+            });
+            const rootPerson = this.ancestors.find((p) => p.Id === this.startId);
+            if (rootPerson) {
+                this.assignGenerationAndAhnentafel(rootPerson, 1, 1, new Set());
+            }
+
+            // refresh view
+            this.refreshAncestorList();
+            // Ensure buttons reflect the effective parentMode after rebuild
+            this.updateParentModeButtonStates();
         });
         $(this.selector).on("click", ".ahnentafelLink,.parentOf,.childOf", function (e) {
             e.preventDefault();
@@ -318,8 +390,13 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
 
         // Recursively process parents with correct Ahnentafel numbers, considering the maxGeneration limit
         if (generation < this.maxGeneration) {
-            if (person.Father) {
-                const father = this.ancestors.find((p) => p.Id === person.Father);
+            // Use per-person parent mode to choose BioFather/BioMother when requested
+            const mode = this.parentModeMap.get(person.Id) || "adoptive";
+            const fatherId = mode === "bio" ? person.BioFather || person.Father : person.Father;
+            const motherId = mode === "bio" ? person.BioMother || person.Mother : person.Mother;
+
+            if (fatherId) {
+                const father = this.ancestors.find((p) => p.Id === fatherId);
                 if (father) {
                     this.assignGenerationAndAhnentafel(
                         father,
@@ -329,8 +406,8 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                     );
                 }
             }
-            if (person.Mother) {
-                const mother = this.ancestors.find((p) => p.Id === person.Mother);
+            if (motherId) {
+                const mother = this.ancestors.find((p) => p.Id === motherId);
                 if (mother) {
                     this.assignGenerationAndAhnentafel(
                         mother,
@@ -393,6 +470,23 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             $(this.selector).html(`<div id="ahnentafelAncestorList"></div>`);
             this.displayGeneration(1);
         }
+    }
+
+    // Update the active class on parent-mode buttons to reflect `parentModeMap`
+    updateParentModeButtonStates() {
+        $(this.selector)
+            .find(".parentModeButton")
+            .each((_, btn) => {
+                const $b = $(btn);
+                const pid = parseInt($b.data("person-id"), 10);
+                const btnMode = $b.data("mode");
+                const effective = this.parentModeMap.get(pid) || "adoptive";
+                if (btnMode === effective) {
+                    $b.addClass("active");
+                } else {
+                    $b.removeClass("active");
+                }
+            });
     }
 
     generationTitle(generation) {
@@ -567,6 +661,9 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         this.addAccessKeys(); // Add access keys
         this.updateReportGenerationSelect(true);
         this.applyViewMode(this.settings.reportMode);
+        if (this.settings.showGenderColors) {
+            $("#ahnentafelAncestorList").addClass("gender-colors");
+        }
     }
 
     renderOptions(container = document.getElementById("ahnentafelAncestorList")) {
@@ -662,6 +759,11 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
 
         $("#ahnentafelShowGenderColors").on("change", (e) => {
             this.settings.showGenderColors = e.target.checked;
+            if (this.settings.showGenderColors) {
+                $("#ahnentafelAncestorList").addClass("gender-colors");
+            } else {
+                $("#ahnentafelAncestorList").removeClass("gender-colors");
+            }
             this.saveSettings();
             this.applySettings();
         });
@@ -1085,6 +1187,8 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                 profileLink = "Private";
             }
 
+            const parentMode = this.parentModeMap.get(person.Id) || "adoptive";
+
             return `<div data-highlighted="${this.incrementedNumber()}" class="ahnentafelPerson ${genderClass} ${coupleClass}" id="person_${
                 person.Id
             }" data-ahnentafel-number="${ahnentafelNumber}" ${dataAttributeString}>
@@ -1092,18 +1196,11 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                         <span class="personText">
                             ${profileLink}${wtIdInline}:
                             <span class="birthAndDeathDetails">${this.formatBirthDeathDetails(person)}</span>
-                            <span class="relativeDetails"><span class="parentOfDetails dataItem">${this.formatParentOfLinks(
-                                person,
-                                ahnentafelNumber
-                            )}</span>
-                             <span class="childOfDetails dataItem">${this.formatParentLinks(
-                                 person,
-                                 ahnentafelNumber
-                             )}</span></span>
+                            <span class="relativeDetails"><span class="parentOfDetails dataItem">${this.formatParentOfLinks(person, ahnentafelNumber)}</span>
+                             <span class="childOfDetails dataItem">${this.formatParentLinks(person, ahnentafelNumber)}</span></span>
                         </span>
-                        <button class="descendantButton" data-ahnentafel="${ahnentafelNumber}" title="See only ${
-                            person.FirstName
-                        }'s descendants and ancestors">↕</button>
+                        ${person.BioFather || person.BioMother ? `<span class="parentModeToggle"> <button class="parentModeButton small ${parentMode === "bio" ? "active" : ""}" data-person-id="${person.Id}" data-mode="bio" title="Show biological parents">Biological</button><button class="parentModeButton small ${parentMode === "adoptive" ? "active" : ""}" data-person-id="${person.Id}" data-mode="adoptive" title="Show adoptive parents">Adoptive</button> </span>` : ""}
+                        <button class="descendantButton" data-ahnentafel="${ahnentafelNumber}" title="See only ${person.FirstName}'s descendants and ancestors">↕</button>
             </div>`;
         }
     }
@@ -1144,9 +1241,14 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         let fatherAhnentafelNumber = ahnentafelNumber * 2;
         let motherAhnentafelNumber = ahnentafelNumber * 2 + 1;
 
+        // Respect per-person parent display mode (adoptive or bio)
+        const mode = this.parentModeMap.get(person.Id) || "adoptive";
+        const fatherId = mode === "bio" ? person.BioFather || person.Father : person.Father;
+        const motherId = mode === "bio" ? person.BioMother || person.Mother : person.Mother;
+
         // Create links for the father and mother
-        let fatherLink = this.createParentLink(person.Father, fatherAhnentafelNumber);
-        let motherLink = this.createParentLink(person.Mother, motherAhnentafelNumber);
+        let fatherLink = this.createParentLink(fatherId, fatherAhnentafelNumber);
+        let motherLink = this.createParentLink(motherId, motherAhnentafelNumber);
 
         // Concatenate the links appropriately
         if (fatherLink && motherLink) {
@@ -1713,6 +1815,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                     };
                 })
                 .get(),
+            parentModes: Object.fromEntries(Array.from(this.parentModeMap.entries())),
         };
         this.changeStack.push(state);
         this.currentStackIndex++;
@@ -1769,6 +1872,23 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             }
         });
 
+        // Restore parent mode map (if present) and rebuild the tree to reflect it
+        if (state.parentModes) {
+            this.parentModeMap = new Map(Object.entries(state.parentModes).map(([k, v]) => [parseInt(k, 10), v]));
+            // Recompute generations and refresh display so parent-mode changes are applied
+            this.ancestors.forEach((a) => {
+                a.Generation = [];
+                a.AhnentafelNumber = [];
+            });
+            const rootPerson = this.ancestors.find((p) => p.Id === this.startId);
+            if (rootPerson) {
+                this.assignGenerationAndAhnentafel(rootPerson, 1, 1, new Set());
+            }
+            this.refreshAncestorList();
+            // Update button active states after rebuild
+            this.updateParentModeButtonStates();
+        }
+
         // Restore the visibility of generation containers
         state.generationContainers.forEach((container) => {
             const selector = `#${container.id} .generationContainer`;
@@ -1785,7 +1905,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
     trackChanges() {
         $(this.selector)
             .off("click.ahnentafelTrack")
-            .on("click.ahnentafelTrack", ".toggleButton,.descendantButton,.childOf,.parentOf", () => {
+            .on("click.ahnentafelTrack", ".toggleButton,.descendantButton,.childOf,.parentOf,.parentModeButton", () => {
                 // Using setTimeout to ensure the state is captured after it changes
                 setTimeout(() => {
                     this.captureState();
@@ -1859,6 +1979,54 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         this.setReportUiState({ busy: true });
 
         this.buildReportShell(people[0]);
+        // Prefetch the first person's bio so the report title/profile shows immediately if possible
+        try {
+            const first = people[0];
+            if (first) {
+                const cached = window.ahnentafelReportCache[first.id] || window.ahnentafelReportCache[first.wtid];
+                if (!cached) {
+                    let batchMap = {};
+                    try {
+                        batchMap = await this.fetchReportBatch([first]);
+                    } catch (err) {
+                        batchMap = {};
+                    }
+
+                    let apiPerson = batchMap[first.id] || batchMap[String(first.id)] || batchMap[first.wtid];
+                    if (!apiPerson && first.wtid) {
+                        // Fallback to fetching by wtid/name
+                        try {
+                            const [, , peopleObj] =
+                                (await this.callWithRetry(() =>
+                                    WikiTreeAPI.getPeople(
+                                        "TA_AhnReport",
+                                        first.wtid,
+                                        AhnentafelAncestorList.REPORT_FIELDS,
+                                        {
+                                            bioFormat: "both",
+                                            resolveRedirect: 1,
+                                        }
+                                    )
+                                )) || [];
+                            apiPerson = peopleObj ? Object.values(peopleObj)[0] : null;
+                        } catch (err) {
+                            apiPerson = null;
+                        }
+                    }
+
+                    const data = this.processReportPersonData(apiPerson, first, {}, batchMap || null);
+                    // Cache under both id and wtid when available
+                    try {
+                        if (first.id) window.ahnentafelReportCache[first.id] = data;
+                        if (first.wtid) window.ahnentafelReportCache[first.wtid] = data;
+                    } catch (err) {
+                        // ignore cache errors
+                    }
+                }
+            }
+        } catch (err) {
+            console.error(`[startReportBuild] Unexpected error prefetching first person:`, err);
+        }
         try {
             await this.processReportQueue(people);
         } catch (error) {
@@ -1970,12 +2138,18 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             const wtidList = toFetch.map((p) => p.wtid).join(", ");
             this.updateReportStatus(`Fetching bios for: ${wtidList}...`);
 
-            const batchMap = await this.fetchReportBatch(toFetch);
+            let batchMap = {};
+            try {
+                batchMap = await this.fetchReportBatch(toFetch);
+            } catch (err) {
+                // swallow errors to avoid noisy logs; fetchReportBatch already increments error counts
+                batchMap = {};
+            }
 
             // Fetch spouses for this batch (skip IDs we already have in the batch).
             const spouseIds = new Set();
             Object.values(batchMap).forEach((p) => {
-                if (p.Spouses) {
+                if (p && p.Spouses) {
                     Object.values(p.Spouses).forEach((s) => {
                         if (s.Id) spouseIds.add(String(s.Id));
                     });
@@ -1995,16 +2169,20 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             if (missingSpouseIds.length > 0) {
                 this.updateReportStatus(`Fetching spouse details for: ${wtidList}...`);
                 const spouseIdList = missingSpouseIds.join(",");
-                const [, , spouses] =
-                    (await this.callWithRetry(() =>
-                        WikiTreeAPI.getPeople(
-                            "TA_AhnReportSpouses",
-                            spouseIdList,
-                            AhnentafelAncestorList.REPORT_FIELDS,
-                            { resolveRedirect: 1 }
-                        )
-                    )) || [];
-                spouseMap = { ...spouseMap, ...(spouses || {}) };
+                try {
+                    const [, , fetchedSpouses] =
+                        (await this.callWithRetry(() =>
+                            WikiTreeAPI.getPeople(
+                                "TA_AhnReportSpouses",
+                                spouseIdList,
+                                AhnentafelAncestorList.REPORT_FIELDS,
+                                { resolveRedirect: 1 }
+                            )
+                        )) || [];
+                    spouseMap = { ...spouseMap, ...(fetchedSpouses || {}) };
+                } catch (err) {
+                    // ignore fetch spouse errors silently
+                }
             }
 
             toFetch.forEach((person) => {
@@ -2051,7 +2229,17 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
 
     processReportPersonData(apiPerson, person, spouseMap, batchMap = null) {
         if (!apiPerson) {
-            return window.ahnentafelReportCache[person.id] || window.ahnentafelReportCache[person.wtid];
+            const cached = window.ahnentafelReportCache[person.id] || window.ahnentafelReportCache[person.wtid];
+            if (cached) return cached;
+            // Return a safe default object so callers don't blow up when API data is missing
+            return {
+                id: person.id || null,
+                bioHtml: "",
+                endnotes: [],
+                photoUrl: null,
+                spouses: [],
+                children: [],
+            };
         }
 
         const bioRaw = apiPerson.bioHTML || apiPerson.bio_html || apiPerson.bioHtml || apiPerson.Bio || "";
@@ -2200,7 +2388,20 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
     }
 
     renderReportAncestor(person, data) {
-        const personData = this.ancestors.find((a) => a.Id === person.id);
+        let personData = this.ancestors.find((a) => a.Id === person.id);
+        if (!personData) {
+            personData = {
+                Id: person.id || null,
+                Name: person.wtid || String(person.id || "Unknown"),
+                FirstName: "",
+                LastNameAtBirth: "",
+                BirthDate: "",
+                BirthLocation: "",
+                DeathDate: "",
+                DeathLocation: "",
+                Gender: "Unknown",
+            };
+        }
         const name = this.getName(personData).theName;
         const wtIdInline = ` <span class="wt-id">(${personData.Name})</span>`;
         const gender = personData.Gender;
