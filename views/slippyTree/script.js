@@ -35,6 +35,7 @@ class SlippyTree extends View {
     H_MANAGEDBYME = "Managed by me";
     H_NOPROFILEMANAGER = "No profile manager";
     H_PROFILENOTPUBLIC = "Profile not public";
+    H_NOLOCATION = "- no birth or death location -";    // How much do I hate this? A lot.
     #VIEWPARAM = "slippyTreeState"; // Param to store details of current view in window location
     #VERSION = 1; // URLs may last over time, plan for extension
     #APIURL = "https://api.wikitree.com/api.php";
@@ -279,6 +280,7 @@ class SlippyTree extends View {
    <div class="icon-attribution">Icons by Andrew Nielsen and Simon Sim via the <a href="http://thenounproject.com">Noun Project</a> (CC BY 3.0)</div>
   </div>
  </div>
+ <dialog id="slippy-dialog" tabindex="0"></dialog>
 </div>
 `;
 
@@ -310,6 +312,7 @@ class SlippyTree extends View {
             this.state.searchMenu = this.state.container.querySelector(".slippy-search-menu");
             this.state.searchInput = this.state.container.querySelector(".slippy-search-id");
             this.state.searchList = this.state.container.querySelector(".slippy-search-list");
+            const dialog = this.state.container.querySelector("#slippy-dialog");
             const helpButton = this.state.container.querySelector(".slippy-help-button");
             const helpContainer = this.state.container.querySelector(".helpContainer");
             const helpBox = helpContainer.querySelector(":scope > :first-child");
@@ -397,10 +400,7 @@ class SlippyTree extends View {
                 // on keypress
                 const searchInput = e.target;
                 const searchList = this.state.searchList;
-                let v = searchInput.value
-                    .toLowerCase()
-                    .normalize("NFKD")
-                    .replace(/\p{Diacritic}/gu, "");
+                let v = searchInput.value.toLowerCase().normalize("NFKD").replace(/\p{Diacritic}/gu, "");
                 searchInput.removeAttribute("data-value");
                 let first = true;
                 for (let n = searchList.firstElementChild; n; n = n.nextElementSibling) {
@@ -613,6 +613,19 @@ class SlippyTree extends View {
                                 searchInput.setAttribute("data-value", focus.getAttribute("idref"));
                             }
                         }
+                    }
+                } else if (dialog.open) {
+                    if (e.key == "Escape" || e.key == "Enter") {
+                        dialog.close();
+                    } else {
+                        let kv = e.key.toLowerCase();
+                        dialog.querySelectorAll(":scope [data-shortcut]:not(.hidden)").forEach((e) => {
+                            let shortcut = e.getAttribute("data-shortcut");
+                            if (kv == e.getAttribute("data-shortcut")) {
+                                focus = e;
+                                e.click();
+                            }
+                        });
                     }
                 } else if (!this.state.personMenu.classList.contains("hidden")) {
                     e.preventDefault();
@@ -2862,33 +2875,101 @@ class SlippyTree extends View {
         this.#setLoading(true);
         for (const person of this.state.people) {
             if (person.data.Name == name) {
-                const url = "https://plus.wikitree.com/function/WTPath/Path.htm?WikiTreeID1=" + name + " &WikiTreeID2=" + name2 + "&relatives=0&IgnoreIDs=";
-                fetch(url)
-                    .then((response) => {
-                        return response.text();
-                    })
-                    .then((html) => {
-                        this.#setLoading(false);
-                        //                    console.log(html);
-                        const doc = new DOMParser().parseFromString(html, "text/html");
-                        let ids = [];
-                        doc.querySelectorAll("tbody td:nth-child(3) a").forEach((e) => {
-                            let href = e.href;
-                            if (href.includes("/wiki/")) {
-                                let id = href.substring(href.lastIndexOf("/") + 1);
-                                ids.push(id);
-                            }
-                        });
-                        console.log("Connection between \"" + name + "\" and \"" + name2 + "\" is through " + JSON.stringify(ids));
-                        if (ids.length > 0) {
-                            this.load({ keys: ids, nuclear: nuclear, spouses: 1 - nuclear }, callback);
+                let usedparams = {
+                    action: "getConnections",
+                    keys: [name, name2],
+                    fields: [ "Id", "Name" ],
+                    relation: 0,                // Shortest path
+                    appId: this.#APPID
+                };
+                const loader = (ids) => {
+                    this.load({ keys: ids, nuclear: nuclear, spouses: 1 - nuclear }, callback);
+                };
+                WikiTreeAPI.postToAPI(usedparams).then((data) => {
+                    try {
+                        let id0 = [];
+                        for (let p of data[0].path) {
+                            id0.push(p.Name);
                         }
-                    })
-                    .catch((error) => {
+                        if (id0.length == 0) {
+                            this.#setLoading(false);
+                            const dialog = document.getElementById("slippy-dialog");
+                            dialog.innerHTML = `
+<p>NAME1 and NAME2 are not connected</p>
+<div id="slippy-button-holder">
+ <button id="slippy-dialog-getconn-cancel">OK</button>
+</div>
+`.replace(/NAME1/g, name).replace(/NAME2/g, name2);
+                            dialog.querySelectorAll("button").forEach((e) => {
+                                e.addEventListener("click", () => {
+                                    dialog.close();
+                                });
+                            });
+                            dialog.showModal();
+                        } else {
+                            usedparams.relation = 2;
+                            WikiTreeAPI.postToAPI(usedparams).then((data) => {
+                                this.#setLoading(false);
+                                try {
+                                    let id1 = [];
+                                    for (let p of data[0].path) {
+                                        id1.push(p.Name);
+                                    }
+                                    if (id1.length == 0) {
+                                        // No ancestral connection found
+                                        console.log("Non-ancestral connection between \"" + name + "\" and \"" + name2 + "\" is through " + JSON.stringify(id0));
+                                        loader(id0);
+                                    } else if (id0.toString() == id1.toString()) {
+                                        console.log("Ancestral connection between \"" + name + "\" and \"" + name2 + "\" is through " + JSON.stringify(id0));
+                                        loader(id0);
+                                    } else {
+                                        // Both connections found. Prompt?
+                                        const dialog = document.getElementById("slippy-dialog");
+                                        dialog.innerHTML = `
+<p>NAME1 and NAME2 are connected in multiple ways:</p>
+<ul>
+ <li>The shortest path: SHORTLENGTH steps</li>
+ <li>A common ancestor: LONGLENGTH steps</li>
+</ul>
+<p>Which do you want to load?</p>
+<div id="slippy-button-holder">
+ <button data-shortcut="s" id="slippy-dialog-getconn-shortest"><u>S</u>hortest</button>
+ <button data-shortcut="a" id="slippy-dialog-getconn-ancestor"><u>A</u>ncestor</button>
+ <button data-shortcut="b" id="slippy-dialog-getconn-both"><u>B</u>oth</button>
+ <button data-shortcut="n" id="slippy-dialog-getconn-cancel"><u>N</u>one</button>
+</div>
+`.replace(/NAME1/g, name).replace(/NAME2/g, name2).replace(/SHORTLENGTH/g, String(id0.length - 1)).replace(/LONGLENGTH/g, String(id1.length - 1));
+                                        dialog.querySelectorAll("button").forEach((e) => {
+                                            e.addEventListener("click", () => {
+                                                let id = e.id;
+                                                dialog.close();
+                                                dialog.innerHTML = "";
+
+                                                if (id.endsWith("shortest")) {
+                                                    loader(id0);
+                                                } else if (id.endsWith("ancestor")) {
+                                                    loader(id1);
+                                                } else if (id.endsWith("both")) {
+                                                    loader([... new Set(id0.concat(id1))]);
+                                                }
+                                            });
+                                        });
+                                        dialog.showModal();
+                                    }
+                                } catch (error) {
+                                    console.log("Tx: " + JSON.stringify(usedparams));
+                                    console.log("Rx: " + JSON.stringify(data));
+                                    console.log(error);
+                                }
+                            });
+                        }
+                    } catch (error) {
                         this.#setLoading(false);
-                        console.log(url);
+                        console.log("Tx: " + JSON.stringify(usedparams));
+                        console.log("Rx: " + JSON.stringify(data));
                         console.log(error);
-                    });
+                    }
+                });
             }
         }
     }
@@ -3954,6 +4035,9 @@ class SlippyTreePerson {
         }
         if (deathCountry && deathCountry != birthCountry) {
             categories.push(["Location", deathCountry]);
+        }
+        if (!birthCountry && !deathCountry) {
+            categories.push(["Location", this.tree.H_NOLOCATION]);
         }
 
         return categories;

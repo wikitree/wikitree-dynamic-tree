@@ -659,6 +659,25 @@ However it's an issue on all tree apps, not just this one. Leave it off for now
     opacity: 0.8;
 }
 
+/* dialog */
+#slippy-dialog {
+    &::backdrop {
+        background: #0006;
+    }
+    #slippy-button-holder {
+        display: flex;
+        gap: 8px;
+        button {
+            flex: 1;
+            border-radius: 4px;
+            border: 2px solid black;
+            background: #ddd;
+            color: black;
+            padding: 3px;
+        }
+    }
+}
+
 .slippy-tree-container:not(.loading) .slippy-loader {
     display: none;
 }
