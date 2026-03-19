@@ -760,7 +760,7 @@ class PeopleTable {
                 // Remember the previous cc7Subset value if it's not what we want
                 const subset = $("#cc7Subset").val();
                 if (subset == "missing-links" || subset == "complete") {
-                    // We don't allow missin-links or complete in the stats view, but we want
+                    // We don't allow missing-links or complete in the stats view, but we want
                     // to return to them when we switch back to another view
                     PeopleTable.PREVIOUS_SUBSET = subset;
                 }
@@ -793,6 +793,7 @@ class PeopleTable {
                 const subset = $("#cc7Subset").val();
                 if (subset != "missing-links") {
                     PeopleTable.PREVIOUS_SUBSET = subset;
+                    $("#cc7Subset").val("missing-links");
                 }
                 // switch to missing links checkboxes
                 PeopleTable.showMissingLinksCheckboxes();
