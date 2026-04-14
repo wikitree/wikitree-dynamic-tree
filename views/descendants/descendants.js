@@ -325,21 +325,13 @@ window.DescendantsView = class DescendantsView extends View {
         $(container_selector).off("click", "#viewTree");
         $(container_selector).on("click", "#viewTree", function (e) {
             e.preventDefault();
-            $("body").removeClass("report-mode");
-            $("#viewTree").addClass("active");
-            $("#viewReport").removeClass("active");
-            $("#descendantsReportWrapper").hide();
-            $("#descendants").show();
+            setDescendantsDisplayMode(false);
         });
 
         $(container_selector).off("click", "#viewReport");
         $(container_selector).on("click", "#viewReport", function (e) {
             e.preventDefault();
-            $("body").addClass("report-mode");
-            $("#viewReport").addClass("active");
-            $("#viewTree").removeClass("active");
-            $("#descendantsReportWrapper").show();
-            $("#descendants").hide();
+            setDescendantsDisplayMode(true);
 
             // Build report if empty (first run)
             // Use a check length to ensure we don't rebuild if satisfied.
@@ -363,9 +355,14 @@ window.DescendantsView = class DescendantsView extends View {
                 return;
             }
             const $arrow = $(this).children(".arrow");
+            const wasExpanded = $childrenUl.hasClass("expanded");
             $childrenUl.toggleClass("expanded");
             $arrow.toggleClass("rotated");
-            if ($(this).children(".load-more").length > 0) {
+            if (
+                !wasExpanded &&
+                $(this).attr("data-directchildrenloaded") !== "1" &&
+                $(this).children(".load-more").length > 0
+            ) {
                 $(this).children(".load-more").trigger("click");
             }
         });
@@ -395,9 +392,7 @@ window.DescendantsView = class DescendantsView extends View {
         $(container_selector).off("click", "#reportModeToggle");
         $(container_selector).on("click", "#reportModeToggle", function () {
             const isOn = $(this).prop("checked");
-            $("body").toggleClass("report-mode", isOn);
-            $("#descendantsReportWrapper").toggleClass("hidden", !isOn);
-            $("#descendants").toggleClass("hidden", isOn); // Hide tree when report is on
+            setDescendantsDisplayMode(isOn);
             $("#printReport").prop("disabled", !isOn);
         });
 
@@ -828,18 +823,25 @@ function loadMore(e) {
     if (target.is("img")) {
         target = $(target).parent();
     }
-    target.fadeOut();
-    // timeout and remove
-    setTimeout(function () {
-        target.remove();
-    }, 1000);
+    target.prop("disabled", true).addClass("loading");
     const theLI = target.closest("li");
-    if (theLI.children(".rotated").length == 0) {
-        target.closest("li").trigger("click");
+    const $childrenUl = theLI.children("ul.personList");
+    const $arrow = theLI.children(".arrow");
+    if (!$childrenUl.hasClass("expanded")) {
+        $childrenUl.addClass("expanded");
+        $arrow.addClass("rotated");
     }
     let person_id = target.parent().data("id");
     let generation = target.parent().children("ul.personList").data("generation");
-    fetchDescendants(person_id, generation);
+    fetchDescendants(person_id, generation)
+        .catch((error) => {
+            console.error(error);
+        })
+        .finally(() => {
+            if (target[0]?.isConnected) {
+                target.prop("disabled", false).removeClass("loading");
+            }
+        });
 }
 
 function showUpToGeneration() {
@@ -889,6 +891,89 @@ const fields = [
 ];
 
 const reportFields = [...fields, "Bio", "bioHTML", "PhotoData", "Photo", "BurialLocation", "Occupation"];
+const LOAD_MORE_BUTTON_HTML =
+    "<button class='load-more small'><img src='https://www.wikitree.com/images/icons/descendant-link.gif'></button>";
+
+function countDirectChildren(peopleById, personId) {
+    return Object.values(peopleById || {}).filter((child) => child.Father == personId || child.Mother == personId)
+        .length;
+}
+
+function normalizeNegativePersonIds(rootId, peopleById) {
+    if (!peopleById) {
+        return;
+    }
+
+    const negativeIds = [];
+    for (const key in peopleById) {
+        if (key < 0) {
+            negativeIds.push(peopleById[key].Id);
+            peopleById[rootId + "_" + key] = peopleById[key];
+            peopleById[rootId + "_" + key].Id = rootId + "_" + key;
+            delete peopleById[key];
+        }
+    }
+    for (const key in peopleById) {
+        if (peopleById[key].Father) {
+            if (negativeIds.includes(peopleById[key].Father)) {
+                peopleById[key].Father = rootId + "_" + peopleById[key].Father;
+            }
+        }
+        if (peopleById[key].Mother) {
+            if (negativeIds.includes(peopleById[key].Mother)) {
+                peopleById[key].Mother = rootId + "_" + peopleById[key].Mother;
+            }
+        }
+    }
+}
+
+function initializeDirectChildrenState(peopleById) {
+    Object.values(peopleById || {}).forEach((person) => {
+        if (person && typeof person.DirectChildrenLoaded === "undefined") {
+            person.DirectChildrenLoaded = false;
+        }
+    });
+}
+
+async function ensureCompleteDirectChildren(personId, peopleById) {
+    const person = peopleById?.[personId];
+    if (!person) {
+        return;
+    }
+
+    if (!person.HasChildren) {
+        person.DirectChildrenLoaded = true;
+        return;
+    }
+
+    const initialDirectChildCount = countDirectChildren(peopleById, personId);
+    const directChildren = await WikiTreeAPI.getPeople("test", personId, fields, {
+        descendants: 1,
+        resolveRedirect: 1,
+    });
+    const directChildrenById = directChildren?.[2] || {};
+
+    normalizeNegativePersonIds(personId, directChildrenById);
+    initializeDirectChildrenState(directChildrenById);
+
+    Object.entries(directChildrenById).forEach(([id, directPerson]) => {
+        const existingPerson = peopleById[id] || {};
+        const mergedPerson = { ...existingPerson, ...directPerson };
+        if (existingPerson.DirectChildrenLoaded === true) {
+            mergedPerson.DirectChildrenLoaded = true;
+        }
+        peopleById[id] = mergedPerson;
+    });
+
+    peopleById[personId].DirectChildrenLoaded = true;
+
+    const mergedDirectChildCount = countDirectChildren(peopleById, personId);
+    if (mergedDirectChildCount > initialDirectChildCount) {
+        console.info(
+            `[Descendants] Added ${mergedDirectChildCount - initialDirectChildCount} missing direct child records for ${personId}.`
+        );
+    }
+}
 
 // Parent template
 function createParentTemplate(parentData) {
@@ -1100,33 +1185,9 @@ async function fetchDescendants(person_id, generation) {
         resolveRedirect: 1,
     });
 
-    /* If a person has a negative key, store their negative key temporarily.
-     Replace the key and Id with person_id+_${negativeId} so that the negative keys/Ids are unique.
-     Find any Father or Mother Ids that match the negative Ids and replace them with the new Ids.
-     */
-    const negativeKeys = [];
-    const negativeIds = [];
-    for (const key in people[2]) {
-        if (key < 0) {
-            negativeKeys.push(key);
-            negativeIds.push(people[2][key].Id);
-            people[2][person_id + "_" + key] = people[2][key];
-            people[2][person_id + "_" + key].Id = person_id + "_" + key;
-            delete people[2][key];
-        }
-    }
-    for (const key in people[2]) {
-        if (people[2][key].Father) {
-            if (negativeIds.includes(people[2][key].Father)) {
-                people[2][key].Father = person_id + "_" + people[2][key].Father;
-            }
-        }
-        if (people[2][key].Mother) {
-            if (negativeIds.includes(people[2][key].Mother)) {
-                people[2][key].Mother = person_id + "_" + people[2][key].Mother;
-            }
-        }
-    }
+    normalizeNegativePersonIds(person_id, people[2]);
+    initializeDirectChildrenState(people[2]);
+    await ensureCompleteDirectChildren(person_id, people[2]);
 
     $("#shakyTree").hide();
     obj = await mergeSpouseDetails(people, fields);
@@ -1220,7 +1281,13 @@ function displayPerson(id, people, generation) {
         $("#view-container").append("<ul id='descendants'></ul>");
     }
 
-    if ($(`li[data-id="${person.Id}"]`).length == 0) {
+    const directChildrenLoaded = person.DirectChildrenLoaded === true;
+    const hasUnloadedChildren = person.HasChildren && !directChildrenLoaded;
+    const $existingItems = $(`li[data-id="${person.Id}"]`);
+
+    syncExistingPersonChildrenState($existingItems, person, hasUnloadedChildren);
+
+    if ($existingItems.length == 0) {
         const personName = new PersonName(person);
         const fullName = personName.withParts(["FullName"]);
         let birthYear = "";
@@ -1238,13 +1305,7 @@ function displayPerson(id, people, generation) {
         const theGender = person.Gender;
         let nameLink = `<a class='profileLink' href="https://www.wikitree.com/wiki/${person.Name}" target='_blank'>${fullName}</a>`;
 
-        const numberOfChildren = Object.values(people).filter(
-            (child) => child.Father == id || child.Mother == id
-        ).length;
-        const hasUnloadedChildren = person.HasChildren && numberOfChildren === 0;
-        const loadMoreButton = hasUnloadedChildren
-            ? "<button class='load-more small'><img src='https://www.wikitree.com/images/icons/descendant-link.gif'></button>"
-            : "";
+        const loadMoreButton = hasUnloadedChildren ? LOAD_MORE_BUTTON_HTML : "";
         let moreDetailsEye =
             '<span data-name="' + person.Name + '" title="Show/hide biography" class="moreDetailsEye">📝</span>';
         // if person.Id is nan, it's a private profile
@@ -1321,7 +1382,7 @@ function displayPerson(id, people, generation) {
             }" data-death-place="${person.DeathLocation || ""}" data-gender='${person.Gender}' 
             data-x='0' data-ydna='0' data-mtdna='0' class='${theGender} person' data-haschildren="${
                 person.HasChildren
-            }">
+            }" data-directchildrenloaded="${directChildrenLoaded ? 1 : 0}">
             ${childIndicator} ${listItemContent}<ul data-generation='${generation}' class='${ulState} personList'>
             </ul>${collapseButton}</li>`
         );
@@ -1434,6 +1495,45 @@ function displayPerson(id, people, generation) {
     });
 
     fillUpToGenerationSelect();
+}
+
+function syncExistingPersonChildrenState($items, person, hasUnloadedChildren) {
+    if ($items.length === 0) {
+        return;
+    }
+
+    $items
+        .attr("data-haschildren", person.HasChildren ? 1 : 0)
+        .attr("data-directchildrenloaded", person.DirectChildrenLoaded ? 1 : 0);
+
+    $items.each(function () {
+        const $item = $(this);
+        const $childrenList = $item.children("ul.personList");
+        let $arrow = $item.children(".arrow");
+
+        if (person.HasChildren && $arrow.length === 0) {
+            $arrow = $('<span class="arrow">▶</span>');
+            if ($childrenList.hasClass("expanded")) {
+                $arrow.addClass("rotated");
+            }
+            $item.prepend($arrow);
+        } else if (!person.HasChildren) {
+            $arrow.remove();
+        }
+
+        if (hasUnloadedChildren) {
+            if ($item.children(".load-more").length === 0) {
+                const $details = $item.children(".birthDeathDetails");
+                if ($details.length > 0) {
+                    $details.after(LOAD_MORE_BUTTON_HTML);
+                } else {
+                    $item.append(LOAD_MORE_BUTTON_HTML);
+                }
+            }
+        } else {
+            $item.children(".load-more").remove();
+        }
+    });
 }
 
 function findHighestGeneration() {
@@ -2488,6 +2588,14 @@ function setReportUiState({ busy }) {
     $("#printReport").prop("disabled", busy);
 }
 
+function setDescendantsDisplayMode(isReportMode) {
+    $("body").toggleClass("report-mode", isReportMode);
+    $("#viewTree").toggleClass("active", !isReportMode);
+    $("#viewReport").toggleClass("active", isReportMode);
+    $("#descendantsReportWrapper").toggleClass("hidden", !isReportMode);
+    $("#descendants").toggleClass("hidden", isReportMode);
+}
+
 function startReportBuild() {
     if (reportState.running) {
         return;
@@ -2505,10 +2613,8 @@ function startReportBuild() {
 
     $("#reportModeToggle").prop("checked", true);
     $("#reportModeToggleLabel").show();
-    $("body").addClass("report-mode");
-    $("#descendantsReportWrapper").removeClass("hidden");
+    setDescendantsDisplayMode(true);
     $("#descendantsReportWrapper").toggleClass("show-photos", $("#showPhotos").prop("checked"));
-    $("#descendants").addClass("hidden"); // Hide tree when report starts
     $("#printReport").prop("disabled", true);
 
     resetReportState();
