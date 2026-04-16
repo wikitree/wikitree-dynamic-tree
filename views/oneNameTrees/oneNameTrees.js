@@ -47,8 +47,8 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.surname = $("#surname").val()
             ? $("#surname").val().replaceAll("_", " ").replace(/\-\d+/, "").trim()
             : this.wtid
-            ? this.wtid.replaceAll("_", " ").replace(/\-\d+/, "").trim()
-            : "";
+              ? this.wtid.replaceAll("_", " ").replace(/\-\d+/, "").trim()
+              : "";
         this.surnameWatchlistIds = null;
         this.watchlistIds = [];
         this.watchlist = JSON.parse(localStorage.getItem(`${this.userId}_watchlist`)) || null;
@@ -1664,10 +1664,10 @@ window.OneNameTrees = class OneNameTrees extends View {
         return !resultObj
             ? 0
             : Array.isArray(resultObj)
-            ? resultObj.length
-            : typeof resultObj === "object"
-            ? Object.keys(resultObj).length
-            : 0;
+              ? resultObj.length
+              : typeof resultObj === "object"
+                ? Object.keys(resultObj).length
+                : 0;
     }
 
     async getPeopleViaPagedCalls(ids, options = {}) {
@@ -2333,8 +2333,8 @@ window.OneNameTrees = class OneNameTrees extends View {
                             ancestor.gender
                         }'>
             ${ancestor.fullName} <span class='dates'>${ancestor.dates}</span> <span class='wtid'>(${
-                            ancestor.wtid
-                        })</span>
+                ancestor.wtid
+            })</span>
           </li>`
                 )
                 .join("")
@@ -4761,9 +4761,9 @@ window.OneNameTrees = class OneNameTrees extends View {
                 return new Intl.NumberFormat(locales, options).format(number);
             }
             const formattedRoundedFound = formatNumber(roundedFound, "en-US");
-            const message = `<p>There are over ${formattedRoundedFound} results.</p>
-                                   <p>This is too many for WikiTree to handle.</p>
-                                   <p>Please add a location or a century (or centuries) and go again.</p>`;
+            const message = `There are over ${formattedRoundedFound} results. 
+                                   This is too many for WikiTree to handle. 
+                                   Please add a location or a century (or centuries) and go again.`;
             wtViewRegistry.showNotice(message);
             $this.disableCancel();
             $this.shakingTree.hide();
