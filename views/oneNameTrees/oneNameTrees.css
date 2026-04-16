@@ -1187,7 +1187,9 @@
   border: 1px solid forestgreen;
   border-radius: 1em;
   width: 40em;
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  box-shadow:
+    0 4px 8px 0 rgba(0, 0, 0, 0.2),
+    0 6px 20px 0 rgba(0, 0, 0, 0.19);
   animation-name: zoom;
   animation-duration: 0.6s;
 }
@@ -1311,7 +1313,7 @@
 }
 
 .oneNameTrees #controlWrapper {
-  position: relative
+  position: relative;
 }
 .oneNameTrees #toggleOptions {
   height: 0.7em;
@@ -1319,4 +1321,11 @@
   bottom: 0;
   right: 0;
   padding: 0.2em;
+}
+
+.oneNameTrees td.privacy,
+.oneNameTrees th.privacy {
+  border-radius: 0;
+  padding: 8px 10px !important;
+  display: table-cell;
 }
