@@ -460,9 +460,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         if (this.settings.reportMode) {
             $("#ahnentafelAncestorList").hide();
             $("#ahnentafelReportWrapper").removeClass("hidden");
-            if ($("#ahnentafelReport").is(":empty")) {
-                this.startReportBuild();
-            }
+            this.startReportBuild();
         } else {
             $("#ahnentafelAncestorList").show();
             $("#ahnentafelReportWrapper").addClass("hidden");
@@ -1252,6 +1250,21 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         this.applySettings();
     }
 
+    getParentModeToggleHtml(person, extraClass = "") {
+        if (!person || (!person.BioFather && !person.BioMother)) {
+            return "";
+        }
+
+        const parentMode = this.parentModeMap.get(person.Id) || "adoptive";
+        const wrapperClass = extraClass ? `parentModeToggle ${extraClass}` : "parentModeToggle";
+
+        return `<span class="${wrapperClass}"><button class="parentModeButton small ${
+            parentMode === "bio" ? "active" : ""
+        }" data-person-id="${person.Id}" data-mode="bio" title="Show biological parents">Biological</button><button class="parentModeButton small ${
+            parentMode === "adoptive" ? "active" : ""
+        }" data-person-id="${person.Id}" data-mode="adoptive" title="Show adoptive parents">Adoptive</button></span>`;
+    }
+
     displayPerson(person, ahnentafelNumber) {
         const additionalNumbers = person.AhnentafelNumber.filter((num) => num !== ahnentafelNumber)
             .sort((a, b) => a - b) // Sorts the numbers in ascending order
@@ -1313,15 +1326,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                 profileLink = "Private";
             }
 
-            const parentMode = this.parentModeMap.get(person.Id) || "adoptive";
-            const parentModeToggleHtml =
-                person.BioFather || person.BioMother
-                    ? `<span class="parentModeToggle"><button class="parentModeButton small ${
-                          parentMode === "bio" ? "active" : ""
-                      }" data-person-id="${person.Id}" data-mode="bio" title="Show biological parents">Biological</button><button class="parentModeButton small ${
-                          parentMode === "adoptive" ? "active" : ""
-                      }" data-person-id="${person.Id}" data-mode="adoptive" title="Show adoptive parents">Adoptive</button></span>`
-                    : "";
+            const parentModeToggleHtml = this.getParentModeToggleHtml(person);
 
             return `<div data-highlighted="${this.incrementedNumber()}" class="ahnentafelPerson ${genderClass} ${coupleClass}" id="person_${
                 person.Id
@@ -2616,7 +2621,12 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                 num = notes.length + 1;
                 let noteHtml = "";
                 if (href.startsWith("#")) {
-                    const target = $wrapper.find(href);
+                    const targetId = href.slice(1);
+                    const target = $wrapper
+                        .find("*")
+                        .addBack()
+                        .filter((_, el) => el.id === targetId)
+                        .first();
                     if (target.length) {
                         noteHtml = target.html();
                         target.remove();
@@ -2657,6 +2667,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         const generation = person.generation;
         const relationship = this.getRelationshipToBase(generation, person.ahnentafel, personData);
         const breadcrumbsHtml = this.getBreadcrumbsHtml(person.ahnentafel);
+        const parentModeToggleHtml = this.getParentModeToggleHtml(personData, "report-parent-mode-toggle");
 
         // Generation Header
         if (generation > this.reportState.currentGeneration) {
@@ -2726,10 +2737,11 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                 <div class="report-person-header">
                     <div class="report-person-title">
                         ${relationship ? `<span class="report-relationship">${relationship}</span>` : ""}
-                        <span class="report-title-main">
+                        <div class="report-title-main">
                             <span class="report-ahnentafel">${person.ahnentafel}.</span>
                             <span class="report-name">${name.toUpperCase()}${wtIdInline}</span>
-                        </span>
+                            ${parentModeToggleHtml ? `<div class="report-parent-mode">${parentModeToggleHtml}</div>` : ""}
+                        </div>
                     </div>
                     <div class="report-vitals">
                         ${birthHtml}

@@ -173,6 +173,14 @@
   overflow: hidden;
 }
 
+.report-parent-mode {
+  margin: 0.35em 0 0 2.7em;
+}
+
+.report-parent-mode .parentModeToggle {
+  margin: 0;
+}
+
 .report-name {
   overflow-wrap: anywhere;
 }
