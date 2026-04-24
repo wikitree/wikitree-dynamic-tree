@@ -1726,7 +1726,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                     }> Relationship</label>
                     <span class="breadcrumbs-control"><label style="font-size: 0.9em; margin-left: 0.5em;"><input type="checkbox" id="ahnentafelShowBreadcrumbs" ${
                         this.settings.showBreadcrumbs ? "checked" : ""
-                    }> Breadcrumbs</label><button class="small" type="button" id="ahnentafelBreadcrumbDirection" title="Toggle breadcrumb order">${
+                    }> Path</label><button class="small" type="button" id="ahnentafelBreadcrumbDirection" title="Toggle path order">${
                         this.settings.breadcrumbsReversed ? "↑" : "↓"
                     }</button></span>
                 </span>`;
@@ -1853,8 +1853,8 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             .attr(
                 "title",
                 this.settings.breadcrumbsReversed
-                    ? "Showing breadcrumbs from this person back to person 1. Click to switch to person 1 down to this person."
-                    : "Showing breadcrumbs from person 1 down to this person. Click to switch to this person back to person 1."
+                    ? "Showing the path from this person back to person 1. Click to switch to person 1 down to this person."
+                    : "Showing the path from person 1 down to this person. Click to switch to this person back to person 1."
             );
 
         $(".ahnentafelPerson").each(function () {
