@@ -26,6 +26,22 @@
   margin-right: 1em;
 }
 
+.breadcrumbs-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+}
+
+#ahnentafelBreadcrumbDirection {
+  min-width: 2em;
+  padding: 0.15em 0.45em;
+}
+
+#ahnentafelBreadcrumbDirection:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 #viewSwitcher {
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -146,10 +162,31 @@
 .report-person-title {
   font-size: 1.25em;
   font-weight: bold;
-  display: flex;
-  gap: 0.5em;
   color: #000;
   margin-bottom: 0.4em;
+  overflow: hidden;
+}
+
+.report-title-main {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.report-name {
+  overflow-wrap: anywhere;
+}
+
+.report-relationship {
+  float: right;
+  margin-left: 1em;
+  font-size: 0.72em;
+  font-weight: 600;
+  color: #555;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: nowrap;
+  text-align: right;
 }
 
 .report-ahnentafel {
@@ -222,6 +259,46 @@
   line-height: 1.4;
 }
 
+.report-breadcrumbs {
+  margin-top: 1.25em;
+  padding-top: 0.9em;
+  border-top: 1px solid #eee;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45em;
+  align-items: center;
+  font-size: 0.92em;
+  color: #555;
+}
+
+.report-breadcrumb-person {
+  display: inline-block;
+  padding: 0.15em 0.45em;
+  border-radius: 999px;
+}
+
+.report-breadcrumb-years {
+  font-size: 0.92em;
+  opacity: 0.85;
+}
+
+.report-breadcrumb-person.Male {
+  background-color: #f2f1ff;
+}
+
+.report-breadcrumb-person.Female {
+  background-color: #ffeeee;
+}
+
+.report-breadcrumb-person.Unknown {
+  background-color: #eeffee;
+}
+
+.report-breadcrumb-separator {
+  color: #888;
+  font-size: 0.9em;
+}
+
 #ahnentafelReportWrapper:not(.show-photos) .report-bio-image,
 #ahnentafelReportWrapper:not(.show-photos) .report-photo {
   display: none !important;
@@ -244,6 +321,14 @@
 #ahnentafelReportWrapper.hide-sources .report-citation,
 #ahnentafelReportWrapper.hide-sources .report-endnotes,
 #ahnentafelReportWrapper.hide-sources .report-sources-section {
+  display: none !important;
+}
+
+#ahnentafelReportWrapper.hide-relationships .report-relationship {
+  display: none !important;
+}
+
+#ahnentafelReportWrapper.hide-breadcrumbs .report-breadcrumbs {
   display: none !important;
 }
 
@@ -390,7 +475,7 @@
 #ahnentafelAncestorList .ahnentafelPerson,
 #ahnentafelAncestorList .ahnentafelPersonShort {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   padding: 3px;
   margin: 0.1em 0;
 }
@@ -409,7 +494,7 @@
 .parentModeToggle {
   display: inline-flex;
   gap: 0.25em;
-  margin-left: 0.5em;
+  margin: 0.25em 0 0;
 }
 .parentModeToggle .parentModeButton {
   min-width: 90px;
@@ -432,6 +517,20 @@
 #ahnentafelAncestorList .ahnentafelPerson > span.personText,
 #ahnentafelAncestorList .ahnentafelPersonShort > span.personText {
   margin-left: 0.3em; /* Space between number and name */
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+#ahnentafelAncestorList .ahnentafelPerson > span.personText > .personHeadline,
+#ahnentafelAncestorList .ahnentafelPersonShort > span.personText > .personHeadline,
+#ahnentafelAncestorList .ahnentafelPerson > span.personText > .birthAndDeathDetails,
+#ahnentafelAncestorList .ahnentafelPersonShort > span.personText > .birthAndDeathDetails,
+#ahnentafelAncestorList .ahnentafelPerson > span.personText > .relativeDetails,
+#ahnentafelAncestorList .ahnentafelPersonShort > span.personText > .relativeDetails {
+  display: block;
 }
 
 #ahnentafelAncestorList .ahnentafelPerson,
@@ -441,7 +540,9 @@
 }
 
 .gender-colors #ahnentafelAncestorList .ahnentafelPerson,
-.gender-colors #ahnentafelAncestorList .ahnentafelPersonShort {
+.gender-colors #ahnentafelAncestorList .ahnentafelPersonShort,
+#ahnentafelAncestorList.gender-colors .ahnentafelPerson,
+#ahnentafelAncestorList.gender-colors .ahnentafelPersonShort {
   background-color: #efe;
   border-color: transparent;
 }
