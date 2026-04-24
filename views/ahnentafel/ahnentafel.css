@@ -241,6 +241,12 @@
   max-width: none;
 }
 
+#ahnentafelReportWrapper.hide-sources .report-citation,
+#ahnentafelReportWrapper.hide-sources .report-endnotes,
+#ahnentafelReportWrapper.hide-sources .report-sources-section {
+  display: none !important;
+}
+
 /* Print Styles for Report */
 @media print {
   @page {

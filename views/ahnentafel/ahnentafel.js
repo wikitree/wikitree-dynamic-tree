@@ -710,6 +710,9 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             <span class="printer-option"><label><input type="checkbox" id="ahnentafelShowGenderColors" ${
                 this.settings.showGenderColors ? "checked" : ""
             }> Gender colors</label></span>
+            <span class="printer-option"><label><input type="checkbox" id="ahnentafelShowSources" ${
+                this.settings.showSources ? "checked" : ""
+            }> <span title="Show/hide Sources and Acknowledgements">Sources</span></label></span>
         `;
 
         container.parentNode.insertBefore(optionsContainer, container);
@@ -764,6 +767,12 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             } else {
                 $("#ahnentafelAncestorList").removeClass("gender-colors");
             }
+            this.saveSettings();
+            this.applySettings();
+        });
+
+        $("#ahnentafelShowSources").on("change", (e) => {
+            this.settings.showSources = e.target.checked;
             this.saveSettings();
             this.applySettings();
         });
@@ -1626,6 +1635,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             format: 1,
             showWtId: false,
             showGenderColors: true,
+            showSources: true,
             reportMode: false,
             showPhotos: true,
             wide: false,
@@ -1710,6 +1720,12 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             $reportWrapper.addClass("wide");
         } else {
             $reportWrapper.removeClass("wide");
+        }
+
+        if (this.settings.showSources) {
+            $reportWrapper.removeClass("hide-sources");
+        } else {
+            $reportWrapper.addClass("hide-sources");
         }
 
         if (this.settings.reportMode) {
@@ -2349,7 +2365,37 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                 const $p = $("<p></p>").text(this.textContent);
                 $(this).replaceWith($p);
             });
+
+        this.tagReportSourceSections($wrapper);
         return $wrapper;
+    }
+
+    isSourcesHeadingText(text) {
+        return /^sources\b/i.test((text || "").trim());
+    }
+
+    tagReportSourceSections($wrapper) {
+        const children = $wrapper.children().toArray();
+        const sourceStartIndex = children.findIndex((child) => {
+            const $child = $(child);
+            const isHeading = /^H[1-6]$/i.test(child.tagName);
+            const isSection = /^SECTION$/i.test(child.tagName);
+            const $heading = isHeading ? $child : isSection ? $child.find("h1,h2,h3,h4,h5,h6").first() : $();
+            if (!$heading.length) {
+                return false;
+            }
+
+            const headingText = $heading.find(".mw-headline").first().text().trim() || $heading.text().trim();
+            return this.isSourcesHeadingText(headingText);
+        });
+
+        if (sourceStartIndex === -1) {
+            return;
+        }
+
+        children.slice(sourceStartIndex).forEach((child) => {
+            $(child).addClass("report-sources-section");
+        });
     }
 
     extractEndnotesFromBio($wrapper, personId) {
