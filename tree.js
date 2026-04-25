@@ -502,9 +502,16 @@ window.SessionManager = class SessionManager {
 
     isValidWikiTreeIdFormat(value) {
         if (typeof value !== "string") return false;
-        const s = value.trim();
-        if (!s || s.length > 200) return false;
-        return /^[A-Za-z][A-Za-z'._-]*-\d+$/.test(s);
+        let s = value.trim();
+        try {
+            s = decodeURIComponent(s.replace(/\+/g, "_"));
+        } catch {
+            return false;
+        }
+        s = s.trim();
+        if (!s) return false;
+        // Name segment ends with -digits; allow any-script letters, marks, digits inside the name (e.g. 松下-1, Распутин-1, Le Brun-881).
+        return /^[\p{L}\p{M}][\p{L}\p{M}\p{N}'.\s_-]*-\d+$/u.test(s);
     }
 };
 
