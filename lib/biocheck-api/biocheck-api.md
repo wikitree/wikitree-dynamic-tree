@@ -17,7 +17,8 @@ Only contains a subset of the complete set of data available.
 Expects the profile to contain the following fields from the API:
 Id,Name,IsLiving,Privacy,Manager,IsMember,
 BirthDate,DeathDate,BirthDateDecade,DeathDateDecade,
-FirstName,RealName,LastNameCurrent,LastNameAtBirth,Mother,Father,DataStatus,Bio
+BirthLocation,DeathLocation,Managers,
+FirstName,RealName,LastNameCurrent,LastNameAtBirth,DataStatus,Bio
 
 ### canUse
 
@@ -89,11 +90,29 @@ Is profile an orphan
 
 Returns **[Boolean][7]** true if profile is an orphan
 
+### getManagers
+
+Get managers for this profile as a String
+
+Returns **[String][8]** list of managers
+
 ### hasLocation
 
 Does profile have either birth or death location
 
 Returns **[Boolean][7]** true if either location present
+
+### hasBirthLocation
+
+Does profile have birth location
+
+Returns **[Boolean][7]** true if birth location
+
+### hasDeathLocation
+
+Does profile have death location
+
+Returns **[Boolean][7]** true if death location
 
 ### getPrivacy
 
@@ -143,6 +162,14 @@ Returns **[Boolean][7]** true if either birth or death date before 1700
 Is the person born > 150 years ago or died > 100 years ago
 
 Returns **[Boolean][7]** true if born > 150 years ago or died > 100 years ago
+
+### hasBirthDate
+
+Does the profile have a birth date
+
+### hasDeathDate
+
+Does the profile have a death date
 
 ### isUndated
 
@@ -246,6 +273,22 @@ Returns **[Boolean][7]** true if profile looks good, else false.
 Returns false a profile that appears unsourced (is ?), a profile with an empty bio, a profile with no dates,
 or a profile that has an Unsourced Research Notes Box or is in an Unsourced category.
 
+### getScore
+
+Get score value for the profile. This number may be less than 0.
+
+Returns **any** score value for the profile
+
+### getBioSectionLines
+
+Get Biography Section lines
+including each line after the == Biography == heading up through
+the start of the next heading or end of the biography.
+The \n character terminates a line, which are returned in an array.
+Blank lines are included.
+
+Returns **[Array][11]** of bio string lines
+
 ### validateSourcesStr
 
 Validate using just a string of sources. This is typically
@@ -257,6 +300,14 @@ used when adding a new person in basic mode.
 *   `thePerson`  {BioCheckPerson} person to check
 
 Returns **[Boolean][7]** true if sources found.
+
+### hasProblems
+
+Does biography have problems.
+problems include: no valid sources, no sources, empty,
+marked unsourced, undated, has style issues
+
+Returns **[Boolean][7]** true if bio has problems
 
 ### isEmpty
 
@@ -638,6 +689,18 @@ assumes the leading {{ removed and line is lower case
 
 Returns **[Boolean][7]** true if nav box else false
 
+### isNotabilityTemplate
+
+Determine if line is a Notability template
+Do not want to look at all formatting templates, at present
+assumes the leading {{ removed and line is lower case
+
+#### Parameters
+
+*   `line` **[String][8]** to test
+
+Returns **[Boolean][7]** true if notability else false
+
 ### isSticker
 
 Determine if a line is a valid Sticker
@@ -651,7 +714,7 @@ Returns **[Boolean][7]** true if sticker else false
 
 ### isRecommendedTag
 
-Determine if a line starts with an HTML tag
+Determine if a line contains with an HTML tag
 that is recommended for use on WikiTree.
 Typically used for a line that starts with <
 
