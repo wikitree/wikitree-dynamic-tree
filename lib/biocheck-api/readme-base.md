@@ -9,6 +9,7 @@ contexts.
 * Biography.js
 * BioCheckPerson.js
 * SourceRules.js
+
 The Bio Check app and WikiTree Dynamic Tree make use of
 * BioCheckTemplateManager
 
@@ -30,8 +31,15 @@ import { Biography } from "./Biography.js";
   if (canUseThis) {
     let biography = new Biography(theSourceRules);
     biography.parse(bioString, thePerson, searchString);
-    let isValid = biography.validate(); 
+    let hasValidSources = biography.validate(); 
+
+    // optionally determine if biography has any problems
+    let hasProblems = biography.hasProblems();
+
+    // optionally get the bioScore
+    let bioScore = biography.getScore();
   }
+
 
   // now report from biography (use getters) as desired or just the boolean return 
   // you might want to report any biography that is not valid from the validate()
