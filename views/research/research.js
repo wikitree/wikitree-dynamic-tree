@@ -158,7 +158,7 @@ window.ResearchView = class ResearchView extends View {
     searchButton(label, siteName) {
         return `
             <div class="col-12 col-md-6 col-xl-3">
-                <button type="button" class="btn btn-pill w-100 text-start" data-site="${this.escapeHtml(siteName)}">
+                <button type="button" class="research-search-btn btn btn-pill w-100 text-start" data-site="${this.escapeHtml(siteName)}">
                     <span>${this.escapeHtml(label)}</span>
                     <span class="icon--search icon--inline float-end"></span>
                 </button>
