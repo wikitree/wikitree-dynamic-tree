@@ -50,7 +50,7 @@ header > * {
 }
 
 main {
-  background: white;
+  background: #f7f6f0;
   padding: var(--content-padding);
 }
 

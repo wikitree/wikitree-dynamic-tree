@@ -67,22 +67,6 @@
     white-space: nowrap;
 }
 
-.icon--search {
-    background: transparent url("https://www.wikitree.com/images/icons/icon-search.svg") left no-repeat;
-    background-size: 20px 20px;
-    display: inline-block;
-    height: 20px;
-    width: 20px;
-}
-
-.icon--help {
-  background: transparent url("https://www.wikitree.com/images/icons/icon-question.svg");
-  background-size: 26px 26px;
-  display: inline-block;
-  height: 26px;
-  width: 26px;
-}
-
 #research-app .research-search-btn:hover .icon--search {
     filter: invert(1);
 }
