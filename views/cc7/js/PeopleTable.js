@@ -45,12 +45,13 @@ class PeopleTable {
         }
         let rootPerson = window.people.get(window.rootId) || window.rootPerson;
         if (!rootPerson) {
-            rootPerson = await WikiTreeAPI.postToAPI({
+            const rslt = await WikiTreeAPI.postToAPI({
                 appId: Settings.APP_ID,
                 action: "getPerson",
-                keys: window.rootId,
+                key: window.rootId,
                 fields: CC7.GET_PEOPLE_FIELDS,
             });
+            rootPerson = rslt[0].person;
         }
         window.rootPerson = rootPerson;
 
