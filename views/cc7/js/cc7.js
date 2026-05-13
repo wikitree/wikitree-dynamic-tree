@@ -1256,36 +1256,26 @@ class CC7 {
     }
 
     static addRelationships() {
-        const rootName = Utils.getTreeAppWtId();
-        let rootId = null;
-        const familyMapEntries = [];
-        for (let [key, value] of window.people.entries()) {
-            if (value.Name === rootName) {
-                rootId = key;
-                // break;
-            }
-            familyMapEntries.push([
-                key,
-                {
-                    Name: value.Name,
-                    BirthDate: value.BirthDate,
-                    BirthDateDecade: value.BirthDateDecade,
-                    DeathDate: value.DeathDate,
-                    DeathDateDecade: value.DeathDateDecade,
-                    DataStatus: value.DataStatus,
-                    FirstName: value.FirstName,
-                    LastNameCurrent: value.LastNameCurrent,
-                    LastNameAtBirth: value.LastNameAtBirth,
-                    Gender: value.Gender,
-                    LongNamePrivate: value.LongNamePrivate,
-                    Father: value.Father,
-                    Mother: value.Mother,
-                    Meta: value.Meta,
-                },
-            ]);
-        }
-
-        let rootPersonId = rootId;
+        const familyMapEntries = Array.from(window.people, ([key, value]) => [
+            key,
+            {
+                Name: value.Name,
+                BirthDate: value.BirthDate,
+                BirthDateDecade: value.BirthDateDecade,
+                DeathDate: value.DeathDate,
+                DeathDateDecade: value.DeathDateDecade,
+                DataStatus: value.DataStatus,
+                FirstName: value.FirstName,
+                LastNameCurrent: value.LastNameCurrent,
+                LastNameAtBirth: value.LastNameAtBirth,
+                Gender: value.Gender,
+                LongNamePrivate: value.LongNamePrivate,
+                Father: value.Father,
+                Mother: value.Mother,
+                Meta: value.Meta,
+            },
+        ]);
+        const rootPersonId = window.rootId;
         const loggedInUser = window.wtViewRegistry.session.lm.user.name;
         const loggedInUserId = window.wtViewRegistry.session.lm.user.id;
 
@@ -1296,7 +1286,7 @@ class CC7 {
             // console.log("Worker returned:", event.data);
             if (event.data.type === "completed") {
                 if (event.data.rootId == rootPersonId) {
-                    const updatedTable = CC7.updateTableWithResults(event.data.results);
+                    CC7.updateTableWithResults(event.data.results);
                     if (loggedInUserId == rootPersonId) {
                         $this.storeDataInIndexedDB(event.data.dbEntries);
                     }
@@ -1334,6 +1324,9 @@ class CC7 {
     }
 
     static storeDataInIndexedDB(dbEntries) {
+        if (dbEntries.length == 0) {
+            return;
+        }
         const $this = this;
         this.openDatabase(CC7.RELATIONSHIP_DB_NAME, CC7.RELATIONSHIP_DB_VERSION, CC7.RELATIONSHIP_STORE_NAME)
             .then((db) => {
@@ -1451,6 +1444,9 @@ class CC7 {
     }
 
     static async updateTableWithResults(results) {
+        if (results.length == 0) {
+            return;
+        }
         // Wait for the people table to be present
         await new Promise((resolve) => {
             if ($("#peopleTable").length) {
@@ -1477,7 +1473,7 @@ class CC7 {
             if (person) {
                 person.Relationship = result.relationship;
             }
-            // Update the people table relarionship column in this person's row
+            // Update the people table relationship column in this person's row
             const row = pTable.querySelector(`tr[data-id="${result.personId}"]`);
             if (row) {
                 row.setAttribute("data-relation", result?.relationship?.abbr || "");

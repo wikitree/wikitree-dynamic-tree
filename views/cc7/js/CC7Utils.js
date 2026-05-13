@@ -50,7 +50,7 @@ export class CC7Utils {
     }
 
     static tableCaption() {
-        const person = window.people.get(window.rootId);
+        const person = window.people.get(window.rootId) || window.rootPerson;
         let displName;
         if (person) {
             displName = new PersonName(person).withParts(CC7Utils.WANTED_NAME_PARTS);
