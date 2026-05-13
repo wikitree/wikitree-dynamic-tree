@@ -1,207 +1,270 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Tree Apps</title>
+<head>
+  <title>Tree Apps</title>
 
-    <link rel="icon" href="https://www.wikitree.com/favicon.ico" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta charset="utf-8" />
+  <link rel="shortcut icon" href="https://www.wikitree.com/favicon.ico" />
+  <meta property="og:image" content="https://www.wikitree.com/images/og-image.png" />
+  <meta property="og:type" content="website" />
+  <link rel="apple-touch-icon" sizes="180x180" href="https://www.wikitree.com/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://www.wikitree.com/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://www.wikitree.com/favicon-16x16.png">
+  <link rel="mask-icon" href="https://www.wikitree.com/safari-pinned-tab.svg" color="#5bbad5">
+  <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.4/d3.min.js"></script>
-    <script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://unpkg.com/vis-timeline@latest/standalone/umd/vis-timeline-graph2d.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.3.2/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.7/js/select2.min.js"></script>
-    <script src="WikiTreeAPI.js"></script>
-    <script src="tree.js"></script>
-    <script src="person_name.js"></script>
-    <script src="views/shared/DateFormatOptions.js"></script>
-    <script type="module" src="lib/biocheck-api/src/BioCheckTemplateManager.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://www.wikitree.com/skins/common/wikibits.js"></script>
+  <script src="https://www.wikitree.com/skins/common/ajax.js"></script>
 
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.5.3/jspdf.debug.js"
-      integrity="sha384-NaWTHo/8YCBYJ59830LTz/P4aQZK1sS0SneOgAvhsIl3zBu8r9RevNg5lHCHAuQ/"
-      crossorigin="anonymous"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://www.wikitree.com/css/wt-vars.css" />
+  <link rel="stylesheet" href="https://www.wikitree.com/css/wt-fonts.css" />
+  <link rel="stylesheet" href="https://www.wikitree.com/css/wt-opensans.css" />
+  <link rel="stylesheet" href="https://www.wikitree.com/css/wt-examples.css" />
+  <link rel="stylesheet" href="https://www.wikitree.com/css/wt-forms.css" />
+  <link rel="stylesheet" href="https://www.wikitree.com/css/wt-buttons.css" />
+  <link rel="stylesheet" href="https://www.wikitree.com/css/wt-links.css" />
+  <link rel="stylesheet" href="https://www.wikitree.com/css/wt-icons.css" />
+  <link rel="stylesheet" href="https://www.wikitree.com/css/wt-navigation.css" />
+  <link rel="stylesheet" href="https://www.wikitree.com/css/wt-header.css" />
+  <link rel="stylesheet" href="https://www.wikitree.com/css/wt-footer.css" />
+  <link rel="stylesheet" href="https://www.wikitree.com/css/wt-components.css" />
+  <link rel="stylesheet" href="https://www.wikitree.com/css/wt-content.css" />
+  <link rel="stylesheet" href="https://www.wikitree.com/css/wt-tree.css" />
+  <link rel="stylesheet" href="https://www.wikitree.com/css/wt-avatars.css" />
+  <link rel="stylesheet" href="https://www.wikitree.com/css/wt-privacy.css" />
+  <link rel="stylesheet" href="https://www.wikitree.com/css/wt-comments.css" />
+  <link rel="stylesheet" href="https://www.wikitree.com/css/wt-stylesheet.css" />
 
-    <!-- 
-    <link rel="stylesheet" href="https://www.wikitree.com/css/base.css" />
-    <link rel="stylesheet" href="https://www.wikitree.com/css/skeleton.css" />
-    <link rel="stylesheet" href="https://www.wikitree.com/css/skeleton-wide.css" />
-    <link rel="stylesheet" href="https://www.wikitree.com/css/layout.css" /> -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
-      crossorigin="anonymous" />
-    <link rel="stylesheet" href="css/wt-stylesheet.css?v=1" />
-    <link rel="stylesheet" href="tree.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Mono:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap"
+    rel="stylesheet">
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.7/css/select2.min.css" />
-    <link href="https://unpkg.com/vis-timeline@latest/styles/vis-timeline-graph2d.min.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.4/d3.min.js"></script>
+  <script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
+  <script src="https://unpkg.com/vis-timeline@latest/standalone/umd/vis-timeline-graph2d.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.3.2/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.7/js/select2.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.5.3/jspdf.debug.js"
+    integrity="sha384-NaWTHo/8YCBYJ59830LTz/P4aQZK1sS0SneOgAvhsIl3zBu8r9RevNg5lHCHAuQ/"
+    crossorigin="anonymous"></script>
 
-    <script src="views/baseDynamicTree/WikiTreeDynamicTreeViewer.js"></script>
-    <script src="views/timeline/TimelineView.js"></script>
-    <script src="views/familyPortraits/portraits.js"></script>
-    <script src="views/familyCalendar/familyCalendar.js"></script>
-    <link rel="stylesheet" href="views/familyCalendar/calendar.css" />
-    <link rel="stylesheet" href="views/familyPortraits/portraits.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.7/css/select2.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/vis-timeline@latest/styles/vis-timeline-graph2d.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
 
-    <script src="views/fanChart/SVGfunctions.js"></script>
-    <script src="views/fanChart/personPopup.js"></script>
-    <script src="views/fanChart/AhnenTafel.js"></script>
-    <script src="views/fanChart/PeopleCollection.js"></script>
-    <script src="views/fanChart/SettingsOptions.js"></script>
-    <script type="module" src="views/fanChart/FanChartView.js"></script>
-    <!-- <script src="views/fanChart/FanChartView2.js" type="module"></script> -->
-    <script type="module" src="views/fandoku/FandokuView.js"></script>
-    <script type="module" src="views/fractalTree/FractalView.js"></script>
-    <script type="module" src="views/webs/WebsView.js"></script>
+  <script src="WikiTreeAPI.js"></script>
+  <script src="tree.js"></script>
+  <script src="person_name.js"></script>
+  <script src="views/shared/DateFormatOptions.js"></script>
+  <script type="module" src="lib/biocheck-api/src/BioCheckTemplateManager.js"></script>
+  <link rel="stylesheet" href="tree.css" />
 
-    <script src="views/xTree/XTreeView.js"></script>
-    <script src="views/superBigFamTree/SuperBigFamView.js" type="module"></script>
+  <script src="views/baseDynamicTree/WikiTreeDynamicTreeViewer.js"></script>
+  <script src="views/timeline/TimelineView.js"></script>
+  <script src="views/familyPortraits/portraits.js"></script>
+  <script src="views/familyCalendar/familyCalendar.js"></script>
+  <link rel="stylesheet" href="views/familyCalendar/calendar.css" />
+  <link rel="stylesheet" href="views/familyPortraits/portraits.css" />
 
-    <script src="views/printerFriendly/PrinterFriendlyView.js"></script>
-    <link rel="stylesheet" href="views/printerFriendly/printerFriendly.css" />
+  <script src="views/fanChart/SVGfunctions.js"></script>
+  <script src="views/fanChart/personPopup.js"></script>
+  <script src="views/fanChart/AhnenTafel.js"></script>
+  <script src="views/fanChart/PeopleCollection.js"></script>
+  <script src="views/fanChart/SettingsOptions.js"></script>
+  <script type="module" src="views/fanChart/FanChartView.js"></script>
+  <!-- <script src="views/fanChart/FanChartView2.js" type="module"></script> -->
+  <script type="module" src="views/fandoku/FandokuView.js"></script>
+  <script type="module" src="views/fractalTree/FractalView.js"></script>
+  <script type="module" src="views/webs/WebsView.js"></script>
 
-    <script src="views/ahnentafel/ahnentafel.js"></script>
-    <link rel="stylesheet" href="views/ahnentafel/ahnentafel.css" />
+  <script src="views/xTree/XTreeView.js"></script>
+  <script src="views/superBigFamTree/SuperBigFamView.js" type="module"></script>
 
-    <script src="views/surnames/surnames.js"></script>
-    <link rel="stylesheet" href="views/surnames/surnames.css" />
+  <script src="views/printerFriendly/PrinterFriendlyView.js"></script>
+  <link rel="stylesheet" href="views/printerFriendly/printerFriendly.css" />
 
-    <script src="views/familyView/familyView.js"></script>
-    <link rel="stylesheet" href="views/familyView/familyView.css" />
+  <script src="views/ahnentafel/ahnentafel.js"></script>
+  <link rel="stylesheet" href="views/ahnentafel/ahnentafel.css" />
 
-    <script src="views/nameTest/name_test.js"></script>
-    <script type="module" src="views/timelineTree/timelineTree.js"></script>
-    <link rel="stylesheet" href="views/timelineTree/timelineTree.css" />
+  <script src="views/surnames/surnames.js"></script>
+  <link rel="stylesheet" href="views/surnames/surnames.css" />
 
-    <!-- jquery-ui.min.js is used by couplesTree, compactCouplesTree, cc7 and ancestorLines,
+  <script src="views/familyView/familyView.js"></script>
+  <link rel="stylesheet" href="views/familyView/familyView.css" />
+
+  <script src="views/nameTest/name_test.js"></script>
+  <script type="module" src="views/timelineTree/timelineTree.js"></script>
+  <link rel="stylesheet" href="views/timelineTree/timelineTree.css" />
+
+  <!-- jquery-ui.min.js is used by couplesTree, compactCouplesTree, cc7 and ancestorLines,
       but only for its draggable function. It was created at https://jqueryui.com/download/
       to only contain draggable and its dependencies. -->
-    <script src="views/cc7/js/jquery-ui.min.js"></script>
-    <!-- floatingScroll is used by couplesTree, compactCouplesTree and ancestorLines and comes with gratitude
+  <script src="views/cc7/js/jquery-ui.min.js"></script>
+  <!-- floatingScroll is used by couplesTree, compactCouplesTree and ancestorLines and comes with gratitude
       from https://github.com/Amphiluke/floating-scroll/ -->
-    <script type="module" src="views/ancestorLines/jquery.floatingscroll.es6.min.js"></script>
+  <script type="module" src="views/ancestorLines/jquery.floatingscroll.es6.min.js"></script>
 
-    <script type="module" src="views/couplesTree/cached_person.js"></script>
-    <script type="module" src="views/couplesTree/cache_loader.js"></script>
-    <script type="module" src="views/couplesTree/people_cache.js"></script>
-    <script type="module" src="views/couplesTree/couples_tree.js"></script>
-    <link rel="stylesheet" href="views/ancestorLines/jquery.floatingscroll.css" />
-    <link rel="stylesheet" href="views/couplesTree/couples_tree.css" />
+  <script type="module" src="views/couplesTree/cached_person.js"></script>
+  <script type="module" src="views/couplesTree/cache_loader.js"></script>
+  <script type="module" src="views/couplesTree/people_cache.js"></script>
+  <script type="module" src="views/couplesTree/couples_tree.js"></script>
+  <link rel="stylesheet" href="views/ancestorLines/jquery.floatingscroll.css" />
+  <link rel="stylesheet" href="views/couplesTree/couples_tree.css" />
 
-    <!-- compactCouplesTree also uses cached_person, cache_loader, and people_cache above -->
-    <script type="module" src="views/compactCouplesTree/cct_view.js"></script>
-    <link rel="stylesheet" href="views/compactCouplesTree/cct.css" />
+  <!-- compactCouplesTree also uses cached_person, cache_loader, and people_cache above -->
+  <script type="module" src="views/compactCouplesTree/cct_view.js"></script>
+  <link rel="stylesheet" href="views/compactCouplesTree/cct.css" />
 
-    <!-- compactDescendantsTree also uses cached_person, cache_loader, and people_cache above -->
-    <script type="module" src="views/compactDescendantsTree/ccd_view.js"></script>
-    <link rel="stylesheet" href="views/compactDescendantsTree/ccd.css" />
+  <!-- compactDescendantsTree also uses cached_person, cache_loader, and people_cache above -->
+  <script type="module" src="views/compactDescendantsTree/ccd_view.js"></script>
+  <link rel="stylesheet" href="views/compactDescendantsTree/ccd.css" />
 
-    <script src="views/cc7/js/date.format.js"></script>
-    <script lang="javascript" src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="views/cc7/js/FileSaver.min.js"></script>
-    <script type="module" src="views/cc7/js/Settings.js"></script>
-    <script type="module" src="views/cc7/js/HierarchyView.js"></script>
-    <script type="module" src="views/cc7/js/LanceView.js"></script>
-    <script type="module" src="views/cc7/js/PeopleTable.js"></script>
-    <script type="module" src="views/cc7/js/cc7.js"></script>
-    <script type="module" src="views/cc7/cc7View.js"></script>
-    <link rel="stylesheet" href="views/cc7/css/cc7.css" />
+  <script src="views/cc7/js/date.format.js"></script>
+  <script lang="javascript" src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <script src="views/cc7/js/FileSaver.min.js"></script>
+  <script type="module" src="views/cc7/js/Settings.js"></script>
+  <script type="module" src="views/cc7/js/HierarchyView.js"></script>
+  <script type="module" src="views/cc7/js/LanceView.js"></script>
+  <script type="module" src="views/cc7/js/PeopleTable.js"></script>
+  <script type="module" src="views/cc7/js/cc7.js"></script>
+  <script type="module" src="views/cc7/cc7View.js"></script>
+  <link rel="stylesheet" href="views/cc7/css/cc7.css" />
 
-    <!-- Ancestor Line Explorer uses FileSaver and floatingscroll above-->
-    <script type="module" src="views/ancestorLines/api.js"></script>
-    <script type="module" src="views/ancestorLines/person.js"></script>
-    <script type="module" src="views/ancestorLines/ancestor_tree.js"></script>
-    <script type="module" src="views/ancestorLines/display.js"></script>
-    <script type="module" src="views/ancestorLines/ancestor_lines_explorer.js"></script>
-    <script type="module" src="views/ancestorLines/ale_view.js"></script>
-    <link rel="stylesheet" href="views/ancestorLines/ale.css" />
+  <!-- Ancestor Line Explorer uses FileSaver and floatingscroll above-->
+  <script type="module" src="views/ancestorLines/api.js"></script>
+  <script type="module" src="views/ancestorLines/person.js"></script>
+  <script type="module" src="views/ancestorLines/ancestor_tree.js"></script>
+  <script type="module" src="views/ancestorLines/display.js"></script>
+  <script type="module" src="views/ancestorLines/ancestor_lines_explorer.js"></script>
+  <script type="module" src="views/ancestorLines/ale_view.js"></script>
+  <link rel="stylesheet" href="views/ancestorLines/ale.css" />
 
-    <script src="views/descendants/descendants.js"></script>
-    <link rel="stylesheet" href="views/descendants/descendants.css" />
+  <script src="views/descendants/descendants.js"></script>
+  <link rel="stylesheet" href="views/descendants/descendants.css" />
 
-    <script type="module" src="views/familyGroupApp/familyGroupApp.js"></script>
-    <link rel="stylesheet" href="views/familyGroupApp/familyGroupApp.css" />
+  <script type="module" src="views/familyGroupApp/familyGroupApp.js"></script>
+  <link rel="stylesheet" href="views/familyGroupApp/familyGroupApp.css" />
 
-    <!-- Sortable, currently used by stats, comes from https://github.hubspot.com/sortable,
+  <!-- Sortable, currently used by stats, comes from https://github.hubspot.com/sortable,
       with thanks to Adam Schwartz -->
-    <script src="views/stats/sortable.min.js"></script>
-    <link rel="stylesheet" href="views/stats/sortable-theme-slick.css" />
-    <script type="module" src="views/stats/stats.js"></script>
-    <link rel="stylesheet" href="views/stats/stats.css" />
+  <script src="views/stats/sortable.min.js"></script>
+  <link rel="stylesheet" href="views/stats/sortable-theme-slick.css" />
+  <script type="module" src="views/stats/stats.js"></script>
+  <link rel="stylesheet" href="views/stats/stats.css" />
 
-    <script type="module" src="views/wtPlusMaps/wtPlusMaps.js"></script>
+  <script type="module" src="views/wtPlusMaps/wtPlusMaps.js"></script>
 
-    <!-- For One Name Trees-->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/3.0.1/js.cookie.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-    <script src="https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
-    <script type="module" src="views/oneNameTrees/location_data.js"></script>
-    <script type="module" src="views/oneNameTrees/locationstatistics.js"></script>
-    <script type="module" src="views/oneNameTrees/familytreestatistics.js"></script>
-    <script type="module" src="views/oneNameTrees/oneNameTrees.js"></script>
-    <script type="module" src="views/oneNameTrees/d3dataformatter.js"></script>
+  <!-- For One Name Trees-->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/3.0.1/js.cookie.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+  <script src="https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+  <script type="module" src="views/oneNameTrees/location_data.js"></script>
+  <script type="module" src="views/oneNameTrees/locationstatistics.js"></script>
+  <script type="module" src="views/oneNameTrees/familytreestatistics.js"></script>
+  <script type="module" src="views/oneNameTrees/oneNameTrees.js"></script>
+  <script type="module" src="views/oneNameTrees/d3dataformatter.js"></script>
 
-    <link rel="stylesheet" href="views/oneNameTrees/oneNameTrees.css" />
+  <link rel="stylesheet" href="views/oneNameTrees/oneNameTrees.css" />
 
-    <!-- begin SlippyTree -->
-    <script type="module" src="views/slippyTree/script.js"></script>
-    <link rel="stylesheet" href="views/slippyTree/style.css" />
-    <!-- end SlippyTree -->
+  <!-- begin SlippyTree -->
+  <script type="module" src="views/slippyTree/script.js"></script>
+  <link rel="stylesheet" href="views/slippyTree/style.css" />
+  <!-- end SlippyTree -->
 
-    <!-- begin Ancestors Cemeteries -->
-    <script type="module" src="views/ancestorsCemeteries/ancestorsCemeteries.js"></script>
-    <!-- end Ancestors Cemeteries -->
+  <!-- begin Ancestors Cemeteries -->
+  <script type="module" src="views/ancestorsCemeteries/ancestorsCemeteries.js"></script>
+  <!-- end Ancestors Cemeteries -->
 
-    <!-- begin Heritage Charts -->
-    <script type="module" src="views/heritage/heritage.js"></script>
-    <link rel="stylesheet" href="views/heritage/heritage.css" />
-    <!-- end Heritage Charts -->
-  </head>
+  <!-- begin Heritage Charts -->
+  <script type="module" src="views/heritage/heritage.js"></script>
+  <link rel="stylesheet" href="views/heritage/heritage.css" />
+  <!-- end Heritage Charts -->
 
-  <body>
-    <script>
-      // A var statement creates a global variable. This is here because of modules (an inelegent solution, I know
-      // - the globals, not modules).
-      var debugLoggingOn = false; // set to true to turn on debug logging to the console
-    </script>
-    <!-- The View Registry, for adding new views, is in index.js. -->
-    <script src="index.js"></script>
-    <header>
-      <a
-        href="https://www.wikitree.com/"
-        id="logo"
-        title="WikiTree: Where genealogists collaborate"
-        target="_blank"></a>
-      <div id="settings-panel">
-        <form>
-          <label for="view-select">TREE APP:</label>
-          <select id="view-select"></select>
-          <label for="wt-id-text">ID:</label>
-          <input id="wt-id-text" type="text" placeholder="e.g. Windsor-1" />
-          <input id="show-btn" class="btn btn-primary p-2" type="submit" value="GO" />
-        </form>
+  <!-- beginResearch -->
+  <link rel="stylesheet" href="views/research/research.css">
+  <script src="views/research/sites.js"></script>
+  <script src="views/research/research.js"></script>
+  <!-- end Research -->
+</head>
+
+<body>
+  <script>
+    // A var statement creates a global variable. This is here because of modules (an inelegent solution, I know
+    // - the globals, not modules).
+    var debugLoggingOn = false; // set to true to turn on debug logging to the console
+  </script>
+  <!-- The View Registry, for adding new views, is in index.js. -->
+  <script src="index.js"></script>
+
+  <header>
+    <div class="container full-width d-none d-lg-block">
+      <div class="row align-items-center">
+        <div class="col-3">
+          <a class="visually-hidden-focusable" href="#main">Skip to main content</a>
+          <a href="/">
+            <img src="https://www.wikitree.com/images/wikitree-logo-tagline.png"
+              alt="WikiTree: Where genealogists collaborate">
+          </a>
+        </div>
+        <div class="col-6 d-flex justify-content-center">
+        </div>
+        <div class="col-3 d-flex justify-content-end">
+        </div>
       </div>
-      <div id="wt-api-login"></div>
-    </header>
-    <main>
-      <div id="view-loader" class="hidden">Loading...</div>
-      <div id="wt-status" class="status hidden"></div>
-      <div id="info-panel" class="hidden">
-        <h2>
-          <span id="view-title"></span> for <span id="name-placeholder"></span> -
-          <a id="wt-id-link" target="_blank"></a>
-        </h2>
-        <p id="view-description"></p>
+    </div>
+  </header>
+
+  <div class="tabs--wrapper has--current">
+    <div class="container">
+      <div class="row">
+        <div class="col" id="tabs">
+          <nav>
+            <div class="profile--actions float-end">
+              <div id="wt-api-login"></div>
+            </div>
+            <div id="settings-panel">
+              <form>
+                <label for="view-select">TREE APP:</label>
+                <select id="view-select"></select>
+                <label for="wt-id-text">ID:</label>
+                <input id="wt-id-text" type="text" placeholder="e.g. Windsor-1" />
+                <input id="show-btn" class="btn btn-primary p-2" type="submit" value="GO" />
+              </form>
+            </div>
+            
+          </nav>
+        </div>
       </div>
-    </main>
-    <div id="view-container"></div>
-  </body>
+    </div>
+  </div>
+
+  <main id="main" data-bs-root-margin="0px 0px -60%" data-bs-smooth-scroll="true">
+    <div class="row mt-3">
+      <div class="col-lg-12">
+        <main>
+          <div id="view-loader" class="hidden">Loading...</div>
+          <div id="wt-status" class="status hidden"></div>
+          <div id="info-panel" class="hidden">
+            <h2>
+              <span id="view-title"></span> for <span id="name-placeholder"></span> -
+              <a id="wt-id-link" target="_blank"></a>
+            </h2>
+            <p id="view-description"></p>
+          </div>
+        </main>
+        <div id="view-container"></div>
+      </div>
+    </div>
+  </main>
+</body>
+
 </html>
