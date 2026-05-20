@@ -6,7 +6,7 @@ window.ResearchSites.push({
     group: "General",
 
     buildUrl(data) {
-        const baseUrl = "https://www.usgwarchives.net/search/search.cgi/search.htm";
+        const baseUrl = "http://www.usgwarchives.net/search/search.cgi/search.htm";
 
         const params = {
             cmd: "Search!",
