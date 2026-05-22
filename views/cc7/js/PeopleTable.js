@@ -83,7 +83,7 @@ class PeopleTable {
                 "<th title='Privacy'>Priv</th>" +
                 "<th></th><th></th>" +
                 `<th id='research' title="Research Status and Notes">RS</th>` +
-                `<th id='degree' title="Distance (Degree). Click to sort.">°</th>` +
+                `<th id='degree' title="Distance (Degree). Click to sort." style="text-align: center;">°</th>` +
                 `<th id="relation" title="Relation between ${rootFirstName} and each person">Rel.</th>` +
                 "<th id='parent' title='Parents. Click to sort.' data-order='desc'>Par.</th>" +
                 "<th id='sibling' title='Siblings. Click to sort.' data-order='desc'>Sib.</th>" +

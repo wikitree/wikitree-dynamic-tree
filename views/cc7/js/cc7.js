@@ -144,7 +144,7 @@ class CC7 {
         <a href="https://www.wikitree.com/wiki/Help:Research_Status" title="Help:Research_Status">Research Status</a>
             (shown in the RS column) is a WikiTree classification that can be added to a profile when editing the profile.
         </p><p>
-            Additionally you can associate notes with profiles by clicking in the RS (Research Notes) column and typing in a note.
+            Additionally you can associate notes with profiles by clicking in the RS column and typing in a note.
              A note can have a status associated with it, and does not have to have text. Profiles with notes are flagged with
             extra colour in the RS column and the note status is indicated by a small coloured triangle in the same cell.
         </p><p>
