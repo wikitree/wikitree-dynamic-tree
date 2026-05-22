@@ -9,13 +9,15 @@ import { CC7Utils } from "./CC7Utils.js";
 import { Utils } from "../../shared/Utils.js";
 import { CC7, CC7MLParamMap, CC7CirclesParamMap } from "./cc7.js";
 
-export { PeopleTable, showTable, PRIVACY_LEVELS };
+export { PeopleTable, showTable, PRIVACY_LEVELS, RESEARCH_STATUS };
 
 class PeopleTable {
     static EXCEL = "xlsx";
     static CSV = "csv";
     static ACTIVE_VIEW = CC7.VIEWS.TABLE;
     static PREVIOUS_SUBSET = null;
+    static NOTES_COL = 3;
+    static BIOCHECK_COL = 10;
 
     // From https://github.com/wikitree/wikitree-api/blob/main/getProfile.md :
     // Privacy_IsPrivate            True if Privacy = 20
@@ -33,6 +35,16 @@ class PeopleTable {
         [20, { title: "Private", img: "./views/cc7/images/privacy_private.png" }],
         [10, { title: "Unlisted", img: "./views/cc7/images/privacy_unlisted.png" }],
         ["?", { title: "Unknown", img: "./views/cc7/images/question-mark-circle-outline-icon.png" }],
+    ]);
+
+    static RESEARCH_STATUS = new Map([
+        [0, { title: "No Research Status", class: "" }],
+        [10, { title: "Unfinished", class: "cc7-icon--rs-unfinished" }],
+        [20, { title: "Help Requested", class: "cc7-icon--rs-help" }],
+        [30, { title: "Sources to Review", class: "cc7-icon--rs-sources" }],
+        [40, { title: "Silver Standard", class: "cc7-icon--rs-silver" }],
+        [50, { title: "Gold Standard Candidate", class: "cc7-icon--rs-gold" }],
+        [60, { title: "Gold Standard; Genealogically Complete and Peer Reviewed", class: "cc7-icon--rs-complete" }],
     ]);
 
     static async addPeopleTable() {
@@ -55,17 +67,9 @@ class PeopleTable {
         }
         window.rootPerson = rootPerson;
 
-        const rootFirstName = rootPerson?.FirstName || window.rootId; // Get first name of root person
+        const rootFirstName =
+            rootPerson?.FirstName || rootPerson?.BirthNamePrivate || rootPerson?.Name || window.rootId; // Get first name of root person
         const sortTitle = "title='Click to sort'";
-        const degreeTH = `<th id='degree' title="Distance. Click to sort.">°</th>`;
-        const relationTH = `<th id="relation" title="Relation between ${rootFirstName} and each person">Rel.</th>`;
-        const createdTH = `<th id='created' ${sortTitle} data-order='asc'>Created</th>`;
-        const touchedTH = `<th id='touched' ${sortTitle} data-order='asc'>Modified</th>`;
-        const parentsNum = "<th id='parent' title='Parents. Click to sort.' data-order='desc'>Par.</th>";
-        const siblingsNum = "<th id='sibling' title='Siblings. Click to sort.' data-order='desc'>Sib.</th>";
-        const spousesNum = "<th id='spouse' title='Spouses. Click to sort.' data-order='desc'>Sp.</th>";
-        const childrenNum = "<th id='child' title='Children. Click to sort.' data-order='desc'>Ch.</th>";
-        const ageAtDeathCol = "<th id='age-at-death' title='Age at Death. Click to sort.'  data-order='desc'>Age</th>";
         const bioCheck = Settings.current["biocheck_options_biocheckOn"];
 
         let idsAndStatus = await CC7Notes.getIdsAndStatus();
@@ -78,12 +82,13 @@ class PeopleTable {
                 "<thead><tr>" +
                 "<th title='Privacy'>Priv</th>" +
                 "<th></th><th></th>" +
-                degreeTH +
-                relationTH +
-                parentsNum +
-                siblingsNum +
-                spousesNum +
-                childrenNum +
+                `<th id='research' title="Research Status and Notes">RS</th>` +
+                `<th id='degree' title="Distance (Degree). Click to sort.">°</th>` +
+                `<th id="relation" title="Relation between ${rootFirstName} and each person">Rel.</th>` +
+                "<th id='parent' title='Parents. Click to sort.' data-order='desc'>Par.</th>" +
+                "<th id='sibling' title='Siblings. Click to sort.' data-order='desc'>Sib.</th>" +
+                "<th id='spouse' title='Spouses. Click to sort.' data-order='desc'>Sp.</th>" +
+                "<th id='child' title='Children. Click to sort.' data-order='desc'>Ch.</th>" +
                 (bioCheck
                     ? "<th id='bioscore' title='Bio Check scores & issues. Click to sort.' data-order='desc'>BCS</th>"
                     : "") +
@@ -104,10 +109,10 @@ class PeopleTable {
                 `<img src="${CC7Utils.imagePath(
                     "reverse.svg"
                 )}" alt="Reverse Icon" width="20" height="20"></span></th>` +
-                ageAtDeathCol +
+                "<th id='age-at-death' title='Age at Death. Click to sort.'  data-order='desc'>Age</th>" +
                 `<th data-order='' id='manager' ${sortTitle}>Manager</th>` +
-                createdTH +
-                touchedTH +
+                `<th id='created' ${sortTitle} data-order='asc'>Created</th>` +
+                `<th id='touched' ${sortTitle} data-order='asc'>Modified</th>` +
                 "</tr></thead><tbody></tbody></table>"
         );
 
@@ -264,6 +269,7 @@ class PeopleTable {
                 dManager = managerLink;
             }
 
+            let researchCell = "";
             let degreeCell = "";
             let relationCell = "";
             let touched = "";
@@ -293,15 +299,25 @@ class PeopleTable {
 
             if ($("#cc7Container").length) {
                 const hasNote = idsWithNotes.has(mPerson.Id);
+                const rsDetail = PeopleTable.RESEARCH_STATUS.get(mPerson.ResearchStatus) || {
+                    title: mPerson.ResearchStatus,
+                    class: "",
+                };
                 let status = hasNote ? idsWithNotes.get(mPerson.Id) : "";
                 if (status != "") status = " " + status;
-                degreeCell = `<td class="degree${
-                    hasNote ? " hasNote" : ""
-                }${status}" title="Degree. Click to add/edit Notes.">${mPerson.Meta.Degrees}°</td>`;
+                const titleStatus = status == "" ? ". " : `, Note status:${status}. `;
+
+                researchCell = `<td class="research${hasNote ? " hasNote" : ""}${status}" data-rs="${
+                    mPerson.ResearchStatus
+                }" title="Research Status: ${
+                    rsDetail.title.startsWith("No Research") ? "None" : rsDetail.title
+                }${titleStatus} Click to add/edit Notes."><span class="${rsDetail.class} icon--inline"></span></td>`;
+
+                degreeCell = `<td class="degree" title="Degree">${mPerson.Meta.Degrees}°</td>`;
                 relationCell = `<td class='relation' title="${mPerson.Relationship?.full || ""}">${
                     mPerson.Relationship?.abbr || ""
                 }</td>`;
-                dDegree = "data-degree='" + mPerson.Meta.Degrees + "'";
+                dDegree = `data-degree="${mPerson.Meta.Degrees}"`;
                 dRelation = `data-relation="${mPerson.Relationship?.abbr || ""}"`;
                 dBioScore = bioCheck ? ` data-bioscore="${mPerson.bioScore || ""}"` : "";
 
@@ -310,7 +326,7 @@ class PeopleTable {
                         "<td class='created aDate'>" +
                         mPerson.Created.replace(/([0-9]{4})([0-9]{2})([0-9]{2}).*/, "$1-$2-$3") +
                         "</td>";
-                    dCreated = "data-created='" + mPerson.Created + "'";
+                    dCreated = `data-created="${mPerson.Created}"`;
                 } else {
                     created = "<td class='created aDate'></td>";
                 }
@@ -467,6 +483,7 @@ class PeopleTable {
                         : "<span title='Unknown'>?</span>") +
                     `</td><td><img class='familyHome' src='./views/cc7/images/Home_icon.png' title="Click to see ${firstName}'s family sheet"></td>` +
                     `<td><img class='timelineButton' src='./views/cc7/images/timeline.png' title="Click to see a timeline for ${firstName}"></td>` +
+                    researchCell +
                     degreeCell +
                     relationCell +
                     relNums["Parent_cell"] +
@@ -560,8 +577,8 @@ class PeopleTable {
             });
 
         $("#cc7Container")
-            .off("click", "td.degree")
-            .on("click", "td.degree", function (event) {
+            .off("click", "td.research")
+            .on("click", "td.research", function (event) {
                 CC7Notes.processNoteCellClick($(this));
             });
 
@@ -1162,15 +1179,13 @@ class PeopleTable {
                 return;
             } else if (i == 2) {
                 return;
-            } else if (i == 3) {
+            } else if (i == PeopleTable.NOTES_COL) {
                 $(filterCell).append(
-                    $(
-                        "<select id='cc7DegFilter' title='Enter a degree (> and < prefixes are allowed) or select a Notes filter'></select>"
-                    )
+                    $("<select id='cc7NotesFilter' title='Select a Research Status or Notes filter'></select>")
                 );
                 $(filterRow).append(filterCell);
                 return;
-            } else if (i == 9 && Settings.current["biocheck_options_biocheckOn"]) {
+            } else if (i == PeopleTable.BIOCHECK_COL && Settings.current["biocheck_options_biocheckOn"]) {
                 const filterSelect = document.createElement("select");
                 filterSelect.id = "cc7BCSFilter";
                 filterSelect.title =
@@ -1268,12 +1283,12 @@ class PeopleTable {
             width: "2.5em",
         });
 
-        const shapeOptions = new Map([
+        const noteShapeOptions = new Map([
             [
                 "none",
                 {
                     title: "Clear filter",
-                    html: " ",
+                    html: '<span class="icon--inline" style="background-color: white;"></span>',
                     // html: '<svg viewBox="0 0 100 100"><polygon points="10,10 90,90" style="fill:white;"/></svg>',
                 },
             ],
@@ -1325,38 +1340,46 @@ class PeopleTable {
             [
                 "st-done",
                 {
-                    id: "st-done",
                     title: "Notes with Done state",
                     html: '<svg viewBox="0 0 100 100"><polygon points="25,10 90,10 90,75" style="fill:rgb(0, 255, 0);"/></svg>',
                 },
             ],
         ]);
 
-        function formatDegOption(data) {
+        function formatNotesOption(data) {
             // data:
             // {
             //     "id": "value attribute" || "option text",
             //     "text": "label attribute" || "option text",
             //     "element": HTMLOptionElement
             // }
-            const option = shapeOptions.get(data.id);
+            let option = noteShapeOptions.get(data.id);
             if (option) {
-                return $('<span class="cc7DegFilter-option">' + option.html + "</span>");
+                return $('<span class="cc7NotesFilter-option">' + option.html + "</span>");
             }
-            return data.text; // Default for free-typed numbers
+            option = PeopleTable.RESEARCH_STATUS.get(+data.id);
+            if (option) {
+                return data.id == "0"
+                    ? `<span class="cc7NotesFilter-option">ø</span>`
+                    : `<span class="cc7NotesFilter-option ${option.class} icon--inline"></span>`;
+            }
+            return $('<span class="cc7NotesFilter-option">?</span>');
         }
 
-        $("#cc7DegFilter").select2({
-            tags: true, // Allow custom input
-            data: [...shapeOptions.entries()].map((opt) => ({ id: opt[0], title: opt[1].title })),
-            templateResult: formatDegOption,
-            templateSelection: formatDegOption,
+        $("#cc7NotesFilter").select2({
+            minimumResultsForSearch: Infinity, // Don't allow custom input
+            data: [...noteShapeOptions.entries(), ...PeopleTable.RESEARCH_STATUS.entries()].map((opt) => ({
+                id: opt[0],
+                title: opt[1].title,
+            })),
+            templateResult: formatNotesOption,
+            templateSelection: formatNotesOption,
             // dropdownParent: $("#cc7Container"),
             escapeMarkup: function (markup) {
                 return markup;
             }, // Allow custom HTML
-            // multiple: true,
             width: "2.5em",
+            dropdownParent: $("#cc7Container"),
         });
 
         function formatBCOption(option) {
@@ -1384,7 +1407,7 @@ class PeopleTable {
         });
 
         $("#cc7PrivFilter").off("select2:select").on("select2:select", PeopleTable.filterListener);
-        $("#cc7DegFilter").off("select2:select").on("select2:select", PeopleTable.filterListener);
+        $("#cc7NotesFilter").off("select2:select").on("select2:select", PeopleTable.filterListener);
         $("#cc7BCSFilter").off("select2:select").on("select2:select", PeopleTable.filterListener);
 
         // Add Clear Filters button
@@ -1409,7 +1432,7 @@ class PeopleTable {
             input.value = "";
         });
         $("#cc7PrivFilter").val("all").trigger("change");
-        $("#cc7DegFilter").val("none").trigger("change");
+        $("#cc7NotesFilter").val("none").trigger("change");
         $("#cc7BCSFilter").val("").trigger("change");
         PeopleTable.filterFunction();
         PeopleTable.updateClearFiltersButtonVisibility();
@@ -1440,7 +1463,7 @@ class PeopleTable {
 
         // Get the filter values for the privacy, degree and BioCheck filters
         const reqPrivacy = $("#cc7PrivFilter").select2("data")[0].id;
-        const reqDegree = $("#cc7DegFilter").val();
+        const reqNotes = $("#cc7NotesFilter").val();
         const reqBioCheck = $("#cc7BCSFilter").val();
 
         rows.forEach((row, rowIndex) => {
@@ -1473,27 +1496,27 @@ class PeopleTable {
                 }
             }
 
-            // Check the degree filter
+            // Check the notes/research filter
             let displayRow = true;
-            if (reqDegree != "none") {
-                const $cell = $(row.children[3]);
-                if (reqDegree == "all") {
+            if (reqNotes != "none") {
+                const $cell = $(row.children[PeopleTable.NOTES_COL]);
+                if (reqNotes == "all") {
                     displayRow = $cell.hasClass("hasNote");
-                } else if (reqDegree == "st-none") {
+                } else if (reqNotes == "st-none") {
                     displayRow =
                         $cell.hasClass("hasNote") &&
                         !$cell.hasClass("ToDo") &&
                         !$cell.hasClass("InProgress") &&
                         !$cell.hasClass("Done");
-                } else if (reqDegree == "st-todo") {
+                } else if (reqNotes == "st-todo") {
                     displayRow = $cell.hasClass("ToDo");
-                } else if (reqDegree == "st-busy") {
+                } else if (reqNotes == "st-busy") {
                     displayRow = $cell.hasClass("InProgress");
-                } else if (reqDegree == "st-done") {
+                } else if (reqNotes == "st-done") {
                     displayRow = $cell.hasClass("Done");
                 } else {
-                    // Treat it as a numeric filter
-                    displayRow = shouldKeepRow($cell.text(), reqDegree, true, false);
+                    // Treat it as a numeric research status filter
+                    displayRow = shouldKeepRow($cell.attr("data-rs"), reqNotes, true, false);
                 }
             }
             if (!displayRow) {
@@ -1503,7 +1526,7 @@ class PeopleTable {
 
             // Check the BioCheck filter
             if (reqBioCheck && reqBioCheck !== "") {
-                const $cell = $(row.children[9]);
+                const $cell = $(row.children[PeopleTable.BIOCHECK_COL]);
                 if (reqBioCheck == "bioOK") {
                     displayRow = !$cell.hasClass("bioIssue");
                 } else if (reqBioCheck == "bioBad") {
@@ -1583,7 +1606,7 @@ class PeopleTable {
         return (
             Array.from(document.querySelectorAll(".filter-input")).some((input) => input.value.trim() !== "") ||
             $("#cc7PrivFilter").select2("data")[0].id != "all" ||
-            $("#cc7DegFilter").val() != "none" ||
+            $("#cc7NotesFilter").val() != "none" ||
             ($("#cc7BCSFilter").length && $("#cc7BCSFilter").val() !== "")
         );
     }
@@ -2638,3 +2661,4 @@ class PeopleTable {
 
 const showTable = PeopleTable.showTable;
 const PRIVACY_LEVELS = PeopleTable.PRIVACY_LEVELS;
+const RESEARCH_STATUS = PeopleTable.RESEARCH_STATUS;

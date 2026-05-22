@@ -139,11 +139,14 @@ class CC7 {
             uncertain. Similarly ~-7 means <i>about 7 years before the person's birth</i>, and &lt;~-28 means
             <i>earlier that about 28 years before the person's birth</i>.
          </p>
-        <h4>Notes</h4>
+        <h4>Research Status and Notes</h4>
         <p>
-            You can associate notes with profiles by clicking in the Degree column and typing in a note. A note can have
-            a status associated with it, and does not have to have text. Profiles with notes are flagged with extra colour
-            in the degree column and the note status is indicated by a small coloured triangle in the same cell.
+        <a href="https://www.wikitree.com/wiki/Help:Research_Status" title="Help:Research_Status">Research Status</a>
+            (shown in the RS column) is a WikiTree classification that can be added to a profile when editing the profile.
+        </p><p>
+            Additionally you can associate notes with profiles by clicking in the RS (Research Notes) column and typing in a note.
+             A note can have a status associated with it, and does not have to have text. Profiles with notes are flagged with
+            extra colour in the RS column and the note status is indicated by a small coloured triangle in the same cell.
         </p><p>
             Notes are saved in the browser and while they persist over sessions, they are not shared between devices. It is
             highly recommended that you backup your notes regularly to a file. You can also use this file to transport
@@ -218,9 +221,6 @@ class CC7 {
             <li>
                 Numeric columns (including the years in date columns) can be filtered with &gt; and &lt;.
                 For example, to see all people born after 1865, enter &gt;1865 in the birth year filter box.
-            </li>
-            <li>
-                For the Degree column filter you can enter a numeric value, or select one of the Note options.
             </li>
             <li>
                 Clear the filters by clicking on the CLEAR FILTERS button that appears as soon as you have an
@@ -337,6 +337,7 @@ class CC7 {
         "Prefix",
         "Privacy",
         "RealName",
+        "ResearchStatus",
         "ShortName",
         "Spouses",
         "Suffix",
