@@ -299,8 +299,9 @@ class PeopleTable {
 
             if ($("#cc7Container").length) {
                 const hasNote = idsWithNotes.has(mPerson.Id);
-                const rsDetail = PeopleTable.RESEARCH_STATUS.get(mPerson.ResearchStatus) || {
-                    title: mPerson.ResearchStatus,
+                const researchStatus = mPerson.ResearchStatus || 0;
+                const rsDetail = PeopleTable.RESEARCH_STATUS.get(researchStatus) || {
+                    title: researchStatus,
                     class: "",
                 };
                 let status = hasNote ? idsWithNotes.get(mPerson.Id) : "";
@@ -308,7 +309,7 @@ class PeopleTable {
                 const titleStatus = status == "" ? ". " : `, Note status:${status}. `;
 
                 researchCell = `<td class="research${hasNote ? " hasNote" : ""}${status}" data-rs="${
-                    mPerson.ResearchStatus
+                    researchStatus
                 }" title="Research Status: ${
                     rsDetail.title.startsWith("No Research") ? "None" : rsDetail.title
                 }${titleStatus} Click to add/edit Notes."><span class="${rsDetail.class} icon--inline"></span></td>`;
