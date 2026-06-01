@@ -212,6 +212,11 @@
   cursor: pointer;
 }
 
+.oneNameTrees .akaLastNames {
+  color: #555;
+  font-style: italic;
+}
+
 .oneNameTrees div.error {
   color: red;
   font-weight: bold;
