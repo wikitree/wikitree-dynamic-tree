@@ -47,6 +47,11 @@ window.AhnentafelView = class AhnentafelView extends View {
  * Display a list of ancestors using the ahnen numbering system.
  */
 window.AhnentafelAncestorList = class AhnentafelAncestorList {
+    static MAX_EXCEL_SLOT_EXPORT_ROWS = 20000;
+    static MAX_EXCEL_WIDTH_SAMPLE_ROWS = 1000;
+    static MAX_EXCEL_CELL_LENGTH = 32000;
+    static GEDCOM_MONTHS = ["", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
     static WANTED_NAME_PARTS = [
         "Prefix",
         "FirstNames",
@@ -707,6 +712,10 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             <span class="printer-option"><label><input type="checkbox" id="ahnentafelShowGenderColors" ${
                 this.settings.showGenderColors ? "checked" : ""
             }> Gender colors</label></span>
+            <span id="exportControls" class="printer-option">
+                <button class="small" id="downloadExcel" title="Download all loaded ancestors as an Excel file">Excel</button>
+                <button class="small" id="downloadGedcom" title="Download all loaded ancestors as a GEDCOM file">GEDCOM</button>
+            </span>
         `;
 
         container.parentNode.insertBefore(optionsContainer, container);
@@ -758,6 +767,16 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             this.settings.showGenderColors = e.target.checked;
             this.saveSettings();
             this.applySettings();
+        });
+
+        $("#downloadExcel").on("click", (e) => {
+            e.preventDefault();
+            this.exportAncestorsToExcel();
+        });
+
+        $("#downloadGedcom").on("click", (e) => {
+            e.preventDefault();
+            this.exportAncestorsToGedcom();
         });
     }
 
@@ -2318,6 +2337,497 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             }
         });
         return people;
+    }
+
+    collectExportAncestors(maxGeneration = this.maxGeneration) {
+        const peopleById = new Map(this.ancestors.map((person) => [person.Id, person]));
+        return this.collectReportAncestors(maxGeneration)
+            .map((entry) => {
+                const person = peopleById.get(entry.id);
+                return person ? { ...entry, person } : null;
+            })
+            .filter(Boolean);
+    }
+
+    collectExportSlots(maxGeneration = this.maxGeneration) {
+        const slots = [];
+
+        for (let generation = 1; generation <= maxGeneration; generation++) {
+            const startAhnentafel = Math.pow(2, generation - 1);
+            const endAhnentafel = Math.pow(2, generation) - 1;
+            for (let ahnentafel = startAhnentafel; ahnentafel <= endAhnentafel; ahnentafel++) {
+                const person = this.findPersonByAhnentafelNumber(ahnentafel);
+                if (!person) {
+                    continue;
+                }
+                slots.push({
+                    ahnentafel,
+                    generation,
+                    person,
+                });
+            }
+        }
+
+        return slots;
+    }
+
+    countExportSlots(maxGeneration = this.maxGeneration) {
+        return this.collectExportSlots(maxGeneration).length;
+    }
+
+    getEffectiveParentIds(person) {
+        const requestedMode = this.parentModeMap.get(person.Id) || "adoptive";
+        const useBioFather = requestedMode === "bio" && !!person.BioFather;
+        const useBioMother = requestedMode === "bio" && !!person.BioMother;
+        const fatherId = useBioFather ? person.BioFather || null : person.Father || null;
+        const motherId = useBioMother ? person.BioMother || null : person.Mother || null;
+        const fatherType = useBioFather ? "bio" : person.BioFather && person.BioFather !== person.Father ? "adoptive" : "normal";
+        const motherType = useBioMother ? "bio" : person.BioMother && person.BioMother !== person.Mother ? "adoptive" : "normal";
+        const presentParentTypes = [fatherId ? fatherType : null, motherId ? motherType : null].filter(Boolean);
+        const uniqueParentTypes = [...new Set(presentParentTypes.length ? presentParentTypes : ["normal"])];
+
+        return {
+            fatherId,
+            motherId,
+            fatherType,
+            motherType,
+            mode: uniqueParentTypes.length === 1 ? uniqueParentTypes[0] : "mixed",
+        };
+    }
+
+    serializeExportValue(value) {
+        if (value === null || typeof value === "undefined") {
+            return "";
+        }
+
+        let serializedValue;
+        if (Array.isArray(value)) {
+            serializedValue = value.join(" | ");
+        } else if (typeof value === "object") {
+            try {
+                serializedValue = JSON.stringify(value);
+            } catch (error) {
+                serializedValue = String(value);
+            }
+        } else {
+            serializedValue = String(value);
+        }
+
+        if (serializedValue.length > AhnentafelAncestorList.MAX_EXCEL_CELL_LENGTH) {
+            return `${serializedValue.slice(0, AhnentafelAncestorList.MAX_EXCEL_CELL_LENGTH - 15)}...[truncated]`;
+        }
+
+        return serializedValue;
+    }
+
+    buildExcelExportPersonRow(person, peopleById) {
+        const { fatherId, motherId, fatherType, motherType, mode } = this.getEffectiveParentIds(person);
+        const effectiveFather = fatherId ? peopleById.get(String(fatherId)) : null;
+        const effectiveMother = motherId ? peopleById.get(String(motherId)) : null;
+
+        return {
+            ParentMode: mode,
+            Id: person.Id || "",
+            Name: person.Name || "",
+            FirstName: this.serializeExportValue(person.FirstName),
+            MiddleName: this.serializeExportValue(person.MiddleName),
+            LastNameAtBirth: this.serializeExportValue(person.LastNameAtBirth),
+            LastNameCurrent: this.serializeExportValue(person.LastNameCurrent),
+            RealName: this.serializeExportValue(person.RealName),
+            Nicknames: this.serializeExportValue(person.Nicknames),
+            Suffix: this.serializeExportValue(person.Suffix),
+            Gender: this.serializeExportValue(person.Gender),
+            BirthDate: this.serializeExportValue(person.BirthDate),
+            BirthLocation: this.serializeExportValue(person.BirthLocation),
+            DeathDate: this.serializeExportValue(person.DeathDate),
+            DeathLocation: this.serializeExportValue(person.DeathLocation),
+            Father: this.serializeExportValue(person.Father),
+            Mother: this.serializeExportValue(person.Mother),
+            BioFather: this.serializeExportValue(person.BioFather),
+            BioMother: this.serializeExportValue(person.BioMother),
+            EffectiveFatherId: fatherId || "",
+            EffectiveFatherType: fatherId ? fatherType : "",
+            EffectiveFatherWtId: effectiveFather?.Name || "",
+            EffectiveMotherId: motherId || "",
+            EffectiveMotherType: motherId ? motherType : "",
+            EffectiveMotherWtId: effectiveMother?.Name || "",
+            Privacy: this.serializeExportValue(person.Privacy),
+        };
+    }
+
+    getExcelAncestorsColumns() {
+        return [
+            "PrimaryAhnentafel",
+            "PrimaryGeneration",
+            "ParentMode",
+            "Id",
+            "Name",
+            "FirstName",
+            "MiddleName",
+            "LastNameAtBirth",
+            "LastNameCurrent",
+            "RealName",
+            "Nicknames",
+            "Suffix",
+            "Gender",
+            "BirthDate",
+            "BirthLocation",
+            "DeathDate",
+            "DeathLocation",
+            "Father",
+            "Mother",
+            "BioFather",
+            "BioMother",
+            "EffectiveFatherId",
+            "EffectiveFatherType",
+            "EffectiveFatherWtId",
+            "EffectiveMotherId",
+            "EffectiveMotherType",
+            "EffectiveMotherWtId",
+            "Privacy",
+        ];
+    }
+
+    getExcelSlotsColumns() {
+        return [
+            "SlotAhnentafel",
+            "SlotGeneration",
+            "ParentMode",
+            "Id",
+            "Name",
+            "FirstName",
+            "MiddleName",
+            "LastNameAtBirth",
+            "LastNameCurrent",
+            "RealName",
+            "Nicknames",
+            "Suffix",
+            "Gender",
+            "BirthDate",
+            "BirthLocation",
+            "DeathDate",
+            "DeathLocation",
+            "Father",
+            "Mother",
+            "BioFather",
+            "BioMother",
+            "EffectiveFatherId",
+            "EffectiveFatherType",
+            "EffectiveFatherWtId",
+            "EffectiveMotherId",
+            "EffectiveMotherType",
+            "EffectiveMotherWtId",
+            "Privacy",
+        ];
+    }
+
+    makeExportFileBase() {
+        const rootPerson = this.ancestors.find((person) => person.Id === this.startId);
+        const rootId = rootPerson?.Name || `person_${this.startId}`;
+        const safeRootId = String(rootId).replace(/[^A-Za-z0-9._-]+/g, "_").replace(/^_+|_+$/g, "") || `person_${
+            this.startId
+        }`;
+        const timestamp = new Date().toISOString().replace(/\.[0-9]{3}Z$/, "Z").replace(/:/g, "-").replace("T", "_");
+        return `ahnentafel_${safeRootId}_${timestamp}`;
+    }
+
+    downloadBlob(blob, fileName) {
+        if (typeof saveAs === "function") {
+            saveAs(blob, fileName);
+            return;
+        }
+
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 0);
+    }
+
+    getExcelColumnWidths(columns, rows) {
+        const sampledRows = rows.slice(0, AhnentafelAncestorList.MAX_EXCEL_WIDTH_SAMPLE_ROWS);
+
+        return columns.map((column) => {
+            let maxLength = column.length;
+            sampledRows.forEach((row) => {
+                maxLength = Math.max(maxLength, String(row?.[column] ?? "").length);
+            });
+            return { wch: Math.min(60, Math.max(12, maxLength + 2)) };
+        });
+    }
+
+    createExcelSheetFromRows(columns, rows) {
+        const sheet = XLSX.utils.json_to_sheet(rows, { header: columns });
+        sheet["!cols"] = this.getExcelColumnWidths(columns, rows);
+        return sheet;
+    }
+
+    exportAncestorsToExcel() {
+        const exportAncestors = this.collectExportAncestors(this.maxGeneration);
+        if (exportAncestors.length === 0) {
+            wtViewRegistry.showError("No ancestor data is currently loaded to export.");
+            return;
+        }
+
+        const exportSlots = this.collectExportSlots(this.maxGeneration);
+        const exportSlotCount = exportSlots.length;
+        const includeSlotsSheet = exportSlotCount <= AhnentafelAncestorList.MAX_EXCEL_SLOT_EXPORT_ROWS;
+
+        const peopleById = new Map(exportAncestors.map((entry) => [String(entry.id), entry.person]));
+        const rowData = exportAncestors.map(({ person, generation, ahnentafel }) => ({
+            PrimaryAhnentafel: ahnentafel,
+            PrimaryGeneration: generation,
+            ...this.buildExcelExportPersonRow(person, peopleById),
+        }));
+        const columns = this.getExcelAncestorsColumns();
+        const ancestorsSheet = this.createExcelSheetFromRows(columns, rowData);
+
+        let slotsSheet = null;
+        if (includeSlotsSheet) {
+            const slotRowData = exportSlots.map(({ person, generation, ahnentafel }) => ({
+                SlotAhnentafel: ahnentafel,
+                SlotGeneration: generation,
+                ...this.buildExcelExportPersonRow(person, peopleById),
+            }));
+            const slotColumns = this.getExcelSlotsColumns();
+            slotsSheet = this.createExcelSheetFromRows(slotColumns, slotRowData);
+        }
+
+        const rootPerson = this.ancestors.find((person) => person.Id === this.startId);
+        const summarySheet = XLSX.utils.aoa_to_sheet([
+            ["Root Person", rootPerson ? this.getDisplayName(rootPerson) : this.startId],
+            ["WikiTree ID", rootPerson?.Name || ""],
+            ["Generations Loaded", this.maxGeneration],
+            ["Unique Profiles Exported", exportAncestors.length],
+            ["Ahnentafel Slots Loaded", exportSlotCount],
+            [
+                "Ahnentafel Slots Sheet Included",
+                includeSlotsSheet
+                    ? "Yes"
+                    : `No - omitted because ${exportSlotCount} slots exceeds the in-browser Excel safety limit of ${AhnentafelAncestorList.MAX_EXCEL_SLOT_EXPORT_ROWS}`,
+            ],
+            ["Exported At", new Date().toISOString()],
+        ]);
+
+        const workbook = XLSX.utils.book_new();
+        workbook.Props = {
+            Title: `Ahnentafel Ancestors for ${rootPerson?.Name || this.startId}`,
+            Subject: "Ancestor export",
+            Author: "WikiTree",
+            CreatedDate: new Date(),
+        };
+        XLSX.utils.book_append_sheet(workbook, summarySheet, "Summary");
+        XLSX.utils.book_append_sheet(workbook, ancestorsSheet, "Ancestors");
+        if (slotsSheet) {
+            XLSX.utils.book_append_sheet(workbook, slotsSheet, "Ahnentafel Slots");
+        }
+
+        try {
+            const workbookData = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+            this.downloadBlob(
+                new Blob([workbookData], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+                `${this.makeExportFileBase()}.xlsx`
+            );
+            wtViewRegistry.showNotice(
+                includeSlotsSheet
+                    ? `Downloaded Excel export for ${exportAncestors.length} ancestors.`
+                    : `Downloaded Excel export for ${exportAncestors.length} ancestors. The Ahnentafel Slots sheet was omitted because ${exportSlotCount} slot rows would likely overwhelm the browser.`
+            );
+        } catch (error) {
+            console.error("Excel export failed", error);
+            wtViewRegistry.showError(
+                /32767/.test(error?.message || "")
+                    ? "Excel export failed because one or more cells exceeded Excel's text-length limit. The export now omits bulky columns like photo and data status fields; reload the page and try again."
+                    : "Excel export failed. The loaded tree is too large to build a full workbook in the browser. Try GEDCOM or export fewer generations."
+            );
+        }
+    }
+
+    escapeGedcomText(value) {
+        return String(value || "")
+            .replace(/[\r\n]+/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    formatGedcomDate(date) {
+        if (!date || date === "0000-00-00") {
+            return "";
+        }
+
+        const [year, month, day] = String(date).split("-");
+        if (!year || year === "0000") {
+            return "";
+        }
+
+        const parts = [];
+        if (day && day !== "00") {
+            parts.push(String(parseInt(day, 10)));
+        }
+        if (month && month !== "00") {
+            parts.push(AhnentafelAncestorList.GEDCOM_MONTHS[parseInt(month, 10)]);
+        }
+        parts.push(year);
+        return parts.join(" ");
+    }
+
+    formatGedcomHeaderDate(date) {
+        const day = date.getDate();
+        const month = AhnentafelAncestorList.GEDCOM_MONTHS[date.getMonth() + 1];
+        const year = date.getFullYear();
+        return `${day} ${month} ${year}`;
+    }
+
+    formatGedcomName(person) {
+        const givenNames = [person.Prefix, person.FirstName || person.RealName, person.MiddleName].filter(Boolean).join(" ");
+        const surname = person.LastNameAtBirth || person.LastNameCurrent || "";
+        const suffix = person.Suffix ? ` ${person.Suffix}` : "";
+        if (givenNames || surname) {
+            return this.escapeGedcomText(`${givenNames}${surname ? ` /${surname}/` : ""}${suffix}`.trim());
+        }
+
+        return this.escapeGedcomText(this.getDisplayName(person));
+    }
+
+    exportAncestorsToGedcom() {
+        const exportAncestors = this.collectExportAncestors(this.maxGeneration);
+        if (exportAncestors.length === 0) {
+            wtViewRegistry.showError("No ancestor data is currently loaded to export.");
+            return;
+        }
+
+        const peopleById = new Map(exportAncestors.map((entry) => [String(entry.id), entry.person]));
+        const familiesByKey = new Map();
+
+        exportAncestors.forEach(({ id, person }) => {
+            const { fatherId, motherId } = this.getEffectiveParentIds(person);
+            const normalizedFatherId = fatherId && peopleById.has(String(fatherId)) ? String(fatherId) : "";
+            const normalizedMotherId = motherId && peopleById.has(String(motherId)) ? String(motherId) : "";
+
+            if (!normalizedFatherId && !normalizedMotherId) {
+                return;
+            }
+
+            const familyKey = `${normalizedFatherId || 0}-${normalizedMotherId || 0}`;
+            if (!familiesByKey.has(familyKey)) {
+                familiesByKey.set(familyKey, {
+                    fatherId: normalizedFatherId,
+                    motherId: normalizedMotherId,
+                    children: new Set(),
+                });
+            }
+            familiesByKey.get(familyKey).children.add(String(id));
+        });
+
+        const families = Array.from(familiesByKey.values()).map((family, index) => ({
+            ...family,
+            gedcomId: `F${index + 1}`,
+            children: [...family.children],
+        }));
+        const familyLinks = new Map(exportAncestors.map(({ id }) => [String(id), { famc: "", fams: new Set() }]));
+
+        families.forEach((family) => {
+            if (family.fatherId && familyLinks.has(family.fatherId)) {
+                familyLinks.get(family.fatherId).fams.add(family.gedcomId);
+            }
+            if (family.motherId && familyLinks.has(family.motherId)) {
+                familyLinks.get(family.motherId).fams.add(family.gedcomId);
+            }
+            family.children.forEach((childId) => {
+                if (familyLinks.has(childId)) {
+                    familyLinks.get(childId).famc = family.gedcomId;
+                }
+            });
+        });
+
+        const now = new Date();
+        const lines = [
+            "0 HEAD",
+            "1 SOUR WikiTreeDynamicTree",
+            "2 NAME WikiTree Dynamic Tree",
+            "2 VERS 1.0",
+            "1 DEST ANY",
+            `1 DATE ${this.formatGedcomHeaderDate(now)}`,
+            `2 TIME ${now.toTimeString().slice(0, 8)}`,
+            "1 GEDC",
+            "2 VERS 5.5.1",
+            "2 FORM LINEAGE-LINKED",
+            "1 CHAR UTF-8",
+        ];
+
+        exportAncestors.forEach(({ id, generation, ahnentafel, person }) => {
+            const personLinks = familyLinks.get(String(id)) || { famc: "", fams: new Set() };
+            lines.push(`0 @I${id}@ INDI`);
+
+            const gedcomName = this.formatGedcomName(person);
+            if (gedcomName) {
+                lines.push(`1 NAME ${gedcomName}`);
+            }
+
+            const sex = person.Gender === "Male" ? "M" : person.Gender === "Female" ? "F" : "U";
+            lines.push(`1 SEX ${sex}`);
+
+            if (person.Name) {
+                lines.push(`1 REFN ${this.escapeGedcomText(person.Name)}`);
+            }
+            lines.push(
+                `1 NOTE WikiTree ID: ${this.escapeGedcomText(person.Name || "")}; Ahnentafel: ${ahnentafel}; Generation: ${generation}`
+            );
+
+            const birthDate = this.formatGedcomDate(person.BirthDate);
+            const birthPlace = this.escapeGedcomText(person.BirthLocation);
+            if (birthDate || birthPlace) {
+                lines.push("1 BIRT");
+                if (birthDate) {
+                    lines.push(`2 DATE ${birthDate}`);
+                }
+                if (birthPlace) {
+                    lines.push(`2 PLAC ${birthPlace}`);
+                }
+            }
+
+            const deathDate = this.formatGedcomDate(person.DeathDate);
+            const deathPlace = this.escapeGedcomText(person.DeathLocation);
+            if (deathDate || deathPlace) {
+                lines.push("1 DEAT");
+                if (deathDate) {
+                    lines.push(`2 DATE ${deathDate}`);
+                }
+                if (deathPlace) {
+                    lines.push(`2 PLAC ${deathPlace}`);
+                }
+            }
+
+            if (personLinks.famc) {
+                lines.push(`1 FAMC @${personLinks.famc}@`);
+            }
+            personLinks.fams.forEach((familyId) => {
+                lines.push(`1 FAMS @${familyId}@`);
+            });
+        });
+
+        families.forEach((family) => {
+            lines.push(`0 @${family.gedcomId}@ FAM`);
+            if (family.fatherId) {
+                lines.push(`1 HUSB @I${family.fatherId}@`);
+            }
+            if (family.motherId) {
+                lines.push(`1 WIFE @I${family.motherId}@`);
+            }
+            family.children.forEach((childId) => {
+                lines.push(`1 CHIL @I${childId}@`);
+            });
+        });
+
+        lines.push("0 TRLR");
+        this.downloadBlob(
+            new Blob([`${lines.join("\n")}\n`], { type: "text/plain;charset=utf-8" }),
+            `${this.makeExportFileBase()}.ged`
+        );
+        wtViewRegistry.showNotice(`Downloaded GEDCOM export for ${exportAncestors.length} ancestors.`);
     }
 
     buildReportShell(rootPerson) {

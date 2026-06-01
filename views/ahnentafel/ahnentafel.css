@@ -69,9 +69,17 @@
   cursor: default;
 }
 
-#reportControls {
+#reportControls,
+#exportControls {
   border-left: 1px solid #ccc;
   padding-left: 1em;
+}
+
+#exportControls {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em;
 }
 
 #reportStatusText {
