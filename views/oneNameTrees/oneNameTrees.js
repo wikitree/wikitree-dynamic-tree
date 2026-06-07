@@ -33,8 +33,6 @@ window.OneNameTrees = class OneNameTrees extends View {
     constructor(container_selector, person_id) {
         super(container_selector, person_id);
 
-        this.shouldLogIds = [9202358, 9202367];
-
         this.userId =
             Cookies.get("wikidb_wtb_UserID") || Cookies.get("loggedInID") || Cookies.get("WikiTreeAPI_userId");
         this.defaultSettings = { periodLength: 50, onlyLastNameAtBirth: false };
@@ -64,6 +62,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.parentToChildrenMap = {};
         this.peopleById = {};
         this.peopleByIdKeys = [];
+        this.wtPlusMatches = new Set();
         this.familyTreeStats = {};
         this.monthName = ["Unk", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         this.familyTreeStatistics = {};
@@ -1319,11 +1318,13 @@ window.OneNameTrees = class OneNameTrees extends View {
     filterFilteredResultsByLNAB() {
         const surnameVariants = this.getSurnameVariants();
         const filteredResults = this.filteredResults;
+        const standardizedSurnameVariants = surnameVariants.map((variant) => this.standardizeString(variant));
 
         // Convert the object to an array of [key, value] pairs, filter, then convert back
         const filteredResultsByLNAB = Object.fromEntries(
             Object.entries(filteredResults).filter(([id, person]) => {
-                return surnameVariants.includes(person.LastNameAtBirth);
+                const isMatch = standardizedSurnameVariants.includes(this.standardizeString(person.LastNameAtBirth));
+                return isMatch;
             })
         );
 
@@ -1414,6 +1415,69 @@ window.OneNameTrees = class OneNameTrees extends View {
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "")
             .toLowerCase();
+    }
+
+    getStandardizedOtherLastNames(lastNameOther) {
+        if (!lastNameOther) {
+            return [];
+        }
+
+        return lastNameOther
+            .split(",")
+            .map((name) => this.standardizeString(name).trim())
+            .filter((name) => name);
+    }
+
+    getAkaLastNamesDisplay(person) {
+        const seen = new Set();
+        const ownLastNames = new Set([
+            this.standardizeString(person.LastNameAtBirth),
+            this.standardizeString(person.LastNameCurrent),
+        ]);
+
+        const names = [];
+        if (person?.LastNameOther) {
+            person.LastNameOther.split(",")
+                .map((name) => name.trim())
+                .filter((name) => name)
+                .forEach((name) => {
+                    const standardized = this.standardizeString(name);
+                    if (seen.has(standardized) || ownLastNames.has(standardized)) {
+                        return;
+                    }
+                    seen.add(standardized);
+                    names.push(name);
+                });
+        }
+
+        if (names.length === 0 && this.wtPlusMatches.has(String(person?.Id))) {
+            const standardizedVariants = this.getSurnameVariants().map((variant) => this.standardizeString(variant));
+            const hasTargetSurnameInData =
+                standardizedVariants.includes(this.standardizeString(person.LastNameAtBirth)) ||
+                standardizedVariants.includes(this.standardizeString(person.LastNameCurrent)) ||
+                this.getStandardizedOtherLastNames(person.LastNameOther).some((name) => standardizedVariants.includes(name));
+
+            if (!hasTargetSurnameInData) {
+                const enteredNames = ($("#surname").val() || "")
+                    .split(",")
+                    .map((name) => name.trim())
+                    .filter((name) => name);
+                enteredNames.forEach((name) => {
+                    const standardized = this.standardizeString(name);
+                    if (seen.has(standardized) || ownLastNames.has(standardized)) {
+                        return;
+                    }
+                    seen.add(standardized);
+                    names.push(name);
+                });
+            }
+        }
+
+        if (names.length === 0) {
+            return "";
+        }
+
+        return ` <span class='akaLastNames'>aka ${names.join(", ")}</span>`;
     }
 
     getSurnameVariants() {
@@ -1777,6 +1841,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         }
     }
+
     isCorrectLocationMatch(location, input, exclusionMap) {
         const lowerLocation = this.standardizeString(location);
         const lowerInput = this.standardizeString(input);
@@ -1900,14 +1965,15 @@ window.OneNameTrees = class OneNameTrees extends View {
             // Standardize the person's surnames for comparison
             const standardizedLastNameAtBirth = $this.standardizeString(person?.LastNameAtBirth) || "";
             const standardizedLastNameCurrent = $this.standardizeString(person?.LastNameCurrent) || "";
-            const standardizedLastNameOther = $this.standardizeString(person?.LastNameOther) || "";
+            const standardizedLastNameOthers = $this.getStandardizedOtherLastNames(person?.LastNameOther);
+            const isWtPlusMatch = this.wtPlusMatches.has(String(person.Id));
 
             // Check if any standardized surname variants include the standardized person's surnames
             const isSurnameMatch = surnameVariants.some(
                 (variant) =>
                     $this.standardizeString(variant) === standardizedLastNameAtBirth ||
                     $this.standardizeString(variant) === standardizedLastNameCurrent ||
-                    $this.standardizeString(variant) === standardizedLastNameOther
+                    standardizedLastNameOthers.includes($this.standardizeString(variant))
             );
 
             // Determine the person's birth century for filtering
@@ -1920,8 +1986,9 @@ window.OneNameTrees = class OneNameTrees extends View {
                 (birthCentury && birthCentury >= firstCentury) ||
                 !person.BirthDate ||
                 person.BirthDate == "0000-00-00";
+            const isLocationMatch = this.isLocationMatch(person, locationInput);
 
-            if (isSurnameMatch && isCenturyMatch && this.isLocationMatch(person, locationInput)) {
+            if ((isSurnameMatch || isWtPlusMatch) && isCenturyMatch && isLocationMatch) {
                 $this.filteredResults[person.Id] = person;
             }
         });
@@ -2049,10 +2116,6 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         for (let i = 0; i < updatedPeople.length; i++) {
             let person = updatedPeople[i];
-            let personShouldLog = this.shouldLog(person.Id);
-
-            if (personShouldLog) {
-            }
 
             if (person.Spouses && person.Spouses.length > 0) {
                 const spouseIds = person.Spouses.map((spouse) => spouse.Id);
@@ -2063,10 +2126,6 @@ window.OneNameTrees = class OneNameTrees extends View {
 
                     if (spouseIndex !== -1) {
                         let spouse = sortedPeople[spouseIndex];
-                        let spouseShouldLog = this.shouldLog(spouse.Id);
-
-                        if (personShouldLog || spouseShouldLog) {
-                        }
 
                         if (this.shouldPrioritize(spouse, person)) {
                             spouse.shouldBeRoot = false;
@@ -2116,14 +2175,8 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.sortedPeople = updatedPeople; // Update the original array reference if needed
     }
 
-    shouldLog(id) {
-        return this.shouldLogIds.includes(id);
-    }
-
     shouldPrioritize(spouse, person) {
         // Convert the target surname and its variants into standardized forms for comparison
-
-        const shouldLog = this.shouldLog(spouse.Id) || this.shouldLog(person.Id);
         const standardizedVariants = this.getSurnameVariants().map((variant) => this.standardizeString(variant));
 
         // Standardize the spouse and person's last names for comparison
@@ -2286,6 +2339,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         const categoryHTML = this.createCategoryHTML(person);
         const dates = this.displayDates(person);
+        const akaLastNames = this.getAkaLastNamesDisplay(person);
         const privacySticker = person.Privacy == 60 ? "" : this.getPrivacySticker(person);
 
         let html = `<li class='level_${level} person ${duplicateClass}' data-id='${personIdStr}' data-name='${
@@ -2294,7 +2348,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             person?.Mother
         }' data-gender='${gender}' data-full-name='${fullName}' data-dates='${dates}'> ${toggleButton}${descendantsCount}<a href="https://www.wikitree.com/wiki/${
             person.Name
-        }" target="_blank">${fullName}</a> <span class="wtid">(${
+        }" target="_blank">${fullName}</a>${akaLastNames} <span class="wtid">(${
             person.Name || ""
         })</span> ${duplicateLink} <span class='dates'>${dates}</span> ${categoryHTML} ${privacySticker}`;
 
@@ -2713,6 +2767,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 }
 
                 const spouseName = new PersonName(spouseInfo).withParts(["FullName"]);
+                const spouseAkaLastNames = this.getAkaLastNamesDisplay(spouseInfo);
                 if (married && married !== "0000-00-00") {
                     married = this.formatDate(married);
                     married = ` (Married: ${married})`;
@@ -2732,7 +2787,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                     spouseInfo.Id
                 }' data-gender='${gender}' data-marriage-date='${marriageDate}'>m. <a href="https://www.wikitree.com/wiki/${
                     spouseInfo.Name
-                }" target="_blank">${spouseName}</a> <span class='wtid'>(${
+                }" target="_blank">${spouseName}</a>${spouseAkaLastNames} <span class='wtid'>(
                     spouseInfo.Name || ""
                 })</span>${duplicateLink} <span class='dates'>${this.displayDates(
                     spouseInfo
@@ -4748,6 +4803,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             return;
         }
         const ids = data.main.response.profiles;
+        this.wtPlusMatches = new Set(ids.map((id) => String(id)));
         const found = data.main.response.found;
         if (found === 0) {
             $this.disableCancel();
@@ -4794,6 +4850,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             wtViewRegistry.showNotice("Watchlist saved...");
         }
         const surnameVariants = this.getSurnameVariants(surname);
+        const standardizedSurnameVariants = surnameVariants.map((variant) => this.standardizeString(variant));
         if (this.watchlist) {
             if (!watchlistFetched) {
                 wtViewRegistry.showNotice("Using stored watchlist...");
@@ -4802,10 +4859,14 @@ window.OneNameTrees = class OneNameTrees extends View {
             this.surnameWatchlistIds = [];
             this.watchlist.watchlist.forEach((person) => {
                 if (person.Name) {
+                    const standardizedLastNameAtBirth = this.standardizeString(person.LastNameAtBirth);
+                    const standardizedLastNameCurrent = this.standardizeString(person.LastNameCurrent);
+                    const standardizedLastNameOthers = this.getStandardizedOtherLastNames(person.LastNameOther);
+
                     if (
-                        (surnameVariants.includes(person.LastNameAtBirth) ||
-                            surnameVariants.includes(person.LastNameCurrent) ||
-                            surnameVariants.includes(person.LastNameOther)) &&
+                        (standardizedSurnameVariants.includes(standardizedLastNameAtBirth) ||
+                            standardizedSurnameVariants.includes(standardizedLastNameCurrent) ||
+                            standardizedLastNameOthers.some((name) => standardizedSurnameVariants.includes(name))) &&
                         !ids.includes(person.Id)
                     ) {
                         this.surnameWatchlistIds.push(person.Id);
