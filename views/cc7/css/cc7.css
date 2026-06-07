@@ -22,6 +22,9 @@ div.cc7Table .Female {
 div.cc7Table .Male {
   background-color: #cceeff;
 }
+div.cc7Table .blank {
+  background-color: #efe;
+}
 
 div.cc7Table ol,
 div.cc7Table ul {
@@ -102,19 +105,19 @@ div.cc7Table #tree {
   white-space: nowrap; /* keep date on a single line */
 }
 
-.cc7Table .degree.hasNote {
+.cc7Table .research.hasNote {
   position: relative; /* Ensure the gradient respects the td's bounds */
 }
-.cc7Table tr.Male .degree.hasNote {
+.cc7Table tr.Male .research.hasNote {
   background: linear-gradient(to top right, #cceeff, #1daddd);
 }
-.cc7Table tr.Female .degree.hasNote {
+.cc7Table tr.Female .research.hasNote {
   background: linear-gradient(to top right, #ffe6ea, #e05c6a);
 }
-.cc7Table tr .degree.hasNote {
+.cc7Table tr .research.hasNote {
   background: linear-gradient(to top right, #f5f5f5, #c3f6c7);
 }
-.cc7Table .degree.ToDo::before {
+.cc7Table .research.ToDo::before {
   content: "";
   position: absolute;
   top: 0;
@@ -124,7 +127,7 @@ div.cc7Table #tree {
   border-top: 10px solid red; /* Triangle color and height */
   border-left: 10px solid transparent; /* Transparent left edge */
 }
-.cc7Table .degree.InProgress::before {
+.cc7Table .research.InProgress::before {
   content: "";
   position: absolute;
   top: 0;
@@ -134,7 +137,7 @@ div.cc7Table #tree {
   border-top: 10px solid rgb(255, 255, 0); /* Triangle color and height */
   border-left: 10px solid transparent; /* Transparent left edge */
 }
-.cc7Table .degree.Parked::before {
+.cc7Table .research.Parked::before {
   content: "";
   position: absolute;
   top: 0;
@@ -144,7 +147,7 @@ div.cc7Table #tree {
   border-top: 10px solid rgb(0, 0, 255); /* Triangle color and height */
   border-left: 10px solid transparent; /* Transparent left edge */
 }
-.cc7Table .degree.Done::before {
+.cc7Table .research.Done::before {
   content: "";
   position: absolute;
   top: 0;
@@ -442,10 +445,10 @@ span.missingText {
   min-width: 3em;
   padding-right: 1.5em;
 }
-#cc7DegFilter {
+#cc7NotesFilter {
   min-width: 1em;
 }
-.cc7DegFilter-option svg {
+.cc7NotesFilter-option svg {
   width: 15px;
   height: 15px;
   vertical-align: middle;
@@ -772,7 +775,8 @@ div.cc7Table .cc7filter-row th {
 
 #cc7Container ul.select2-results__options {
   margin: 0;
-  padding: 0 0 0 6px;
+  padding: 0 3px 0 3px;
+  text-align: center;
 }
 #cc7Container li.select2-results__option {
   min-height: 18px;
@@ -784,8 +788,9 @@ div.cc7Table .cc7filter-row th {
 }
 #cc7Container.cc7Table span.select2-selection__rendered {
   min-width: 2.5em;
+  padding-left: 4px;
 }
-#cc7Container.cc7Table span.select2-results ul {
+#cc7Container cc7Table span.select2-results ul {
   margin-left: 0;
 }
 #cc7Container #relation,
@@ -925,4 +930,59 @@ div.cc7Table .cc7filter-row th {
       border: 1px solid #000;
     }
   }
+}
+
+.cc7-icon--rs-unfinished {
+  background: transparent url(https://www.wikitree.com/images/icons/rs/rs-unfinished.svg) left no-repeat;
+  background-size: 20px 20px;
+  display: inline-block;
+  height: 20px;
+  position: relative;
+  top: 3px;
+  width: 20px;
+}
+.cc7-icon--rs-help {
+  background: transparent url(https://www.wikitree.com/images/icons/rs/rs-help.svg) left no-repeat;
+  background-size: 20px 20px;
+  display: inline-block;
+  height: 20px;
+  position: relative;
+  top: 3px;
+  width: 20px;
+}
+.cc7-icon--rs-sources {
+  background: transparent url(https://www.wikitree.com/images/icons/rs/rs-sources.svg) left no-repeat;
+  background-size: 20px 20px;
+  display: inline-block;
+  height: 20px;
+  position: relative;
+  top: 3px;
+  width: 20px;
+}
+.cc7-icon--rs-silver {
+  background: transparent url(https://www.wikitree.com/images/icons/rs/rs-silver.svg) left no-repeat;
+  background-size: 20px 20px;
+  display: inline-block;
+  height: 20px;
+  position: relative;
+  top: 3px;
+  width: 20px;
+}
+.cc7-icon--rs-gold {
+  background: transparent url(https://www.wikitree.com/images/icons/rs/rs-gold.svg) left no-repeat;
+  background-size: 20px 20px;
+  display: inline-block;
+  height: 20px;
+  position: relative;
+  top: 3px;
+  width: 20px;
+}
+.cc7-icon--rs-complete {
+  background: transparent url(https://www.wikitree.com/images/icons/rs/rs-complete.svg) left no-repeat;
+  background-size: 20px 20px;
+  display: inline-block;
+  height: 20px;
+  position: relative;
+  top: 3px;
+  width: 20px;
 }
