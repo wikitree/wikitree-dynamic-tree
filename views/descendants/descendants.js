@@ -733,6 +733,10 @@ function assignGenerationAndAboville() {
     visited = new Set();
     // Initial call on root li
     const rootLi = document.querySelector("li#primaryPerson");
+    if (!rootLi) {
+        console.warn("[Descendants] No #primaryPerson node found; skipping generation/Aboville assignment.");
+        return;
+    }
     processLi(rootLi, 0);
     const uls = $("ul.personList");
     uls.each(function () {
@@ -831,6 +835,21 @@ function loadMore(e) {
         $childrenUl.addClass("expanded");
         $arrow.addClass("rotated");
     }
+
+    // Show a loading gif so it's clear that more descendants are being fetched, but
+    // only when there's nothing to see yet: if the next generation is already
+    // displayed (the fetch is just completing/deepening in the background) we don't
+    // need the gif. We also delay it slightly so fast loads never flash it.
+    const nextGenerationAlreadyShown = $childrenUl.children("li").length > 0;
+    const $spinner = $(
+        "<img class='loadingDescendants' src='https://apps.wikitree.com/apps/beacall6/images/tree.gif' alt='Loading' title='Loading descendants…'>"
+    );
+    const spinnerTimer = nextGenerationAlreadyShown
+        ? null
+        : setTimeout(() => {
+              target.after($spinner);
+          }, 400);
+
     let person_id = target.parent().data("id");
     let generation = target.parent().children("ul.personList").data("generation");
     fetchDescendants(person_id, generation)
@@ -838,6 +857,8 @@ function loadMore(e) {
             console.error(error);
         })
         .finally(() => {
+            clearTimeout(spinnerTimer);
+            $spinner.remove();
             if (target[0]?.isConnected) {
                 target.prop("disabled", false).removeClass("loading");
             }
@@ -947,7 +968,7 @@ async function ensureCompleteDirectChildren(personId, peopleById) {
     }
 
     const initialDirectChildCount = countDirectChildren(peopleById, personId);
-    const directChildren = await WikiTreeAPI.getPeople("test", personId, fields, {
+    const directChildren = await getPeopleWithRetry("test", personId, fields, {
         descendants: 1,
         resolveRedirect: 1,
     });
@@ -1156,7 +1177,7 @@ async function mergeSpouseDetails(people, fields) {
 
     if (spouseIds.length > 0) {
         $("#shakyTree").show();
-        const spouses = await WikiTreeAPI.getPeople("TA_Descendants", spouseIds.join(","), fields, {
+        const spouses = await getPeopleWithRetry("TA_Descendants", spouseIds.join(","), fields, {
             resolveRedirect: 1,
         });
         const obj2 = spouses;
@@ -1179,11 +1200,68 @@ async function mergeSpouseDetails(people, fields) {
     return obj1; // Returning the merged object
 }
 
+// Wrapper around WikiTreeAPI.getPeople that retries transient network failures
+// (e.g. ERR_CONNECTION_RESET, which surfaces as a rejected "Failed to fetch").
+// The WikiTree API drops connections now and then; a short retry usually
+// recovers without the user noticing. Note that a resolved response carrying a
+// status string (e.g. "Limit exceeded.") is NOT a network error, so it is
+// returned as-is rather than retried.
+async function getPeopleWithRetry(appId, ids, fields, options = {}, attempts = 3) {
+    let lastError;
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+        try {
+            return await WikiTreeAPI.getPeople(appId, ids, fields, options);
+        } catch (error) {
+            lastError = error;
+            console.warn(
+                `[Descendants] getPeople attempt ${attempt} of ${attempts} failed: ${error}. ${
+                    attempt < attempts ? "Retrying…" : "Giving up."
+                }`
+            );
+            if (attempt < attempts) {
+                // Simple linear backoff: 600ms, 1200ms, …
+                await new Promise((resolve) => setTimeout(resolve, 600 * attempt));
+            }
+        }
+    }
+    throw lastError;
+}
+
+// Make sure the root person's own record is present in people[2]. The descendants
+// query can omit it when the profile cap is reached, so fetch it directly and add
+// it back if it's missing.
+async function ensureRootPerson(person_id, people) {
+    if (!people || typeof people[2] !== "object" || people[2] === null) {
+        return;
+    }
+    if (people[2][person_id]) {
+        return;
+    }
+
+    const rootResult = await getPeopleWithRetry("test", person_id, fields, {
+        resolveRedirect: 1,
+    });
+    const rootById = rootResult?.[2];
+    if (rootById && rootById[person_id]) {
+        people[2][person_id] = rootById[person_id];
+        console.info(
+            `[Descendants] Root profile ${person_id} was missing from the descendants results and was re-added.`
+        );
+    }
+}
+
 async function fetchDescendants(person_id, generation) {
-    const people = await WikiTreeAPI.getPeople("test", person_id, fields, {
+    const people = await getPeopleWithRetry("test", person_id, fields, {
         descendants: 10,
         resolveRedirect: 1,
     });
+
+    // For very large descendant trees the API caps the returned profiles (e.g. at
+    // 1025) and can drop the root person from people[2]. Without the root record
+    // breadthFirstDescent() never builds the #primaryPerson node, which then
+    // crashes assignGenerationAndAboville() with a null li. Fetch the root on its
+    // own and merge it back in when it's missing.
+    await ensureRootPerson(person_id, people);
 
     normalizeNegativePersonIds(person_id, people[2]);
     initializeDirectChildrenState(people[2]);
