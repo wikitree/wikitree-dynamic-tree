@@ -920,32 +920,110 @@ function countDirectChildren(peopleById, personId) {
         .length;
 }
 
+// The WikiTree descendants API returns any profile it treats as possibly-living
+// (including public profiles with an unknown death date) as an anonymised node
+// with a NEGATIVE Id and no Name. Those negative Ids are assigned per-response
+// during traversal, so the *same* real person comes back as e.g. -3 from one
+// query root and -46 from another. The old code re-keyed them as
+// `${fetchRoot}_${negativeId}`, which produced a DIFFERENT synthetic Id on every
+// fetch. Deduplication (which keys off the Id) then failed, so each overlapping
+// descendants call re-added the same private person as a brand-new child — the
+// cause of the same "Private" person appearing many times under one parent.
+//
+// Instead we build a STABLE synthetic Id from data the API returns consistently:
+// the person's lineage anchored at its nearest real (positive) ancestor, plus
+// gender and birth decade. The same private person therefore gets the same Id in
+// every response and deduplicates correctly. `rootId` is no longer needed for the
+// Id itself, but is kept in the signature for call-site compatibility.
 function normalizeNegativePersonIds(rootId, peopleById) {
     if (!peopleById) {
         return;
     }
 
-    const negativeIds = [];
-    for (const key in peopleById) {
-        if (key < 0) {
-            negativeIds.push(peopleById[key].Id);
-            peopleById[rootId + "_" + key] = peopleById[key];
-            peopleById[rootId + "_" + key].Id = rootId + "_" + key;
-            delete peopleById[key];
-        }
+    const negativeKeys = Object.keys(peopleById).filter((key) => Number(key) < 0);
+    if (negativeKeys.length === 0) {
+        return;
     }
-    for (const key in peopleById) {
-        if (peopleById[key].Father) {
-            if (negativeIds.includes(peopleById[key].Father)) {
-                peopleById[key].Father = rootId + "_" + peopleById[key].Father;
-            }
+
+    const stableIdByNeg = {}; // original negative id (as string) -> stable "PVT-…" id
+    const resolving = new Set(); // guard against malformed cyclic Father/Mother data
+
+    // A stable token for a Father/Mother reference: the real ancestor id when the
+    // parent is public, or the parent's own stable id when the parent is itself an
+    // anonymised (negative) node present in this response.
+    function refFor(parentId) {
+        if (parentId === undefined || parentId === null || parentId === 0 || parentId === "0") {
+            return "x";
         }
-        if (peopleById[key].Mother) {
-            if (negativeIds.includes(peopleById[key].Mother)) {
-                peopleById[key].Mother = rootId + "_" + peopleById[key].Mother;
-            }
+        const numeric = Number(parentId);
+        if (!Number.isNaN(numeric) && numeric < 0) {
+            return peopleById[parentId] ? stableFor(parentId) : "x";
         }
+        return "R" + parentId; // real ancestor id, stable across responses
     }
+
+    function stableFor(negId) {
+        const negKey = String(negId);
+        if (stableIdByNeg[negKey]) {
+            return stableIdByNeg[negKey];
+        }
+        if (resolving.has(negKey)) {
+            return "cyc"; // cyclic data: stop recursing
+        }
+        resolving.add(negKey);
+        const person = peopleById[negKey] || {};
+        const fatherRef = refFor(person.Father);
+        const motherRef = refFor(person.Mother);
+        const gender = (person.Gender || "").charAt(0);
+        const decade =
+            person.BirthDateDecade ||
+            (person.BirthDate && person.BirthDate !== "0000-00-00" ? String(person.BirthDate).slice(0, 4) : "") ||
+            "";
+        const signature = `PVT-${fatherRef}|${motherRef}|${gender}|${decade}`.replace(/[^A-Za-z0-9_-]+/g, "_");
+        resolving.delete(negKey);
+        stableIdByNeg[negKey] = signature;
+        return signature;
+    }
+
+    negativeKeys.forEach((key) => stableFor(key));
+
+    // Distinct private siblings can share an identical signature (same parents,
+    // gender and birth decade — e.g. two siblings both born in the 1990s). Append
+    // a deterministic ordinal so they don't collapse into a single node within a
+    // response, ordered by the (traversal-assigned) negative id for stability.
+    const bySignature = {};
+    negativeKeys.forEach((key) => {
+        const sig = stableIdByNeg[key];
+        (bySignature[sig] = bySignature[sig] || []).push(key);
+    });
+    Object.values(bySignature).forEach((keys) => {
+        if (keys.length > 1) {
+            keys.sort((a, b) => Number(b) - Number(a));
+            keys.forEach((key, index) => {
+                stableIdByNeg[key] = `${stableIdByNeg[key]}_${index}`;
+            });
+        }
+    });
+
+    // Re-key each anonymised person under its stable id. Two negatives that map to
+    // the same stable id are indistinguishable private profiles and merge here.
+    negativeKeys.forEach((key) => {
+        const stableId = stableIdByNeg[key];
+        const person = peopleById[key];
+        person.Id = stableId;
+        peopleById[stableId] = person;
+        delete peopleById[key];
+    });
+
+    // Rewrite every Father/Mother reference that pointed at an original negative id.
+    Object.values(peopleById).forEach((person) => {
+        if (person.Father !== undefined && stableIdByNeg[String(person.Father)] !== undefined) {
+            person.Father = stableIdByNeg[String(person.Father)];
+        }
+        if (person.Mother !== undefined && stableIdByNeg[String(person.Mother)] !== undefined) {
+            person.Mother = stableIdByNeg[String(person.Mother)];
+        }
+    });
 }
 
 function initializeDirectChildrenState(peopleById) {
