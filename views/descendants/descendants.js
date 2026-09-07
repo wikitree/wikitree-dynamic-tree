@@ -733,6 +733,10 @@ function assignGenerationAndAboville() {
     visited = new Set();
     // Initial call on root li
     const rootLi = document.querySelector("li#primaryPerson");
+    if (!rootLi) {
+        console.warn("[Descendants] No #primaryPerson node found; skipping generation/Aboville assignment.");
+        return;
+    }
     processLi(rootLi, 0);
     const uls = $("ul.personList");
     uls.each(function () {
@@ -831,6 +835,21 @@ function loadMore(e) {
         $childrenUl.addClass("expanded");
         $arrow.addClass("rotated");
     }
+
+    // Show a loading gif so it's clear that more descendants are being fetched, but
+    // only when there's nothing to see yet: if the next generation is already
+    // displayed (the fetch is just completing/deepening in the background) we don't
+    // need the gif. We also delay it slightly so fast loads never flash it.
+    const nextGenerationAlreadyShown = $childrenUl.children("li").length > 0;
+    const $spinner = $(
+        "<img class='loadingDescendants' src='https://apps.wikitree.com/apps/beacall6/images/tree.gif' alt='Loading' title='Loading descendants…'>"
+    );
+    const spinnerTimer = nextGenerationAlreadyShown
+        ? null
+        : setTimeout(() => {
+              target.after($spinner);
+          }, 400);
+
     let person_id = target.parent().data("id");
     let generation = target.parent().children("ul.personList").data("generation");
     fetchDescendants(person_id, generation)
@@ -838,6 +857,8 @@ function loadMore(e) {
             console.error(error);
         })
         .finally(() => {
+            clearTimeout(spinnerTimer);
+            $spinner.remove();
             if (target[0]?.isConnected) {
                 target.prop("disabled", false).removeClass("loading");
             }
@@ -899,32 +920,110 @@ function countDirectChildren(peopleById, personId) {
         .length;
 }
 
+// The WikiTree descendants API returns any profile it treats as possibly-living
+// (including public profiles with an unknown death date) as an anonymised node
+// with a NEGATIVE Id and no Name. Those negative Ids are assigned per-response
+// during traversal, so the *same* real person comes back as e.g. -3 from one
+// query root and -46 from another. The old code re-keyed them as
+// `${fetchRoot}_${negativeId}`, which produced a DIFFERENT synthetic Id on every
+// fetch. Deduplication (which keys off the Id) then failed, so each overlapping
+// descendants call re-added the same private person as a brand-new child — the
+// cause of the same "Private" person appearing many times under one parent.
+//
+// Instead we build a STABLE synthetic Id from data the API returns consistently:
+// the person's lineage anchored at its nearest real (positive) ancestor, plus
+// gender and birth decade. The same private person therefore gets the same Id in
+// every response and deduplicates correctly. `rootId` is no longer needed for the
+// Id itself, but is kept in the signature for call-site compatibility.
 function normalizeNegativePersonIds(rootId, peopleById) {
     if (!peopleById) {
         return;
     }
 
-    const negativeIds = [];
-    for (const key in peopleById) {
-        if (key < 0) {
-            negativeIds.push(peopleById[key].Id);
-            peopleById[rootId + "_" + key] = peopleById[key];
-            peopleById[rootId + "_" + key].Id = rootId + "_" + key;
-            delete peopleById[key];
-        }
+    const negativeKeys = Object.keys(peopleById).filter((key) => Number(key) < 0);
+    if (negativeKeys.length === 0) {
+        return;
     }
-    for (const key in peopleById) {
-        if (peopleById[key].Father) {
-            if (negativeIds.includes(peopleById[key].Father)) {
-                peopleById[key].Father = rootId + "_" + peopleById[key].Father;
-            }
+
+    const stableIdByNeg = {}; // original negative id (as string) -> stable "PVT-…" id
+    const resolving = new Set(); // guard against malformed cyclic Father/Mother data
+
+    // A stable token for a Father/Mother reference: the real ancestor id when the
+    // parent is public, or the parent's own stable id when the parent is itself an
+    // anonymised (negative) node present in this response.
+    function refFor(parentId) {
+        if (parentId === undefined || parentId === null || parentId === 0 || parentId === "0") {
+            return "x";
         }
-        if (peopleById[key].Mother) {
-            if (negativeIds.includes(peopleById[key].Mother)) {
-                peopleById[key].Mother = rootId + "_" + peopleById[key].Mother;
-            }
+        const numeric = Number(parentId);
+        if (!Number.isNaN(numeric) && numeric < 0) {
+            return peopleById[parentId] ? stableFor(parentId) : "x";
         }
+        return "R" + parentId; // real ancestor id, stable across responses
     }
+
+    function stableFor(negId) {
+        const negKey = String(negId);
+        if (stableIdByNeg[negKey]) {
+            return stableIdByNeg[negKey];
+        }
+        if (resolving.has(negKey)) {
+            return "cyc"; // cyclic data: stop recursing
+        }
+        resolving.add(negKey);
+        const person = peopleById[negKey] || {};
+        const fatherRef = refFor(person.Father);
+        const motherRef = refFor(person.Mother);
+        const gender = (person.Gender || "").charAt(0);
+        const decade =
+            person.BirthDateDecade ||
+            (person.BirthDate && person.BirthDate !== "0000-00-00" ? String(person.BirthDate).slice(0, 4) : "") ||
+            "";
+        const signature = `PVT-${fatherRef}|${motherRef}|${gender}|${decade}`.replace(/[^A-Za-z0-9_-]+/g, "_");
+        resolving.delete(negKey);
+        stableIdByNeg[negKey] = signature;
+        return signature;
+    }
+
+    negativeKeys.forEach((key) => stableFor(key));
+
+    // Distinct private siblings can share an identical signature (same parents,
+    // gender and birth decade — e.g. two siblings both born in the 1990s). Append
+    // a deterministic ordinal so they don't collapse into a single node within a
+    // response, ordered by the (traversal-assigned) negative id for stability.
+    const bySignature = {};
+    negativeKeys.forEach((key) => {
+        const sig = stableIdByNeg[key];
+        (bySignature[sig] = bySignature[sig] || []).push(key);
+    });
+    Object.values(bySignature).forEach((keys) => {
+        if (keys.length > 1) {
+            keys.sort((a, b) => Number(b) - Number(a));
+            keys.forEach((key, index) => {
+                stableIdByNeg[key] = `${stableIdByNeg[key]}_${index}`;
+            });
+        }
+    });
+
+    // Re-key each anonymised person under its stable id. Two negatives that map to
+    // the same stable id are indistinguishable private profiles and merge here.
+    negativeKeys.forEach((key) => {
+        const stableId = stableIdByNeg[key];
+        const person = peopleById[key];
+        person.Id = stableId;
+        peopleById[stableId] = person;
+        delete peopleById[key];
+    });
+
+    // Rewrite every Father/Mother reference that pointed at an original negative id.
+    Object.values(peopleById).forEach((person) => {
+        if (person.Father !== undefined && stableIdByNeg[String(person.Father)] !== undefined) {
+            person.Father = stableIdByNeg[String(person.Father)];
+        }
+        if (person.Mother !== undefined && stableIdByNeg[String(person.Mother)] !== undefined) {
+            person.Mother = stableIdByNeg[String(person.Mother)];
+        }
+    });
 }
 
 function initializeDirectChildrenState(peopleById) {
@@ -947,7 +1046,7 @@ async function ensureCompleteDirectChildren(personId, peopleById) {
     }
 
     const initialDirectChildCount = countDirectChildren(peopleById, personId);
-    const directChildren = await WikiTreeAPI.getPeople("test", personId, fields, {
+    const directChildren = await getPeopleWithRetry("test", personId, fields, {
         descendants: 1,
         resolveRedirect: 1,
     });
@@ -1156,7 +1255,7 @@ async function mergeSpouseDetails(people, fields) {
 
     if (spouseIds.length > 0) {
         $("#shakyTree").show();
-        const spouses = await WikiTreeAPI.getPeople("TA_Descendants", spouseIds.join(","), fields, {
+        const spouses = await getPeopleWithRetry("TA_Descendants", spouseIds.join(","), fields, {
             resolveRedirect: 1,
         });
         const obj2 = spouses;
@@ -1179,11 +1278,68 @@ async function mergeSpouseDetails(people, fields) {
     return obj1; // Returning the merged object
 }
 
+// Wrapper around WikiTreeAPI.getPeople that retries transient network failures
+// (e.g. ERR_CONNECTION_RESET, which surfaces as a rejected "Failed to fetch").
+// The WikiTree API drops connections now and then; a short retry usually
+// recovers without the user noticing. Note that a resolved response carrying a
+// status string (e.g. "Limit exceeded.") is NOT a network error, so it is
+// returned as-is rather than retried.
+async function getPeopleWithRetry(appId, ids, fields, options = {}, attempts = 3) {
+    let lastError;
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+        try {
+            return await WikiTreeAPI.getPeople(appId, ids, fields, options);
+        } catch (error) {
+            lastError = error;
+            console.warn(
+                `[Descendants] getPeople attempt ${attempt} of ${attempts} failed: ${error}. ${
+                    attempt < attempts ? "Retrying…" : "Giving up."
+                }`
+            );
+            if (attempt < attempts) {
+                // Simple linear backoff: 600ms, 1200ms, …
+                await new Promise((resolve) => setTimeout(resolve, 600 * attempt));
+            }
+        }
+    }
+    throw lastError;
+}
+
+// Make sure the root person's own record is present in people[2]. The descendants
+// query can omit it when the profile cap is reached, so fetch it directly and add
+// it back if it's missing.
+async function ensureRootPerson(person_id, people) {
+    if (!people || typeof people[2] !== "object" || people[2] === null) {
+        return;
+    }
+    if (people[2][person_id]) {
+        return;
+    }
+
+    const rootResult = await getPeopleWithRetry("test", person_id, fields, {
+        resolveRedirect: 1,
+    });
+    const rootById = rootResult?.[2];
+    if (rootById && rootById[person_id]) {
+        people[2][person_id] = rootById[person_id];
+        console.info(
+            `[Descendants] Root profile ${person_id} was missing from the descendants results and was re-added.`
+        );
+    }
+}
+
 async function fetchDescendants(person_id, generation) {
-    const people = await WikiTreeAPI.getPeople("test", person_id, fields, {
+    const people = await getPeopleWithRetry("test", person_id, fields, {
         descendants: 10,
         resolveRedirect: 1,
     });
+
+    // For very large descendant trees the API caps the returned profiles (e.g. at
+    // 1025) and can drop the root person from people[2]. Without the root record
+    // breadthFirstDescent() never builds the #primaryPerson node, which then
+    // crashes assignGenerationAndAboville() with a null li. Fetch the root on its
+    // own and merge it back in when it's missing.
+    await ensureRootPerson(person_id, people);
 
     normalizeNegativePersonIds(person_id, people[2]);
     initializeDirectChildrenState(people[2]);
