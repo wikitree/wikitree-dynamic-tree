@@ -13,7 +13,8 @@ export class AncestorTree {
     static maxGeneration;
     static duplicates = new Map();
     static genCounts = [];
-    static profileCount = 0;
+    static uniqueProfileCount = 0;
+    static profiledPositionCount = 0;
     static requestedGen = 0;
     static minBirthYear = 0;
 
@@ -21,7 +22,8 @@ export class AncestorTree {
         AncestorTree.#people = new Map();
         AncestorTree.#peopleByWtId.clear();
         AncestorTree.duplicates.clear();
-        AncestorTree.profileCount = 0;
+        AncestorTree.uniqueProfileCount = 0;
+        AncestorTree.profiledPositionCount = 0;
         AncestorTree.requestedGen = 0;
     }
 
@@ -32,7 +34,8 @@ export class AncestorTree {
         AncestorTree.root = undefined;
         AncestorTree.maxGeneration = 0;
         AncestorTree.genCounts = [];
-        AncestorTree.profileCount = 0;
+        AncestorTree.uniqueProfileCount = 0;
+        AncestorTree.profiledPositionCount = 0;
         AncestorTree.requestedGen = 0;
     }
 
@@ -197,20 +200,27 @@ export class AncestorTree {
         const m = AncestorTree.#validate_and_set_generations(rootId, 1, new Set(), 0);
         AncestorTree.maxGeneration = m;
         AncestorTree.duplicates.clear();
-        AncestorTree.profileCount = 0;
+        AncestorTree.uniqueProfileCount = 0;
+        AncestorTree.profiledPositionCount = 0;
         let n = 0;
         for (const p of AncestorTree.#people.values()) {
             const id = p.getNumId();
             if (p.isDuplicate() && !AncestorTree.duplicates.has(id)) {
                 AncestorTree.duplicates.set(id, ++n);
             }
-            AncestorTree.profileCount += p.getNrCopies(AncestorTree.requestedGen);
+            const nrCopies = p.getNrCopies(AncestorTree.requestedGen);
+            if (nrCopies > 0) {
+                AncestorTree.uniqueProfileCount += 1;
+            }
+            AncestorTree.profiledPositionCount += nrCopies;
             const bYear = +p.getBirthYear();
             if (bYear > 0 && bYear < AncestorTree.minBirthYear) {
                 AncestorTree.minBirthYear = bYear;
             }
         }
-        console.log(`nr profiles=${AncestorTree.profileCount}, nr duplicates=${AncestorTree.duplicates.size}`);
+        console.log(
+            `Tree size = ${AncestorTree.#people.size}, ancestors with profiles=${AncestorTree.profiledPositionCount}, nr duplicates=${AncestorTree.duplicates.size}`
+        );
         console.log(`generation counts: ${AncestorTree.genCounts}`, AncestorTree.genCounts);
     }
 
@@ -377,15 +387,18 @@ export class AncestorTree {
         };
     }
 
-    static nrDuplicatesUpToGen(gen) {
-        let cnt = 0;
+    static nrDuplicatesUpToGen(upToGen) {
+        let nrDuplicates = 0;
+        let nrPosOccupiedByDupes = 0;
         for (const dId of AncestorTree.duplicates.keys()) {
             const dPerson = AncestorTree.#people.get(+dId);
-            if (dPerson.getNrCopies(gen) > 1) {
-                ++cnt;
+            const nrCopies = dPerson.getNrCopies(upToGen);
+            if (nrCopies > 1) {
+                ++nrDuplicates;
+                nrPosOccupiedByDupes += nrCopies;
             }
         }
-        return cnt;
+        return [nrDuplicates, nrPosOccupiedByDupes];
     }
 
     static toArray() {
