@@ -562,6 +562,9 @@ export class Utils {
             //         "status": "Redirected to 21303918/Hofmeijer-7"
             //     }
             //   }
+            //
+            // with no record for 10981400 in the result, but only for 21303918
+            //
             let id = rslt.Id;
             if (rslt.status && rslt.status.startsWith("Redirected")) {
                 id = rslt.status.match(/\d+/)[0];

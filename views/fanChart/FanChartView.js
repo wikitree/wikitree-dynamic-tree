@@ -5297,7 +5297,8 @@ import { PDFs } from "../shared/PDFs.js";
 
                 // console.log("person:", person);
 
-                if (FanChartView.theAncestors[resultByKey[id].Id] == undefined) {
+                const profileId = Utils.getProfileId(id, resultByKey);
+                if (!profileId || FanChartView.theAncestors[profileId] == undefined) {
                     console.log("DANGER DANGER, MR. WILLIAM ROBINSON - WE HAVE A VERY PRIVATE ISSUE HERE ...", id);
                     let privatePerson = FanChartView.theAncestors[-1];
                     //   condLog(privatePerson);
@@ -5340,8 +5341,8 @@ import { PDFs } from "../shared/PDFs.js";
 
                     person._data = privatePerson;
                 } else {
-                    person._data.Father = FanChartView.theAncestors[id].Father;
-                    person._data.Mother = FanChartView.theAncestors[id].Mother;
+                    person._data.Father = FanChartView.theAncestors[profileId].Father;
+                    person._data.Mother = FanChartView.theAncestors[profileId].Mother;
                 }
 
                 // PUT everyone into the Ahnentafel order ... which will include the private TBD! peeps if any
@@ -5421,7 +5422,7 @@ import { PDFs } from "../shared/PDFs.js";
                 clearMessageBelowButtonBar();
                 populateXAncestorList(1);
                 fillOutFamilyStatsLocsForAncestors();
-                if (FanChartView.theAncestors[resultByKey[id].Id] == undefined) {
+                if (!profileId || FanChartView.theAncestors[profileId] == undefined) {
                     if (document.getElementById("wt-api-login").textContent.indexOf("Logged in") == -1) {
                         showTemporaryMessageBelowButtonBar(
                             "This is a private profile, with private parents. <br/>Log into the APPS server and try again.",
