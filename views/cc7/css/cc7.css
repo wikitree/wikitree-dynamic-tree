@@ -209,8 +209,7 @@ th.tlBioAge {
 .familySheet .self {
   font-weight: bold;
 }
-.timelineTable .BioPerson,
-.timelineTable .Marriage {
+.timelineTable .BioPerson {
   font-weight: bold;
 }
 div.cc7Table .timelineTable {
@@ -445,6 +444,10 @@ span.missingText {
   min-width: 3em;
   padding-right: 1.5em;
 }
+#tableButtons .select2-results__options {
+  text-align: left !important;
+}
+
 #cc7NotesFilter {
   min-width: 1em;
 }
@@ -985,4 +988,13 @@ div.cc7Table .cc7filter-row th {
   position: relative;
   top: 3px;
   width: 20px;
+}
+
+.cc7BioAdopted,
+.cc7Adopted {
+  height: 18px;
+}
+
+.cc7SubCaption {
+  font-size: smaller;
 }

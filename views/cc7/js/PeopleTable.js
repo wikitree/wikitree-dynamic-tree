@@ -84,7 +84,7 @@ class PeopleTable {
                 "<th></th><th></th>" +
                 `<th id='research' title="Research Status and Notes">RS</th>` +
                 `<th id='degree' title="Distance (Degree). Click to sort." style="text-align: center;">°</th>` +
-                `<th id="relation" title="Relation between ${rootFirstName} and each person">Rel.</th>` +
+                `<th id="relation" title="Relation between ${rootFirstName} and each person">Relation</th>` +
                 "<th id='parent' title='Parents. Click to sort.' data-order='desc'>Par.</th>" +
                 "<th id='sibling' title='Siblings. Click to sort.' data-order='desc'>Sib.</th>" +
                 "<th id='spouse' title='Spouses. Click to sort.' data-order='desc'>Sp.</th>" +
@@ -127,16 +127,34 @@ class PeopleTable {
         if ($("#hierarchyViewButton").length == 0) {
             $("#wideTableButton").before(
                 $(
+                    // Note: the values of the #cc7Subset selector must be unique in their first 3 letter
+                    // since those are used in the exported file name when the user export a filtered set
                     "<select id='cc7Subset' title='Select which profiles should be displayed'>" +
-                        "<option value='all' selected>All</option>" +
-                        "<option value='ancestors' title='Direct ancestors only'>Ancestors</option>" +
-                        "<option value='descendants' title='Direct descendants only'>Descendants</option>" +
+                        "<option value='all' selected>Everyone</option>" +
+                        "<optgroup label='Ancestors'></optgroup>" +
+                        "<option value='ancestors'   title='All ancestors, following all known biological and adoptive parent relationships'>Anc: All</option>" +
+                        "<option value='sbancestors' title='Biological ancestors only'>Anc: Biological (strict)</option>" +
+                        "<option value='ebancestors' title='Biological ancestors including all biological and adoptive ancestors of those people'>Anc: Biological (extended)</option>" +
+                        "<option value='oaancestors' title='Only ancestors who were themselves adopted'>Anc: Adopted</option>" +
+                        "<option value='apancestors'  title='All ancestors, but when adoptive parents exist, exclude the corresponding biological parent paths'>Anc: Adoptive preferred</option>" +
+                        "<option value='saancestors' title='All ancestors (including the root if relevant) who were themselves adopted, including only their adoptive ancestors, if any'>Anc: Adoptive (strict)</option>" +
+                        "<option value='eaancestors' title='All ancestors (including the root if relevant) who were themselves adopted, including all biological and adoptive ancestors of those people'>Anc: Adoptive (extended)</option>" +
+                        "</optgroup>" +
+                        "<optgroup label='Descendants'></optgroup>" +
+                        "<option value='descendants' title='All descendants, biological and adopted'>Desc: All</option>" +
+                        "<option value='bdescendants' title='Biological descendants only'>Desc: Biological</option>" +
+                        "<option value='oadescendants' title='Only descendants who were themselves adopted'>Desc: Adopted (strict)</option>" +
+                        "<option value='eadescendants' title='All descendants who were themselves adopted, including all biological and adoptive descendants of those people'>Desc: Adopted (extended)</option>" +
+                        "</optgroup>" +
+                        "<optgroup label='Other'></optgroup>" +
+                        "<option value='blood' title='Blood relatives only'>Blood Relatives</option>" +
                         '<option value="above" title="Anyone that can be reached by first following a parent link">All "Above"</option>' +
                         '<option value="below" title="Anyone that can be reached by first following a non-parent link">All "Below"</option>' +
                         '<option value="missing-links" title="People that may be missing family members" link">Missing Family</option>' +
                         '<option value="complete" ' +
                         'title="People with birth and death dates and places, both parents, No (More) Spouses box checked, and No (More) Children box checked">' +
                         "Complete</option>" +
+                        "</optgroup>" +
                         "</select>" +
                         "<select id='cc7Gender' title='Which gender profiles should be considered'>" +
                         "<option value='all' selected>All</option>" +
@@ -154,10 +172,75 @@ class PeopleTable {
             );
         }
         PeopleTable.applyViewParameters(CC7.URL_PARAMS);
+        if ($(`#${CC7Utils.CC7_CONTAINER_ID}`).hasClass("degreeView")) {
+            disableSubsetOptions([
+                "ancestors",
+                "sbancestors",
+                "ebancestors",
+                "oaancestors",
+                "apancestors",
+                "saancestors",
+                "eaancestors",
+                "descendants",
+                "bdescendants",
+                "oadescendants",
+                "eadescendants",
+                "blood",
+                "above",
+                "below",
+            ]);
+        } else {
+            // Disable subset options that are not available based on the data we have
+            // console.log("window.cc7Breakdown", window.cc7Breakdown);
+            const disabledOptions = [];
+            if (!window.cc7Breakdown.adoptiveAncestors) {
+                // if (window.cc7Breakdown.bioAncestors) {
+                // if there are no adoptive ancestors, all ancestors, extended bio ancestors, and strict bio ancestors
+                // are all the same, so we only allow all ancestors
+                disabledOptions.push(
+                    "sbancestors",
+                    "ebancestors",
+                    "oaancestors",
+                    "apancestors",
+                    "saancestors",
+                    "eaancestors"
+                );
+                if (!window.cc7Breakdown.bioAncestors) {
+                    // No adoptive nor bio ancestors means we can show no ancestors
+                    disabledOptions.push("ancestors");
+                }
+            }
+            if (!window.cc7Breakdown.adoptiveDescendants) {
+                // if there are no adoptive decendants, decendants and bio decendants are the same, so we only
+                // allow descendants and of course there are no strict, nor extended adopted descendants
+                disabledOptions.push("bdescendants", "oadescendants", "eadescendants");
+                if (!window.cc7Breakdown.bioDescendants) {
+                    // No adoptive nor bio descendants means we can show no decendants
+                    disabledOptions.push("descendants");
+                }
+            }
+
+            disableSubsetOptions(disabledOptions);
+        }
+        function disableSubsetOptions(optionValues) {
+            const $select = $("#cc7Subset");
+            const currentValue = $select.val();
+
+            $select.find("option").prop("disabled", false);
+
+            optionValues.forEach((value) => {
+                $select.find(`option[value="${value}"]`).prop("disabled", true);
+            });
+
+            if (optionValues.includes(currentValue)) {
+                $select.val("all");
+                CC7.updateURL();
+            }
+        }
         const subset = $("#cc7Subset").val() || "all";
         const genderFilter = $("#cc7Gender").val() || "all";
         aTable.addClass([subset, CC7Utils.genderClass(genderFilter)]);
-        aTable.find("caption").text(CC7Utils.tableCaption());
+        aTable.find("caption").html(CC7Utils.tableCaption());
 
         let complete = 0;
         let totalPeople = 0;
@@ -245,7 +328,7 @@ class PeopleTable {
                 }
             }
 
-            const oLink = CC7Utils.profileLink(mPerson.Name, firstName);
+            const oLink = CC7Utils.optionalAdoptedProfileLink(mPerson, mPerson.Name, firstName);
             let managerLink;
             let dManager;
             if (typeof mPerson.Manager != "undefined" && mPerson.Manager == 0) {
@@ -421,11 +504,7 @@ class PeopleTable {
                 }
             }
 
-            let gender = mPerson.Gender;
-            if (mPerson?.DataStatus?.Gender == "blank") {
-                gender = "blank";
-            }
-
+            const gender = CC7Utils.genderOf(mPerson);
             const aLine = $(
                 "<tr " +
                     dPrivacy +
@@ -538,7 +617,10 @@ class PeopleTable {
         const completeSpan = $("#completeSpan");
         const ancReport = $("#ancReport");
         const completePct = Math.round((complete / totalPeople) * 100);
-        const completeText = `<span id="completeSpan" title="Complete profiles are those with birth and death dates and places, both parents, No (More) Spouses box checked, and No (More) Children box checked."> Complete: ${complete} (${completePct}%).</span>`;
+        const completeText =
+            `<span id="completeSpan" ` +
+            `title="Complete profiles are those with birth and death dates and places, both parents, No (More) Spouses box checked, and No (More) Children box checked.">` +
+            ` Out of a total of ${totalPeople} profiles retrieved, ${complete} (${completePct}%) ${complete == 1 ? "is" : "are"} complete.</span>`;
         if (completeSpan.length == 0) {
             ancReport.append(completeText);
         } else {
@@ -567,8 +649,8 @@ class PeopleTable {
 
         $("#cc7Container")
             .off("click", "img.familyHome")
-            .on("click", "img.familyHome", function () {
-                PeopleTable.showFamilySheet($(this));
+            .on("click", "img.familyHome", function (event) {
+                PeopleTable.showFamilySheet(event, $(this));
             });
 
         $("#cc7Container")
@@ -618,8 +700,9 @@ class PeopleTable {
             });
 
         $("#cc7Subset, #cc7Gender")
-            .off("change")
-            .on("change", function () {
+            // Preserve Select2's own change.select2 handler, which keeps its rendered selection in sync.
+            .off("change.cc7")
+            .on("change.cc7", function () {
                 if ($("#cc7Subset").val() == "missing-links") {
                     PeopleTable.showMissingLinksCheckboxes();
                 } else {
@@ -645,6 +728,16 @@ class PeopleTable {
                 }
                 CC7.updateURL();
             });
+
+        // Initialise Select2 after CC7's change handler so its internal change.select2 handler is retained.
+        if (!$("#cc7Subset").data("select2")) {
+            $("#cc7Subset").select2({
+                width: "resolve",
+                dropdownParent: $("#tableButtons"),
+                minimumResultsForSearch: Infinity,
+                dropdownAutoWidth: true,
+            });
+        }
 
         function drawPeopleTable() {
             PeopleTable.addPeopleTable();
@@ -697,8 +790,10 @@ class PeopleTable {
                 } else {
                     LanceView.build();
                 }
-                $("#cc7Subset option[value='missing-links']").prop("disabled", false);
-                $("#cc7Subset option[value='complete']").prop("disabled", false);
+                $("#cc7Subset option")
+                    .filter("[value='missing-links'], [value='complete']")
+                    .prop("disabled", false)
+                    .trigger("change.select2");
                 $("#cc7Subset").show();
                 if ($("#cc7Subset").val() == "missing-links") {
                     PeopleTable.showMissingLinksCheckboxes();
@@ -744,8 +839,10 @@ class PeopleTable {
                 $(".viewButton").removeClass("active");
                 $(this).addClass("active");
 
-                $("#cc7Subset option[value='missing-links']").prop("disabled", false);
-                $("#cc7Subset option[value='complete']").prop("disabled", false);
+                $("#cc7Subset option")
+                    .filter("[value='missing-links'], [value='complete']")
+                    .prop("disabled", false)
+                    .trigger("change.select2");
                 $("#cc7Subset").show();
                 $("#cc7Gender").show();
                 const $peopleTable = $("#peopleTable");
@@ -789,8 +886,10 @@ class PeopleTable {
                     $statsView.hasClass(CC7Utils.genderClass($("#cc7Gender").val()))
                 ) {
                     // We don't have to re-draw the table
-                    $("#cc7Subset option[value='missing-links']").prop("disabled", true);
-                    $("#cc7Subset option[value='complete']").prop("disabled", true);
+                    $("#cc7Subset option")
+                        .filter("[value='missing-links'], [value='complete']")
+                        .prop("disabled", true)
+                        .trigger("change.select2");
                     $("#statsView").show().addClass("active");
                     $("#wideTableButton").show();
                 } else {
@@ -812,7 +911,7 @@ class PeopleTable {
                 const subset = $("#cc7Subset").val();
                 if (subset != "missing-links") {
                     PeopleTable.PREVIOUS_SUBSET = subset;
-                    $("#cc7Subset").val("missing-links");
+                    PeopleTable.setSubsetTo("missing-links");
                 }
                 // switch to missing links checkboxes
                 PeopleTable.showMissingLinksCheckboxes();
@@ -1631,72 +1730,138 @@ class PeopleTable {
     static #BMD_EVENTS = ["Birth", "Death", "Marriage"];
 
     static getTimelineEvents(tPerson) {
-        const family = [tPerson].concat(tPerson.Parent, tPerson.Sibling, tPerson.Spouse, tPerson.Child);
+        const family = [tPerson].concat(
+            tPerson.Parent,
+            tPerson.AParent,
+            tPerson.Sibling,
+            tPerson.Spouse,
+            tPerson.Child,
+            tPerson.AChild
+        );
+
         const timeLineEvent = [];
+        const marriagesProcessed = new Set();
+
+        function marriageId(p1Id, p2Id) {
+            return `${Math.min(p1Id, p2Id)}:${Math.max(p1Id, p2Id)}`;
+        }
 
         // Get birth, marriage, and death (BMD) events for each family member.
         // Since this is a timeline we only add events that have known dates.
         family.forEach(function (evPerson) {
             PeopleTable.#BMD_EVENTS.forEach(function (ev) {
-                let evDate = { date: "", annotation: "" };
+                let evDate = { date: "", annotation: "", annotatedAge: "" }; // for compatibility with Utils.ageAtEvent()
                 let evLocation;
                 if (ev == "Marriage") {
-                    // We already have the sorted marriages and we only collect marriages for which we have dates and have
-                    // loaded the profile (it won't be present if it is in the next, not retrieved CC)
-                    // TODO:
-                    //  . collect all the marriage events. Currently we do not collect marriages for people in the outer ring
-                    //    because their partners are typically in the next ring and therefore we do not know who they are.
-                    //    The Marriage field is only populated for known people, while 'Spouses' contain marriage dates and
-                    //    IDs, but in random order. so we could say "marriage to nth spouse" for example.
-                    //    Also, currently we do not collect any marriage dates of a spouse with possible other spouses,
-                    //    but we probably could and probably should.  The same goes for marriages of parents to other spouses.
-                    const marriageData = tPerson.Marriage[evPerson.Id];
-                    if (marriageData) {
-                        evDate = Utils.formAdjustedDate(
-                            marriageData.MarriageDate,
-                            "",
-                            marriageData.DataStatus?.MarriageDate
-                        );
-                        evLocation = marriageData[ev + "Location"];
-                    }
-                } else {
-                    evDate = evPerson[`adjusted${ev}`];
-                    evLocation = evPerson[ev + "Location"];
-                }
-                if (evDate.date != "" && evDate.date != "0000-00-00" && CC7Utils.isOK(evDate.date)) {
-                    if (evPerson.Relation) {
-                        const theRelation = evPerson.Relation.replace(/s$/, "").replace(/ren$/, "");
-                        const gender = evPerson.Gender;
-                        if (theRelation == "Child") {
-                            evPerson.Relation = CC7Utils.mapGender(gender, "son", "daughter", "child");
-                        } else if (theRelation == "Sibling") {
-                            evPerson.Relation = CC7Utils.mapGender(gender, "brother", "sister", "sibling");
-                        } else if (theRelation == "Parent") {
-                            evPerson.Relation = CC7Utils.mapGender(gender, "father", "mother", "parent");
-                        } else if (theRelation == "Spouse") {
-                            evPerson.Relation = CC7Utils.mapGender(gender, "husband", "wife", "spouse");
-                        } else {
-                            evPerson.Relation = theRelation;
+                    // Marriage event needs extra fields and we also cater for marriages to people that did not
+                    // have their own separate profile in the CCn returned.
+                    if (evPerson.Spouse.length > 0) {
+                        for (const sp of evPerson.Spouse) {
+                            const marrId = marriageId(evPerson.Id, sp.Id);
+                            if (!marriagesProcessed.has(marrId)) {
+                                const marriageData = evPerson.Marriage[sp.Id];
+                                if (marriageData) {
+                                    evDate = Utils.formAdjustedDate(
+                                        marriageData.MarriageDate,
+                                        "",
+                                        marriageData.DataStatus?.MarriageDate
+                                    );
+                                    evLocation = marriageData[ev + "Location"] || "";
+                                }
+                                if (evDate.date != "" && evDate.date != "0000-00-00" && CC7Utils.isOK(evDate.date)) {
+                                    const otherPersonAge = Utils.ageAtEvent(sp.adjustedBirth, evDate);
+                                    let renderedOtherAge = otherPersonAge.annotatedAge;
+                                    if (otherPersonAge.age == 0 || sp.adjustedBirth.date.match(/0000/) != null) {
+                                        renderedOtherAge = "";
+                                    }
+                                    timeLineEvent.push({
+                                        eventDate: evDate,
+                                        location: evLocation,
+                                        firstName: evPerson.FirstName || evPerson.RealName,
+                                        LastNameAtBirth: evPerson.LastNameAtBirth,
+                                        lastNameCurrent: evPerson.LastNameCurrent,
+                                        birthDate: evPerson.adjustedBirth,
+                                        relation: evPerson.GenderedRelation,
+                                        isAdopted: evPerson.isAdopted,
+                                        isAdoptedOutByRoot:
+                                            evPerson.isAdopted && CC7Utils.bioParentIds(evPerson).includes(+tPerson.Id),
+                                        evnt: ev,
+                                        wtId: evPerson.Name,
+
+                                        otherWtId: sp.Name,
+                                        otherFirstName: sp.FirstName || sp.RealName,
+                                        otherLNAB: sp.LastNameAtBirth,
+                                        otherAge: renderedOtherAge,
+                                        otherIsAdopted: sp.isAdopted,
+                                    });
+                                    marriagesProcessed.add(marrId);
+                                }
+                            }
+                        }
+                    } else {
+                        // Spouse only contains "loaded" profiles. The spouse of a person in the outer ring is most
+                        // likely in the next ring and therefore was not returned as a separate profile. They are,
+                        // however, present in the Spouses array, so let's retrieve the information from there.
+                        for (const sp of evPerson.Spouses) {
+                            const marrId = marriageId(evPerson.Id, sp.Id);
+                            if (!marriagesProcessed.has(marrId)) {
+                                evDate = Utils.formAdjustedDate(sp.MarriageDate, "", sp.DataStatus?.MarriageDate);
+                                evLocation = sp[ev + "Location"] || "";
+                                if (evDate.date != "" && evDate.date != "0000-00-00" && CC7Utils.isOK(evDate.date)) {
+                                    const otherBirthDate = Utils.getTheDate(sp, "Birth");
+                                    const otherPersonAge = Utils.ageAtEvent(otherBirthDate, evDate);
+                                    let renderedOtherAge = otherPersonAge.annotatedAge;
+                                    if (otherPersonAge.age == 0 || otherBirthDate.date.match(/0000/) != null) {
+                                        renderedOtherAge = "";
+                                    }
+                                    timeLineEvent.push({
+                                        eventDate: evDate,
+                                        location: evLocation,
+                                        firstName: evPerson.FirstName || evPerson.RealName,
+                                        LastNameAtBirth: evPerson.LastNameAtBirth,
+                                        lastNameCurrent: evPerson.LastNameCurrent,
+                                        birthDate: evPerson.adjustedBirth,
+                                        relation: evPerson.GenderedRelation,
+                                        isAdopted: evPerson.isAdopted,
+                                        isAdoptedOutByRoot:
+                                            evPerson.isAdopted && CC7Utils.bioParentIds(evPerson).includes(+tPerson.Id),
+                                        evnt: ev,
+                                        wtId: evPerson.Name,
+
+                                        otherWtId: sp.Name,
+                                        otherFirstName: sp.FirstName || sp.RealName,
+                                        otherLNAB: sp.LastNameAtBirth,
+                                        otherAge: renderedOtherAge,
+                                        otherIsAdopted: CC7Utils.adoptiveParentIds(sp).length > 0,
+                                    });
+                                    marriagesProcessed.add(marrId);
+                                }
+                            }
                         }
                     }
-                    let fName = evPerson.FirstName;
-                    if (!evPerson.FirstName) {
-                        fName = evPerson.RealName;
+                } else {
+                    // This is not a marriage event
+                    evDate = evPerson[`adjusted${ev}`];
+                    evLocation = evPerson[ev + "Location"];
+                    if (evDate.date != "" && evDate.date != "0000-00-00" && CC7Utils.isOK(evDate.date)) {
+                        if (evLocation == undefined) {
+                            evLocation = "";
+                        }
+                        timeLineEvent.push({
+                            eventDate: evDate,
+                            location: evLocation,
+                            firstName: evPerson.FirstName || evPerson.RealName,
+                            LastNameAtBirth: evPerson.LastNameAtBirth,
+                            lastNameCurrent: evPerson.LastNameCurrent,
+                            birthDate: evPerson.adjustedBirth,
+                            relation: evPerson.GenderedRelation,
+                            isAdopted: evPerson.isAdopted,
+                            isAdoptedOutByRoot:
+                                evPerson.isAdopted && CC7Utils.bioParentIds(evPerson).includes(+tPerson.Id),
+                            evnt: ev,
+                            wtId: evPerson.Name,
+                        });
                     }
-                    if (evLocation == undefined) {
-                        evLocation = "";
-                    }
-                    timeLineEvent.push({
-                        eventDate: evDate,
-                        location: evLocation,
-                        firstName: fName,
-                        LastNameAtBirth: evPerson.LastNameAtBirth,
-                        lastNameCurrent: evPerson.LastNameCurrent,
-                        birthDate: evPerson.adjustedBirth,
-                        relation: evPerson.Relation,
-                        evnt: ev,
-                        wtId: evPerson.Name,
-                    });
                 }
             });
             // Look for military events in templates
@@ -1760,7 +1925,10 @@ class PeopleTable {
                             LastNameAtBirth: evPerson.LastNameAtBirth,
                             lastNameCurrent: evPerson.LastNameCurrent,
                             birthDate: evPerson.adjustedBirth,
-                            relation: evPerson.Relation,
+                            relation: evPerson.GenderedRelation,
+                            isAdopted: evPerson.isAdopted,
+                            isAdoptedOutByRoot:
+                                evPerson.isAdopted && CC7Utils.bioParentIds(evPerson).includes(+tPerson.Id),
                             evnt: evStart,
                             wtId: evPerson.Name,
                         });
@@ -1773,7 +1941,10 @@ class PeopleTable {
                             LastNameAtBirth: evPerson.LastNameAtBirth,
                             lastNameCurrent: evPerson.LastNameCurrent,
                             birthDate: evPerson.adjustedBirth,
-                            relation: evPerson.Relation,
+                            relation: evPerson.GenderedRelation,
+                            isAdopted: evPerson.isAdopted,
+                            isAdoptedOutByRoot:
+                                evPerson.isAdopted && CC7Utils.bioParentIds(evPerson).includes(+tPerson.Id),
                             evnt: evEnd,
                             wtId: evPerson.Name,
                         });
@@ -1879,22 +2050,33 @@ class PeopleTable {
                 aFact.relation = "";
             }
 
-            let relation = aFact.relation.replace(/s$/, "");
+            const relation = aFact.relation.toLowerCase();
             const eventName = aFact.evnt.replaceAll(/Us\b/g, "US").replaceAll(/Ii\b/g, "II");
 
-            let fNames = aFact.firstName || "(Private)";
-            if (aFact.evnt == "Marriage") {
-                fNames = tPersonFirstName + " and " + fNames;
-                relation = "";
-            }
-            const tlFirstName = CC7Utils.profileLink(aFact.wtId, fNames);
-            const tlEventLocation = "<td class='tlEventLocation'>" + aFact.location + "</td>";
-
+            const fNames = aFact.firstName || "(Private)";
             const evPersonAge = Utils.ageAtEvent(evPersonBirth, eventDate);
             let renderedEvpAge = evPersonAge.annotatedAge;
             if (evPersonAge.age == 0 || evPersonBirth.date.match(/0000/) != null) {
                 renderedEvpAge = "";
             }
+            let tlFirstName;
+            if (aFact.evnt == "Marriage") {
+                tlFirstName =
+                    CC7Utils.optionalAdoptedProfileLink(aFact, aFact.wtId, fNames) +
+                    (isEventForBioPerson ? "" : ` (${renderedEvpAge})`) +
+                    ", with " +
+                    CC7Utils.optionalAdoptedProfileLink(
+                        { isAdopted: aFact.otherIsAdopted },
+                        aFact.otherWtId,
+                        aFact.otherFirstName + " " + aFact.otherLNAB
+                    ) +
+                    (aFact.otherAge == "" ? "" : ` (${aFact.otherAge})`);
+            } else {
+                tlFirstName =
+                    CC7Utils.optionalAdoptedProfileLink(aFact, aFact.wtId, fNames) +
+                    (renderedEvpAge == "" ? "" : ` (${renderedEvpAge})`);
+            }
+            const tlEventLocation = "<td class='tlEventLocation'>" + aFact.location + "</td>";
 
             let descr;
             if (PeopleTable.#BMD_EVENTS.includes(aFact.evnt)) {
@@ -1902,17 +2084,10 @@ class PeopleTable {
                     CC7Utils.capitalizeFirstLetter(eventName) +
                     " of " +
                     (relation == "" ? relation : relation + ", ") +
-                    tlFirstName +
-                    (renderedEvpAge == "" ? "" : ", " + renderedEvpAge);
+                    tlFirstName;
             } else {
-                const who =
-                    relation == ""
-                        ? tlFirstName
-                        : CC7Utils.capitalizeFirstLetter(relation) +
-                          " " +
-                          tlFirstName +
-                          (renderedEvpAge == "" ? "" : ", " + renderedEvpAge + ",");
-                descr = who + " " + eventName;
+                const who = relation == "" ? tlFirstName : CC7Utils.capitalizeFirstLetter(relation) + " " + tlFirstName;
+                descr = who + ", " + eventName;
             }
 
             const tlEventDescription = "<td class='tlEventDescription'>" + descr + "</td>";
@@ -1948,8 +2123,9 @@ class PeopleTable {
             return;
         }
 
-        CC7Utils.assignRelationshipsFor(tPerson);
+        CC7Utils.assignRelationsFor(tPerson);
         const familyFacts = PeopleTable.getTimelineEvents(tPerson);
+        console.log(`Timeline facts for ${theClickedName}`, familyFacts);
         // Sort the events
         familyFacts.sort((a, b) => {
             return a.eventDate.date.localeCompare(b.eventDate.date);
@@ -2044,6 +2220,7 @@ class PeopleTable {
     }
 
     static peopleToTable(kPeople) {
+        console.log("People to Table:", kPeople);
         const personOfInterest = kPeople[0];
         let disName = PeopleTable.displayName(personOfInterest)[0];
         if ($("#cc7Container").length) {
@@ -2059,7 +2236,7 @@ class PeopleTable {
         );
         kPeople.forEach(function (kPers) {
             let rClass = "";
-            kPers.RelationShow = kPers.Relation;
+            kPers.RelationShow = kPers.GenderedRelation;
             if (kPers.Relation == undefined || kPers.Active) {
                 kPers.Relation = "Sibling";
                 kPers.RelationShow = "";
@@ -2085,12 +2262,6 @@ class PeopleTable {
             }
             let oName = PeopleTable.displayName(kPers)[0];
 
-            if (kPers.Relation) {
-                kPers.Relation = kPers.Relation.replace(/s$/, "").replace(/ren$/, "");
-                if (rClass != "self") {
-                    kPers.RelationShow = kPers.Relation;
-                }
-            }
             if (oName) {
                 const linkName = CC7Utils.htmlEntities(kPers.Name);
                 const aLine = $(
@@ -2107,7 +2278,7 @@ class PeopleTable {
                         "'><td>" +
                         kPers.RelationShow +
                         "</td><td>" +
-                        CC7Utils.profileLink(linkName, oName) +
+                        CC7Utils.optionalAdoptedProfileLink(kPers, linkName, oName) +
                         "</td><td class='aDate'>" +
                         bDate.display +
                         "</td><td>" +
@@ -2167,8 +2338,15 @@ class PeopleTable {
     }
 
     static buildAndShowFamilySheet(fPerson, jqClicked) {
-        CC7Utils.assignRelationshipsFor(fPerson);
-        const thisFamily = [fPerson].concat(fPerson.Parent, fPerson.Sibling, fPerson.Spouse, fPerson.Child);
+        CC7Utils.assignRelationsFor(fPerson);
+        const thisFamily = [fPerson].concat(
+            fPerson.Parent,
+            fPerson.AParent,
+            fPerson.Sibling,
+            fPerson.Spouse,
+            fPerson.Child,
+            fPerson.AChild
+        );
         const famSheet = PeopleTable.peopleToTable(thisFamily);
 
         const theClickedName = fPerson.Name;
@@ -2177,7 +2355,7 @@ class PeopleTable {
         PeopleTable.showTable(jqClicked, famSheet, 30, 30);
     }
 
-    static showFamilySheet(jqClicked) {
+    static showFamilySheet(ev, jqClicked) {
         const theClickedRow = jqClicked.closest("tr");
         const theClickedName = theClickedRow.attr("data-name");
 
@@ -2197,26 +2375,43 @@ class PeopleTable {
         } else if (!theClickedName.startsWith("Private") || theClickedId > 0) {
             const key = theClickedName.startsWith("Private") ? theClickedId : theClickedName;
             console.log(`Calling getPeople to obtain relatives for ${key}`);
+            const $spinner = $("<img>", {
+                src: "https://www.wikitree.com/images/icons/ajax-loader-snake-333-trans.gif",
+                class: "cc7-api-spinner",
+            })
+                .css({
+                    position: "absolute",
+                    left: ev.pageX + 8,
+                    top: ev.pageY + 8,
+                    zIndex: 99999,
+                    pointerEvents: "none",
+                })
+                .appendTo("body");
+
             WikiTreeAPI.postToAPI({
                 appId: Settings.APP_ID,
                 action: "getPeople",
                 keys: key,
                 nuclear: 1,
                 fields: CC7.GET_PEOPLE_FIELDS,
-            }).then((result) => {
-                // Construct this person so it conforms to the profiles we retrieved previously
-                if (result[0]?.status == "") {
-                    const iPerson = PeopleTable.convertToInternal(key, result);
-                    PeopleTable.buildAndShowFamilySheet(iPerson, jqClicked);
-                } else {
-                    console.log(`Could not obtain relatives for ${key}: ${result[0]?.status}`);
-                }
-            });
+            })
+                .then((result) => {
+                    // Construct this person so it conforms to the profiles we retrieved previously
+                    if (result[0]?.status == "") {
+                        const iPerson = PeopleTable.convertToInternal(key, result);
+                        PeopleTable.buildAndShowFamilySheet(iPerson, jqClicked);
+                    } else {
+                        console.log(`Could not obtain relatives for ${key}: ${result[0]?.status}`);
+                    }
+                })
+                .finally(() => {
+                    $spinner.remove();
+                });
         }
     }
 
     static convertToInternal(key, result) {
-        const rootId = result[0].resultByKey[key]?.Id;
+        const rootId = Utils.getProfileId(key, result[0].resultByKey);
         const profiles = result[0].people ? Object.values(result[0].people) : [];
         const peopleMap = new Map();
         // Collect all the family members in a map
@@ -2235,11 +2430,17 @@ class PeopleTable {
                 Utils.setAdjustedDates(person);
                 person.Parents = [person.Father, person.Mother];
                 person.Hide = person.Id != rootId;
+                if (CC7Utils.adoptiveParentIds(person).length > 0) {
+                    person.isAdopted = true;
+                    if (CC7Utils.bioParentIds(person).includes(rootId)) child.isAdoptedOutByRoot = true;
+                }
                 // To be filled shortly via populateRelativeArrays()
                 person.Parent = [];
+                person.AParent = [];
                 person.Spouse = [];
                 person.Sibling = [];
                 person.Child = [];
+                person.AChild = [];
                 person.Marriage = {};
                 peopleMap.set(id, person);
             }
@@ -2541,7 +2742,7 @@ class PeopleTable {
     }
 
     static makeSheetname() {
-        const prefix = $("#cc7Container").hasClass("degreeView") ? "CC_Deg" : "CC";
+        const prefix = $(`#${CC7Utils.CC7_CONTAINER_ID}`).hasClass("degreeView") ? "CC_Deg" : "CC";
         return `${prefix}${window.cc7Degree}_${wtViewRegistry.getCurrentWtId()}`;
     }
 
@@ -2589,7 +2790,7 @@ class PeopleTable {
                 // handle the "only" (i.e. subset) and gender parameter(s)
                 const matchedOption = validSelectOption("#cc7Subset option", params.only || "all");
                 if (matchedOption) {
-                    $("#cc7Subset").val(matchedOption);
+                    if (matchedOption != $("#cc7Subset").val()) PeopleTable.setSubsetTo(matchedOption);
                     if (matchedOption == "missing-links" && matchedView != CC7.VIEWS.STATS) {
                         setMissingLinkOptions();
                         PeopleTable.showMissingLinksCheckboxes();
@@ -2644,7 +2845,7 @@ class PeopleTable {
         $("#getExtraDegrees").show();
         $("#getDegreeButton").show();
         if (PeopleTable.PREVIOUS_SUBSET) {
-            $("#cc7Subset").val(PeopleTable.PREVIOUS_SUBSET);
+            PeopleTable.setSubsetTo(PeopleTable.PREVIOUS_SUBSET);
             if (PeopleTable.PREVIOUS_SUBSET != "missing-links") {
                 $("#mlButtons").hide();
             }
@@ -2657,6 +2858,10 @@ class PeopleTable {
         $("#ml-count").remove();
         wtViewRegistry.showInfoPanel();
         CC7.updateURL();
+    }
+
+    static setSubsetTo(value) {
+        $("#cc7Subset").val(value).trigger("change.select2");
     }
 }
 

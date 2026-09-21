@@ -5,6 +5,7 @@
 import { API } from "./api.js";
 import { D3Node } from "./D3Node.js";
 import { Person, LinkToPerson } from "./person.js";
+import { Utils } from "../shared/Utils.js";
 
 export class AncestorTree {
     static #people;
@@ -72,7 +73,7 @@ export class AncestorTree {
             );
             return [AncestorTree.root, performance.now() - starttime];
         }
-        const rootId = resultByKey[wtId].Id;
+        const rootId = Utils.getProfileId(wtId, resultByKey);
 
         remainingDepth -= reqDepth;
         while (parentsNotLoaded.size > 0 && remainingDepth > 0) {

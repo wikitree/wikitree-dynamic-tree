@@ -1,0 +1,69 @@
+[
+  [
+    1,
+    {
+      "Name": "Root-1",
+      "LongNamePrivate": "Robin Root",
+      "Gender": "Female",
+      "Father": 3,
+      "Mother": 4,
+      "BioFather": 2,
+      "DataStatus": { "Father": "5", "Mother": "5" },
+      "Meta": { "Degrees": 0 }
+    }
+  ],
+  [
+    2,
+    {
+      "Name": "Bio-Father-2",
+      "LongNamePrivate": "Frank Father (Robin)",
+      "Gender": "Male",
+      "Father": 3,
+      "Mother": 4,
+      "DataStatus": {},
+      "Meta": {}
+    }
+  ],
+  [
+    3,
+    {
+      "Name": "Father-3",
+      "LongNamePrivate": "George Father (Frank)",
+      "Gender": "Male",
+      "Father": 5,
+      "Mother": 6,
+      "DataStatus": {},
+      "Meta": {}
+    }
+  ],
+  [
+    4,
+    {
+      "Name": "Mother-4",
+      "LongNamePrivate": "Grace Mother (Frank)",
+      "Gender": "Female",
+      "DataStatus": {},
+      "Meta": {}
+    }
+  ],
+  [
+    5,
+    {
+      "Name": "Father-5",
+      "LongNamePrivate": "Herman Father (George)",
+      "Gender": "Male",
+      "DataStatus": {},
+      "Meta": {}
+    }
+  ],
+  [
+    6,
+    {
+      "Name": "Mother-6",
+      "LongNamePrivate": "Hester Mother (George)",
+      "Gender": "Female",
+      "DataStatus": {},
+      "Meta": {}
+    }
+  ]
+]
