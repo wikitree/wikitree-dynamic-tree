@@ -104,32 +104,26 @@ const HELP_TEXT = `
             other views.
             Note: Some of these subsets will be partial in the presence of private profiles since the latter will
             "break" connections and the full subset then cannot be calculated. There are 4 gender options (<b>Male</b>, <b>Female</b>,
-            <b>No Gender Provided</b>, and <b>All</b>) that can be used in combination with the following 6 options:
+            <b>No Gender Provided</b>, and <b>All</b>) that can be used in combination with the options below. Options will be
+            greyed out if we know ahead of time they do not show information any different from another option, or there are no such profiles.
             <ul>
                 <li><b>Everyone</b> – All profiles.</li>
                 <li><b>Ancestors</b></li>
                 <ul>
                     <li><b>All</b> – All ancestors, following all known biological and adoptive parent relationships.</li>
-                    <li><b>Biological (strict)</b> – All biological ancestors of the central person. 
-                        This is disabled if all ancestors are biological.</li>
-                    <li><b>Biological (extended)</b> – Biological ancestors, including all biological and adoptive ancestors of those people. 
-                        This is disabled if all ancestors are biological.</li>
-                    <li><b>Adopted</b> – Only ancestors who were themselves adopted. This is disabled if there are none.</li>
-                    <li><b>Adoptive preferred</b> – All ancestors, but when adoptive parents exist, exclude the corresponding biological parent paths. 
-                         This is disabled if all ancestors are biological.</li>
-                    <li><b>Adoptive (strict)</b> – All ancestors who were themselves adopted, including only their adoptive ancestors, if any.
-                        This is disabled if there are no adoptive ancestors.</li>
-                    <li><b>Adoptive (extended)</b> – All ancestors who were themselves adopted, including all biological and adoptive ancestors of those people.
-                        This is disabled if there are no adoptive ancestors.</li>
+                    <li><b>Biological (strict)</b> – All biological ancestors of the central person.</li>
+                    <li><b>Biological (extended)</b> – Biological ancestors, including all biological and adoptive ancestors of those people.</li>
+                    <li><b>Adopted</b> – Only ancestors who were themselves adopted.</li>
+                    <li><b>Adoptive preferred</b> – All ancestors, but when adoptive parents exist, exclude the corresponding biological parent paths.</li>
+                    <li><b>Adoptive (strict)</b> – All ancestors who were themselves adopted, including only their adoptive ancestors, if any.</li>
+                    <li><b>Adoptive (extended)</b> – All ancestors who were themselves adopted, including all biological and adoptive ancestors of those people.</li>
                 </ul>
                 <li><b>Descendants</b></li>
                 <ul>
-                    <li><b>All</b> – All descendants, biological and adopted. This is disabled if there are no descendants.</li>
-                    <li><b>Biological</b> – Biological descendants only. This is disabled if all descendants are biological.</li>
-                    <li><b>Adoptive (strict)</b> – Only descendants who were themselves adopted. 
-                        This is disabled if there are none.</li>
-                    <li><b>Adoptive (extended)</b> – All descendants who were themselves adopted, including all biological and adoptive descendants of those people.
-                        This is disabled if there are none.</li>
+                    <li><b>All</b> – All descendants, biological and adopted.</li>
+                    <li><b>Biological</b> – Biological descendants only.</li>
+                    <li><b>Adopted (strict)</b> – Only descendants who were themselves adopted.</li>
+                    <li><b>Adopted (extended)</b> – All descendants who were themselves adopted, including all biological and adoptive descendants of those people.</li>
                 </ul>
                 <li><b>Blood Relatives</b> – All people that (is supposed to) share DNA with the central person.</li>
                 <li><b>All "Above"</b> – Anyone that can be reached by first following a parent link from the central

@@ -1002,8 +1002,10 @@ class CC7 {
             window.cc7Breakdown = {
                 bioAncestors: catResult.hasBioAncestors,
                 bioDescendants: catResult.hasBioDescendants,
+                adoptedAncestors: catResult.hasAdoptedAncestors,
                 adoptiveAncestors: catResult.hasAdoptiveAncestors,
-                adoptiveDescendants: catResult.hasAdoptiveDescendants,
+                adoptedInDescendants: catResult.hasAdoptedInDescendants,
+                adoptedOutDescendants: catResult.hasAdoptedOutDescendants,
             };
             window.cc7Degree = Math.min(maxWantedDegree, actualMaxDegree);
             Utils.hideShakingTree();
@@ -1462,12 +1464,16 @@ class CC7 {
      *    nrDuplicateAncestors: the number of duplicate ancestor profiles
      *    hasBioAncestors: boolean indicating if there are any biological ancestors
      *    hasBioDescendants: boolean indicating if there are any biological descendants
-     *    hasAdoptiveAncestors: boolean indicating if there are any adoptive ancestors
-     *    hasAdoptiveDescendants: boolean indicating if there are any adoptive descendants
+     *    hasAdoptedAncestors: boolean indicating if any ancestor was adopted
+     *    hasAdoptiveAncestors: boolean indicating if the root or any of their ancestors were adopted
+     *    hasAdoptedInDescendants: boolean indicating if there is anyone adopted by a biological descendant.
+     *                             This includes anyone adpted by such an adoptee or their descendants
+     *    hasAdoptedOutDescendants: boolean indicating if any biological descendant was adopted by someone else
      **/
     static categoriseProfiles(theRoot, maxRequestedDegree) {
         if (!theRoot) return [-1, -1];
 
+        // -----------------
         // For debug logging (set to true the ones you want to see (ths only works for requested degrees <= 3))
         const pAncestors = false;
         const pBlood = false; // show when blood relatives are detected
@@ -1507,6 +1513,7 @@ class CC7 {
                 console.log(`  ${person.BirthNamePrivate} (${person.Name}, ${person.Id})`);
             }
         }
+        // -----------------
 
         const ABOVE = true;
         const BELOW = false;
@@ -1550,10 +1557,12 @@ class CC7 {
         let nrProfiles = 0;
         let firstIteration = true;
         // These are used to determine which options in the filter select should be disabled
-        let showBioAncestors = false;
-        let showBioDescendants = false;
-        let showAdoptiveAncestors = false;
-        let showAdoptiveDescendants = false;
+        let rootHasBioAncestors = false;
+        let rootHasBioDescendants = false;
+        let rootHasAdoptedAncestors = false; // true if ancestor is adopted - TODO: do we need this??
+        let rootHasAdoptiveAncestors = false; // true if the root or any ancestor was adopted
+        let rootHasAdoptedInDescendants = false; // true if any bio descendant has an adopted child
+        let rootHasAdoptedOutDescendants = false; // true if any bio descendant or their bio or adopted descendants was adopted by someone else
 
         function isAdopted(person) {
             return CC7Utils.adoptiveParentIds(person).length > 0;
@@ -1563,14 +1572,18 @@ class CC7 {
                 person.isAdopted = true;
             }
         }
-        function addExtAdoptiveDescendant(person) {
+        function addExtAdoptedDescendant(person) {
             if (person && typeof person.isExtendedAdoptDesc === "undefined") {
                 person.isExtendedAdoptDesc = true;
-                extAdoptDescendantsQ.push(person.Id);
-                showAdoptiveDescendants = true;
+                extAdoptDescendantsQ.push(+person.Id);
             }
         }
-
+        function setAsDescendant(child) {
+            if (child && typeof child.isDescendant === "undefined") {
+                child.isDescendant = true;
+                descendantQ.push(+child.Id);
+            }
+        }
         function setAsAncestor(degree, person, printFrom, from) {
             // We have requested maxRequestedDegree from WT, so to set isAncestor
             // we only check profiles up to and including that degree
@@ -1611,28 +1624,22 @@ class CC7 {
                 const person = window.people.get(+pId);
                 if (person) {
                     // Add this person's children (bio and adoptive) to the descendant queue
-                    const bioChildren = CC7.getIdsOfRelatives(person, ["Child"]);
-                    for (const relId of bioChildren) {
-                        const child = window.people.get(+relId);
-                        if (child && typeof child.isDescendant === "undefined") {
-                            child.isDescendant = true;
-                            descendantQ.push(relId);
-                        }
-                        // We make sure any adopted child of the root is flagged as such
+                    for (const child of person.Child) {
+                        setAsDescendant(child);
                         if (isAdopted(child)) {
+                            // Any bio descendant that was adopted out, should join the extAdoptDescendantsQ
+                            rootHasAdoptedOutDescendants = true;
+                            addExtAdoptedDescendant(child);
+                            // We make sure any adopted child of the root is flagged as such
                             if (CC7Utils.bioParentIds(child).includes(+theRoot.Id)) child.isAdoptedOutByRoot = true;
                         }
                     }
-                    const adoptedChildren = CC7.getIdsOfRelatives(person, ["AChild"]);
-                    for (const relId of adoptedChildren) {
-                        const child = window.people.get(+relId);
-                        if (child && typeof child.isDescendant === "undefined") {
-                            child.isDescendant = true;
-                            descendantQ.push(relId);
-                        }
+                    for (const child of person.AChild) {
+                        setAsDescendant(child);
                         // All adoptive children must also be flagged as adoptive descendants and
                         // added to the extAdoptDescendantsQ for processing
-                        addExtAdoptiveDescendant(child);
+                        rootHasAdoptedInDescendants = true;
+                        addExtAdoptedDescendant(child);
                     }
                 }
             }
@@ -1642,13 +1649,11 @@ class CC7 {
                 const person = window.people.get(+pId);
                 if (person) {
                     // Add this person's biological children to the queue
-                    const rels = CC7.getIdsOfRelatives(person, ["Child"]);
-                    for (const relId of rels) {
-                        const child = window.people.get(+relId);
+                    for (const child of person.Child) {
                         if (child && typeof child.isBioDescendant === "undefined") {
                             child.isBioDescendant = true;
-                            bioDescendantQ.push(relId);
-                            showBioDescendants = true;
+                            bioDescendantQ.push(+child.Id);
+                            rootHasBioDescendants = true;
                         }
                     }
                 }
@@ -1660,18 +1665,13 @@ class CC7 {
                 const pId = bloodQ.shift();
                 const person = window.people.get(+pId);
                 if (person) {
-                    if (pBlood && maxRequestedDegree <= 3) {
-                    }
-                    const rels = CC7.getIdsOfRelatives(person, ["Sibling", "Child"]);
                     let printFrom = true;
-                    for (const relId of rels) {
-                        const relative = window.people.get(+relId);
-
+                    for (const relative of person.Sibling.concat(person.Child)) {
                         if (relative && typeof relative.isBloodRelative === "undefined") {
+                            relative.isBloodRelative = true;
+                            bloodQ.push(+relative.Id);
                             debugLogAddition(pBlood, printFrom, person, relative);
                             printFrom = false;
-                            relative.isBloodRelative = true;
-                            bloodQ.push(relId);
                         }
                     }
                 }
@@ -1681,11 +1681,19 @@ class CC7 {
                 const pId = extAdoptDescendantsQ.shift();
                 const person = window.people.get(+pId);
                 if (person) {
-                    // Add all this person's children (bio and adopted) to the queue
-                    let rels = CC7.getIdsOfRelatives(person, ["Child", "AChild"]);
-                    for (const relId of rels) {
-                        const child = window.people.get(+relId);
-                        addExtAdoptiveDescendant(child);
+                    // Add all this person's children (bio and adopted) to the queue.
+                    // Bio cildren of this person
+                    for (const child of person.Child) {
+                        if (isAdopted(child)) {
+                            // A bio child that was adopted out
+                            rootHasAdoptedOutDescendants = true;
+                        }
+                        addExtAdoptedDescendant(child);
+                    }
+                    // Adopted cildren of this person
+                    for (const child of person.AChild) {
+                        rootHasAdoptedInDescendants = true;
+                        addExtAdoptedDescendant(child);
                     }
                 }
             }
@@ -1694,13 +1702,19 @@ class CC7 {
                 const person = window.people.get(+pId);
                 if (person) {
                     // Add this person's relatives to the queue
-                    const rels = firstIteration
-                        ? CC7.getIdsOfRelatives(person, ["Sibling", "Spouse", "Child", "AChild"])
-                        : CC7.getIdsOfRelatives(person, ["Parent", "AParent", "Sibling", "Spouse", "Child", "AChild"]);
-                    for (const relId of rels) {
-                        if (setAndShouldAdd(relId, BELOW)) {
-                            if (!belowQ.includes(relId)) {
-                                belowQ.push(relId);
+                    const relatives = firstIteration
+                        ? person.Sibling.concat(person.Spouse, person.Child, person.AChild)
+                        : person.Parent.concat(
+                              person.AParent,
+                              person.Sibling,
+                              person.Spouse,
+                              person.Child,
+                              person.AChild
+                          );
+                    for (const rel of relatives) {
+                        if (setAndShouldAdd(rel, BELOW)) {
+                            if (!belowQ.includes(+rel.Id)) {
+                                belowQ.push(+rel.Id);
                             }
                         }
                     }
@@ -1715,6 +1729,10 @@ class CC7 {
                     const bioParents = CC7Utils.bioParentIds(person);
                     const adoptiveParentIds = CC7Utils.adoptiveParentIds(person);
                     const personIsAdopted = adoptiveParentIds.length > 0;
+                    if (personIsAdopted && pId != window.rootId) {
+                        rootHasAdoptedAncestors = true;
+                    }
+
                     let printFromAnc = true;
                     let printFromExtAdop = true;
                     for (const relId of bioParents) {
@@ -1732,7 +1750,7 @@ class CC7 {
                     // ancestor and add their adoptive parents for processing to the strict and extended adoptive
                     // ancestor queues.
                     if (personIsAdopted) {
-                        showAdoptiveAncestors = true;
+                        rootHasAdoptiveAncestors = true;
                         person.isStrictAdoptAnc = true;
                         person.isExtendedAdoptAnc = true;
                         for (const relId of adoptiveParentIds) {
@@ -1764,10 +1782,10 @@ class CC7 {
                     for (const relId of parentIds) {
                         const parent = window.people.get(+relId);
                         if (parent && typeof parent.isAdoptivePreferred === "undefined") {
-                            debugLogAddition(pAdopPreferredAncestors, printFrom, person, parent);
-                            printFrom = false;
                             parent.isAdoptivePreferred = true;
                             adoptPreferredAncQ.push(relId);
+                            debugLogAddition(pAdopPreferredAncestors, printFrom, person, parent);
+                            printFrom = false;
                         }
                     }
                 }
@@ -1831,7 +1849,7 @@ class CC7 {
                             printFromBioAnc = false;
                             parent.isBioAncestor = true;
                             bioAncestorQ.push(relId);
-                            showBioAncestors = true;
+                            rootHasBioAncestors = true;
 
                             // Adopted parents of a bio ancestor belongs to the isExtendedAdoptAnc set
                             const adoptiveGPIds = CC7Utils.adoptiveParentIds(parent);
@@ -1849,15 +1867,11 @@ class CC7 {
                             // siblings and descendents as blood relatives and add them to the blood queue for
                             // processing
                             parent.isBloodRelative = true;
-
-                            const blRelIds = CC7.getIdsOfRelatives(parent, ["Sibling", "Child"]);
                             let printFromBlood = true;
-                            for (const blRId of blRelIds) {
-                                const relative = window.people.get(+blRId);
-
+                            for (const relative of parent.Sibling.concat(parent.Child)) {
                                 if (relative && typeof relative.isBloodRelative === "undefined") {
                                     relative.isBloodRelative = true;
-                                    bloodQ.push(blRId);
+                                    bloodQ.push(+relative.Id);
                                     debugLogAddition(pBlood, printFromBlood, parent, relative);
                                     printFromBlood = false;
                                 }
@@ -1889,13 +1903,19 @@ class CC7 {
                 const person = window.people.get(+pId);
                 if (person) {
                     // Add this person's relatives to the queue
-                    const rels = firstIteration
-                        ? CC7.getIdsOfRelatives(person, ["Parent", "AParent"])
-                        : CC7.getIdsOfRelatives(person, ["Parent", "AParent", "Sibling", "Spouse", "Child", "AChild"]);
-                    for (const relId of rels) {
-                        if (setAndShouldAdd(relId, ABOVE)) {
-                            if (!aboveQ.includes(relId)) {
-                                aboveQ.push(relId);
+                    const relatives = firstIteration
+                        ? person.Parent.concat(person.AParent)
+                        : person.Parent.concat(
+                              person.AParent,
+                              person.Sibling,
+                              person.Spouse,
+                              person.Child,
+                              person.AChild
+                          );
+                    for (const rel of relatives) {
+                        if (setAndShouldAdd(rel, ABOVE)) {
+                            if (!aboveQ.includes(+rel.Id)) {
+                                aboveQ.push(+rel.Id);
                             }
                         }
                     }
@@ -1907,14 +1927,15 @@ class CC7 {
         return {
             nrDirectAncestors: nrProfiles,
             nrDuplicateAncestors: duplicates.size,
-            hasBioAncestors: showBioAncestors,
-            hasBioDescendants: showBioDescendants,
-            hasAdoptiveAncestors: showAdoptiveAncestors,
-            hasAdoptiveDescendants: showAdoptiveDescendants,
+            hasBioAncestors: rootHasBioAncestors,
+            hasBioDescendants: rootHasBioDescendants,
+            hasAdoptedAncestors: rootHasAdoptedAncestors,
+            hasAdoptiveAncestors: rootHasAdoptiveAncestors,
+            hasAdoptedInDescendants: rootHasAdoptedInDescendants,
+            hasAdoptedOutDescendants: rootHasAdoptedOutDescendants,
         };
 
-        function setAndShouldAdd(pId, where) {
-            const p = window.people.get(+pId);
+        function setAndShouldAdd(p, where) {
             if (p) {
                 setIfAdopted(p);
                 if (
@@ -2093,13 +2114,20 @@ class CC7 {
             let minDegree = 1000;
             let hasBioAncestors = false;
             let hasBioDescendants = false;
+            let hasAdoptedAncestors = false;
             let hasAdoptiveAncestors = false;
-            let hasAdoptiveDescendants = false;
+            let hasAdoptedInDescendants = false;
+            let hasAdoptedOutDescendants = false;
             for (const aPerson of window.people.values()) {
                 if (aPerson.isBioAncestor) hasBioAncestors = true;
                 if (aPerson.isBioDescendant) hasBioDescendants = true;
+                if (aPerson.isAdopted && pId != window.rootId) {
+                    rootHasAdoptedAncestors = true;
+                }
                 if (aPerson.isAdoptivePreferred) hasAdoptiveAncestors = true;
-                if (aPerson.isExtendedAdoptDesc) hasAdoptiveDescendants = true;
+                if (aPerson.isExtendedAdoptDesc) hasAdoptedInDescendants = true;
+                if (aPerson.isBioDescendant && CC7Utils.adoptiveParentIds(aPerson).length > 0)
+                    hasAdoptedOutDescendants = true;
                 if (aPerson.Hide) continue;
 
                 const pDeg = aPerson.Meta.Degrees;
@@ -2118,8 +2146,10 @@ class CC7 {
             window.cc7Breakdown = {
                 bioAncestors: hasBioAncestors,
                 bioDescendants: hasBioDescendants,
+                adoptedAncestors: hasAdoptedAncestors,
                 adoptiveAncestors: hasAdoptiveAncestors,
-                adoptiveDescendants: hasAdoptiveDescendants,
+                adoptedInDescendants: hasAdoptedInDescendants,
+                adoptedOutDescendants: hasAdoptedOutDescendants,
             };
             isOneDegree ||= minDegree != 0;
             if (window.cc7Degree == 0) window.cc7Degree = Math.min(maxDegree - 1, CC7.MAX_DEGREE);

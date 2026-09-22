@@ -998,3 +998,8 @@ div.cc7Table .cc7filter-row th {
 .cc7SubCaption {
   font-size: smaller;
 }
+
+.cc7BioAdopted,
+.cc7Adopted {
+  max-width: none;
+}

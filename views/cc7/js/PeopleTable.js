@@ -194,7 +194,6 @@ class PeopleTable {
             // console.log("window.cc7Breakdown", window.cc7Breakdown);
             const disabledOptions = [];
             if (!window.cc7Breakdown.adoptiveAncestors) {
-                // if (window.cc7Breakdown.bioAncestors) {
                 // if there are no adoptive ancestors, all ancestors, extended bio ancestors, and strict bio ancestors
                 // are all the same, so we only allow all ancestors
                 disabledOptions.push(
@@ -209,24 +208,46 @@ class PeopleTable {
                     // No adoptive nor bio ancestors means we can show no ancestors
                     disabledOptions.push("ancestors");
                 }
+            } else if (!window.cc7Breakdown.adoptedAncestors) {
+                // If no ancestor was adopted, disable the Adopted ancestors item
+                disabledOptions.push("oaancestors");
             }
-            if (!window.cc7Breakdown.adoptiveDescendants) {
-                // if there are no adoptive decendants, decendants and bio decendants are the same, so we only
-                // allow descendants and of course there are no strict, nor extended adopted descendants
-                disabledOptions.push("bdescendants", "oadescendants", "eadescendants");
-                if (!window.cc7Breakdown.bioDescendants) {
-                    // No adoptive nor bio descendants means we can show no decendants
-                    disabledOptions.push("descendants");
-                }
+            if (!window.cc7Breakdown.adoptedInDescendants) {
+                // If there are no adopted in decendants, bio descendants are the same as all descendants.
+                disabledOptions.push("bdescendants");
+
+                // However, if there are bio descendants that were adopted out, we still want the adopted
+                // descendants options
+                if (!window.cc7Breakdown.adoptedOutDescendants) disabledOptions.push("oadescendants", "eadescendants");
+
+                // No adoptive nor bio descendants means there are no decendants
+                if (!window.cc7Breakdown.bioDescendants) disabledOptions.push("descendants");
             }
 
-            disableSubsetOptions(disabledOptions);
+            // console.log("People breakdown", window.cc7Breakdown);
+            // console.log(
+            //     "disabledOptions",
+            //     disabledOptions,
+            //     disabledOptions.map((value) => $(`#cc7Subset option[value="${value}"]`).text())
+            // );
+            dimSubsetOptions(disabledOptions);
+        }
+        function dimSubsetOptions(optionValues) {
+            const $select = $("#cc7Subset");
+
+            $select.find("option").removeClass("subset-disabled").prop("disabled", false);
+
+            optionValues.forEach((value) => {
+                $select.find(`option[value="${value}"]`).addClass("subset-disabled");
+            });
+
+            $select.trigger("change.select2");
         }
         function disableSubsetOptions(optionValues) {
             const $select = $("#cc7Subset");
             const currentValue = $select.val();
 
-            $select.find("option").prop("disabled", false);
+            $select.find("option").removeClass("subset-disabled").prop("disabled", false);
 
             optionValues.forEach((value) => {
                 $select.find(`option[value="${value}"]`).prop("disabled", true);
@@ -234,9 +255,11 @@ class PeopleTable {
 
             if (optionValues.includes(currentValue)) {
                 $select.val("all");
+                $select.trigger("change.select2");
                 CC7.updateURL();
             }
         }
+
         const subset = $("#cc7Subset").val() || "all";
         const genderFilter = $("#cc7Gender").val() || "all";
         aTable.addClass([subset, CC7Utils.genderClass(genderFilter)]);
@@ -736,6 +759,13 @@ class PeopleTable {
                 dropdownParent: $("#tableButtons"),
                 minimumResultsForSearch: Infinity,
                 dropdownAutoWidth: true,
+                templateResult: function (option) {
+                    const $result = $("<span>").text(option.text);
+                    if ($(option.element).hasClass("subset-disabled")) {
+                        $result.css("opacity", "0.5");
+                    }
+                    return $result;
+                },
             });
         }
 
@@ -2358,6 +2388,14 @@ class PeopleTable {
     static showFamilySheet(ev, jqClicked) {
         const theClickedRow = jqClicked.closest("tr");
         const theClickedName = theClickedRow.attr("data-name");
+        const theClickedId = +theClickedRow.attr("data-id");
+        if (ev.ctrlKey || ev.metaKey) {
+            // log debug info about this person
+            ev.preventDefault();
+            const p = window.people.get(theClickedId);
+            console.log(p.Name, p);
+            return;
+        }
 
         const familyId = theClickedName.replace(" ", "_") + "_family";
         const $famSheet = $(`#${familyId}`);
@@ -2368,7 +2406,6 @@ class PeopleTable {
             return;
         }
 
-        const theClickedId = +theClickedRow.attr("data-id");
         const clickedPerson = window.people.get(theClickedId);
         if (clickedPerson?.Parent?.length && clickedPerson?.Child?.length) {
             PeopleTable.buildAndShowFamilySheet(clickedPerson, jqClicked);
