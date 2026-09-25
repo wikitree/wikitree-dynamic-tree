@@ -2,6 +2,13 @@ import { Settings } from "./Settings.js";
 import { Utils } from "../../shared/Utils.js";
 export class CC7Utils {
     static CC7_CONTAINER_ID = "cc7Container";
+    static NON_BIO = "5"; // DataStatus value for non-biological parent
+
+    static Gender = {
+        MALE: "Male",
+        FEMALE: "Female",
+        NEUTRAL: "blank",
+    };
 
     static GENDER_MAP = {
         "m": { selectValue: "Male", class: "male" },
@@ -25,6 +32,43 @@ export class CC7Utils {
         return "allgender";
     }
 
+    static genderOf(person) {
+        return person?.DataStatus?.Gender == "blank" ? CC7Utils.Gender.NEUTRAL : person.Gender;
+    }
+
+    static mapGender(gender, maleName, femaleName, neutralName) {
+        return gender == CC7Utils.Gender.MALE ? maleName : gender == CC7Utils.Gender.FEMALE ? femaleName : neutralName;
+    }
+
+    // Always return the biological parents - either the explicit Bio* fields, or
+    // the normal parent fields provided the data status does not indicate non-bio.
+    static bioParentIds(person) {
+        const bioParents = [];
+        if (person.BioFather) {
+            bioParents.push(+person.BioFather);
+        } else if (person.Father && person.DataStatus?.Father != CC7Utils.NON_BIO) {
+            bioParents.push(+person.Father);
+        }
+        if (person.BioMother) {
+            bioParents.push(+person.BioMother);
+        } else if (person.Mother && person.DataStatus?.Mother != CC7Utils.NON_BIO) {
+            bioParents.push(+person.Mother);
+        }
+        return bioParents;
+    }
+
+    // Return any adoptive parents
+    static adoptiveParentIds(person) {
+        const adoptiveParents = [];
+        if (person.Father && (person.DataStatus?.Father == CC7Utils.NON_BIO || person.BioFather)) {
+            adoptiveParents.push(+person.Father);
+        }
+        if (person.Mother && (person.DataStatus?.Mother == CC7Utils.NON_BIO || person.BioMother)) {
+            adoptiveParents.push(+person.Mother);
+        }
+        return adoptiveParents;
+    }
+
     static subsetWords() {
         let gender = $("#cc7Gender").val() || "";
         if (gender == "all") {
@@ -33,9 +77,29 @@ export class CC7Utils {
         const genderWord = gender == "" ? "" : gender + " ";
         switch ($("#cc7Subset").val()) {
             case "ancestors":
-                return genderWord + "Ancestors Only";
+                return genderWord + "Ancestors";
+            case "sbancestors":
+                return genderWord + "Biological Ancestors";
+            case "ebancestors":
+                return genderWord + "Biological Ancestors - Extended";
+            case "oaancestors":
+                return genderWord + "Adopted Ancestors";
+            case "apancestors":
+                return genderWord + "Adoptive Preferred Ancestors";
+            case "saancestors":
+                return genderWord + "Adoptive Ancestors - Strict";
+            case "eaancestors":
+                return genderWord + "Adoptive Ancestors - Extended";
+
             case "descendants":
-                return genderWord + "Descendants Only";
+                return genderWord + "Descendants";
+            case "bdescendants":
+                return genderWord + "Biological Descendants";
+            case "oadescendants":
+                return genderWord + "Adopted Descendants - Strict";
+            case "eadescendants":
+                return genderWord + "Adopted Descendants - Extended";
+
             case "above":
                 return genderWord + '"Above" Only';
             case "below":
@@ -64,7 +128,12 @@ export class CC7Utils {
             caption = `CC${window.cc7Degree} of ${displName}`;
         }
         const subsetWords = CC7Utils.subsetWords();
-        return caption + (subsetWords == "" ? "" : ` (${subsetWords})`);
+        const title = $("#cc7Subset option:selected").attr("title");
+        return (
+            caption +
+            (subsetWords == "" ? "" : ` (${subsetWords})`) +
+            (title ? `<br><span class=cc7SubCaption>${title}</span` : "")
+        );
     }
 
     static profileIsInSubset(person, subset, gender = false) {
@@ -83,8 +152,38 @@ export class CC7Utils {
             case "ancestors":
                 return person.isAncestor;
 
+            case "sbancestors":
+                return person.isBioAncestor;
+
+            case "ebancestors":
+                return person.isBioAncestor || person.isExtendedBioAnc;
+
+            case "oaancestors":
+                return person.isAdopted && person.isAncestor;
+
+            case "apancestors":
+                return person.isAdoptivePreferred;
+
+            case "saancestors":
+                return person.isStrictAdoptAnc;
+
+            case "eaancestors":
+                return (person.isAdopted && person.isAncestor) || person.isExtendedAdoptAnc;
+
             case "descendants":
-                return typeof person.isAncestor != "undefined" && !person.isAncestor;
+                return person.isDescendant;
+
+            case "bdescendants":
+                return person.isBioDescendant;
+
+            case "oadescendants":
+                return person.isAdopted && person.isDescendant;
+
+            case "eadescendants":
+                return person.isExtendedAdoptDesc || (person.isAdopted && person.isDescendant);
+
+            case "blood":
+                return person.isBloodRelative;
 
             case "missing-links":
                 return CC7Utils.isMissingFamily(person);
@@ -161,14 +260,55 @@ export class CC7Utils {
         }
     }
 
-    static assignRelationshipsFor(person) {
+    /**
+     * For each of `person`s immediate family assign a value (like Mother, Father, Brother, ...) to those
+     * people. This value goes into the `Relation` field on each person. This is not to be confused with
+     * the `Relationship` field already there, which prvides the relationship of that person to the root
+     * of the tree.
+     * @param {*} person The profile whode family should be tagged.
+     */
+    static assignRelationsFor(person) {
+        const hasBioAndAdoptiveParents = person.Parent.length > 0 && person.AParent.length > 0;
         person.Relation = undefined;
-        for (const rel of ["Parent", "Spouse", "Sibling", "Child"]) {
+        for (const rel of ["Parent", "AParent", "Spouse", "Sibling", "Child", "AChild"]) {
             const relatives = person[rel];
             if (relatives) {
                 for (const relative of relatives) {
-                    relative.Relation = rel;
+                    assignRelations(relative, rel);
                 }
+            }
+        }
+
+        function assignRelations(relative, neutralTerm) {
+            const gender = CC7Utils.genderOf(relative);
+            relative.Relation = neutralTerm;
+            switch (neutralTerm) {
+                case "Parent":
+                    relative.GenderedRelation = CC7Utils.mapGender(
+                        gender,
+                        hasBioAndAdoptiveParents ? "Bio Father" : "Father",
+                        hasBioAndAdoptiveParents ? "Bio Mother" : "Mother",
+                        hasBioAndAdoptiveParents ? "Bio Parent" : "Parent"
+                    );
+                    break;
+                case "AParent":
+                    relative.Relation = "Parent";
+                    relative.GenderedRelation = CC7Utils.mapGender(gender, "Father", "Mother", "Parent");
+                    break;
+                case "Spouse":
+                    relative.GenderedRelation = CC7Utils.mapGender(gender, "Husband", "Wife", "Spouse");
+                    break;
+                case "Sibling":
+                    relative.GenderedRelation = CC7Utils.mapGender(gender, "Brother", "Sister", "Sibling");
+                    break;
+                case "AChild":
+                    relative.Relation = "Child";
+                // Fall through
+                case "Child":
+                    relative.GenderedRelation = CC7Utils.mapGender(gender, "Son", "Daughter", "Child");
+                    break;
+                default:
+                    break;
             }
         }
     }
@@ -247,10 +387,6 @@ export class CC7Utils {
         }
     }
 
-    static mapGender(gender, maleName, femaleName, neutralName) {
-        return gender == "Male" ? maleName : gender == "Female" ? femaleName : neutralName;
-    }
-
     static missingThings(aPerson) {
         let missingBit = "";
         let missingIcons = "";
@@ -280,6 +416,17 @@ export class CC7Utils {
         return wtRef.toString().startsWith("Private")
             ? text
             : `<a target='_blank' href='https://www.wikitree.com/wiki/${this.htmlEntities(wtRef)}'>${text}</a>`;
+    }
+
+    static optionalAdoptedProfileLink(person, wtRef, text) {
+        return (
+            (person.isAdoptedOutByRoot
+                ? `<img class="cc7BioAdopted" src="./views/cc7/images/adopted-out.svg" 
+                            title="Blood relation adopted by someone else"/> `
+                : person.isAdopted
+                  ? `<img class="cc7Adopted" src="./views/cc7/images/adopted.svg" title="Adopted"/> `
+                  : "") + CC7Utils.profileLink(wtRef, text)
+        );
     }
 
     static setOverflow(value) {

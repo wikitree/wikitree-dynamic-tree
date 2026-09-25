@@ -465,7 +465,7 @@ window.StatsView = class StatsView extends View {
                 }
                 console.log(`Received ${profiles.length} ${mode}s for start:${start}, limit:${limit} in ${callTime}ms`);
                 if (callNr == 1 && keysResult?.[reqId]) {
-                    rootId = keysResult?.[reqId].Id;
+                    rootId = Utils.getProfileId(reqId, keysResult);
                 }
 
                 const [nrAdded, largestDegree, nrPrivateProfiles] = addPeople(profiles, privateIdOffset, reqDegree);
@@ -1005,9 +1005,8 @@ window.StatsView = class StatsView extends View {
                 const row = table.insertRow(-1);
                 row.id = "stats-row" + degree;
                 row.insertCell(0).innerHTML = degree + 1;
-                row.insertCell(
-                    1
-                ).innerHTML = `<a href="#" class="relation-link" data-degree="${degree}">${genNames[degree]}</a>`;
+                row.insertCell(1).innerHTML =
+                    `<a href="#" class="relation-link" data-degree="${degree}">${genNames[degree]}</a>`;
                 if (mode == StatsView.ANCESTOR_MODE && !withSiblings) {
                     const cell = row.insertCell(2);
                     cell.innerHTML = `${stats.profileCounts[degree]} (${stats.uniqueCounts[degree]}) / ${maxAncestorsForGen}`;

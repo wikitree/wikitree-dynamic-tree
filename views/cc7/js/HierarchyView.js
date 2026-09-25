@@ -22,7 +22,7 @@ export class HierarchyView {
         const anLi = $(
             `<li data-lnab='${theLNAB}' data-id='${aPerson.Id}' data-degree='${aPerson.Meta.Degrees}' ` +
                 `data-name=\"${aPerson.Name}\" data-first-name='${theFirstName}'>${aPerson.Meta.Degrees}° ` +
-                CC7Utils.profileLink(linkName, theName) +
+                CC7Utils.optionalAdoptedProfileLink(aPerson, linkName, theName) +
                 "<ul></ul></li>"
         );
         hierarchySection.children("ul").append(anLi);
@@ -145,7 +145,7 @@ export class HierarchyView {
             const aPerson = window.people.get(+id);
 
             if (aPerson) {
-                CC7Utils.assignRelationshipsFor(aPerson);
+                CC7Utils.assignRelationsFor(aPerson);
                 const familyMembers = [].concat(aPerson.Parent, aPerson.Sibling, aPerson.Spouse, aPerson.Child);
 
                 familyMembers.forEach(function (aMember) {
@@ -159,18 +159,7 @@ export class HierarchyView {
                             const theParts = aName.getParts(["LastNameAtBirth", "FirstName"]);
                             const theLNAB = theParts.get("LastNameAtBirth");
                             const theFirstName = theParts.get("FirstName");
-
-                            let relation = aMember.Relation;
-                            if (relation == "Child") {
-                                relation = CC7Utils.mapGender(aMember.Gender, "Son", "Daughter", "Child");
-                            } else if (relation == "Sibling") {
-                                relation = CC7Utils.mapGender(aMember.Gender, "Brother", "Sister", "Sibling");
-                            } else if (relation == "Parent") {
-                                relation = CC7Utils.mapGender(aMember.Gender, "Father", "Mother", "Parent");
-                            } else if (relation == "Spouse") {
-                                relation = CC7Utils.mapGender(aMember.Gender, "Husband", "Wife", "Spouse");
-                            }
-
+                            const relation = aMember.GenderedRelation;
                             const missing = CC7Utils.missingThings(aMember);
                             const missingBit = missing.missingBit;
                             const missingIcons = missing.missingIcons;
@@ -182,7 +171,7 @@ export class HierarchyView {
                                     `${missingBit} data-lnab='${theLNAB}' data-degree='${aMember.Meta.Degrees}' ` +
                                     `data-name=\"${aMember.Name}\" data-first-name='${theFirstName}'>${aMember.Meta.Degrees}° ` +
                                     `<span class='relation ${relation}'>${relation}</span>: ` +
-                                    CC7Utils.profileLink(linkName, theName) +
+                                    CC7Utils.optionalAdoptedProfileLink(aMember, linkName, theName) +
                                     ` <span class='birthDeathDates'>${bdDates}</span> ${missingIcons}<ul></ul></li>`
                             );
                             thisLI.children("ul").append(anLi);
