@@ -1689,7 +1689,7 @@ import { PDFs } from "../shared/PDFs.js";
                         } else {
                             thisWedgeFillColour = thisWedgeStyleFill;
                         }
-                        console.log("Wedge fill colour:", thisWedgeFillColour);
+                        condLog("Wedge fill colour:", thisWedgeFillColour);
                     }
                     if (thisSVGpathD > "") {
                         let Acoords = thisSVGpathD
@@ -4189,7 +4189,7 @@ import { PDFs } from "../shared/PDFs.js";
     function drawWedgesForFanChart(g) {
         let maxNum2DisplayNow = FanChartView.numGens2Display - 1 + 1 * (FanChartView.familyType == "Combo" ? 1.0 : 0);
         for (let genIndex = g ? FanChartView.maxNumGens : maxNum2DisplayNow; genIndex >= 0; genIndex--) {
-            console.log("Drawing Wedges for Generation ", { genIndex });
+            condLog("Drawing Wedges for Generation ", { genIndex });
             for (let index = 0; index < 2 ** genIndex; index++) {
                 let SVGcode = "";
                 if (genIndex <= 2) {
@@ -4271,7 +4271,7 @@ import { PDFs } from "../shared/PDFs.js";
 
         // HIDE all the unused Wedges in the outer rims that we don't need yet
         for (let genIndex = FanChartView.maxNumGens; genIndex > maxNum2DisplayNow; genIndex--) {
-            console.log("Hiding Wedges for Generation ", { genIndex });
+            condLog("Hiding Wedges for Generation ", { genIndex });
             for (let index = 0; index < 2 ** genIndex; index++) {
                 d3.select("#" + "wedge" + 2 ** genIndex + "n" + index).attrs({ display: "none" });
                 let dnaImgX = document.getElementById("imgDNA-x-" + genIndex + "i" + index + "inner");
