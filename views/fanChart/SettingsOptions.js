@@ -57,23 +57,24 @@ window.SettingsOptions = window.SettingsOptions || {};
 
 */
 
- nextZLevel = 10000;
+nextZLevel = 10000;
 
-    function getNextZLevel() {
-        return ++nextZLevel;
-    }
+function getNextZLevel() {
+    return ++nextZLevel;
+}
 
-    function setNextZLevel(n) {
-        nextZLevel = n;
-    }
+function setNextZLevel(n) {
+    nextZLevel = n;
+}
 
 function compareSettings(currentSettings) {
     // console.log("Compare as you dare:");
     // console.log(currentSettings);
-    let defaultOptions =  self.getDefaultOptions();
+    let defaultOptions = self.getDefaultOptions();
     // console.log(defaultOptions);
     numChanges = 0;
-    let settings_functions_compareB4resetDIVhtml = "<table border=0><tr><th>Setting</th><th>Default</th><th>Current Setting</th></tr>";
+    let settings_functions_compareB4resetDIVhtml =
+        "<table border=0><tr><th>Setting</th><th>Default</th><th>Current Setting</th></tr>";
     for (const key in defaultOptions) {
         if (Object.hasOwnProperty.call(defaultOptions, key)) {
             const elementD = defaultOptions[key];
@@ -83,29 +84,35 @@ function compareSettings(currentSettings) {
                 numChanges++;
                 diffNote = " ***** ";
                 settings_functions_compareB4resetDIVhtml +=
-                    "<tr><td>" + key + "</td><td align=center>" + elementD + "</td><td align=center>" + elementC + "</td></tr>";
+                    "<tr><td>" +
+                    key +
+                    "</td><td align=center>" +
+                    elementD +
+                    "</td><td align=center>" +
+                    elementC +
+                    "</td></tr>";
             }
             // console.log("default: ", key, elementD,elementC, diffNote);
-            
         }
     }
-    settings_functions_compareB4resetDIVhtml +="</table>";
+    settings_functions_compareB4resetDIVhtml += "</table>";
     settings_functions_compareB4resetDIVhtml +=
         "<br/>" +
         "<button class='btn btn-primary' onclick='doResetSettings(" +
         self.optionsRegistry.viewClassName +
         ".currentSettings," +
-        self.optionsRegistry.viewClassName + ");'>CONFIRM Reset to Default Settings</button>";
+        self.optionsRegistry.viewClassName +
+        ");'>CONFIRM Reset to Default Settings</button>";
     if (numChanges == 0) {
-        settings_functions_compareB4resetDIVhtml = "<B>You are currently using the DEFAULT SETTINGS for this app.</B>";    
+        settings_functions_compareB4resetDIVhtml = "<B>You are currently using the DEFAULT SETTINGS for this app.</B>";
     }
     settings_functions_compareB4resetDIVhtml +=
         "<br/><br/><button  class='btn btn-secondary' onclick='self.activeTabChanged(\"general\");'>CANCEL</button>";
-    document.getElementById("settings_functions_compareB4resetDIV").innerHTML = settings_functions_compareB4resetDIVhtml;
+    document.getElementById("settings_functions_compareB4resetDIV").innerHTML =
+        settings_functions_compareB4resetDIVhtml;
     document.getElementById("settings_functions_reset2Default").style.display = "none";
     document.getElementById("settings_functions_saveSettings").style.display = "none";
     document.getElementById("settings_functions_loadSettings").style.display = "none";
-    
 }
 
 function doResetSettings(currentSettings, appObject) {
@@ -129,7 +136,9 @@ function doResetSettings(currentSettings, appObject) {
                     "</td><td align=center>" +
                     elementD +
                     "</td><td align=center>" +
-                    elementC + diffNote + "</td></tr>";
+                    elementC +
+                    diffNote +
+                    "</td></tr>";
 
                 currentSettings[key] = elementD;
                 appObject.currentSettings[key] = elementD;
@@ -147,13 +156,11 @@ function doResetSettings(currentSettings, appObject) {
     document.getElementById("settings_functions_reset2Default").style.display = "none";
     document.getElementById("settings_functions_saveSettings").style.display = "none";
     document.getElementById("settings_functions_loadSettings").style.display = "none";
-    
+
     // updateHighlightDescriptor();
     self.activeTabChanged("general");
     appObject.resetSettingsDIVtoDefaults();
-        
 }
-
 
 function saveSettingsFile(currentSettings) {
     // console.log("Welcome to the SAVE SETTINGS FILE");
@@ -178,45 +185,41 @@ function saveSettingsFile(currentSettings) {
 
 function loadSettingsFile(appObject) {
     // console.log("Welcome to the LOAD SETTINGS FILE");
-        document.getElementById("settings_functions_loadSettingsFileDIV").innerHTML = '<input type="file" id="fileInput4SettingsFile" style="display: none"/>';
-        document.getElementById("fileInput4SettingsFile").onchange = function (event) {
-            const file = event.target.files[0];
-            // console.log("Found ", file);
-            // if (typeof file == "undefined" || file == "") {
-            //     return;
-            // }
-
-            const reader = new FileReader();
-            // console.log(reader);
-            reader.onload = async function (e) {
-                // console.log("onload");
-                const contents = e.target.result;
-                // console.log(contents);
-                try {
-                    // console.log("try contents",contents);
-                    appObject.updateCurrentSettingsBasedOnCookieValues(contents);
-                    appObject.redrawAfterLoadSettings();
-                } catch (error) {
-                    console.log("ERROR with ", file);
-                    return;
-                }
-            }
-            
-            self.activeTabChanged("general");
-            reader.readAsText(file);
-        };
-        document.getElementById("fileInput4SettingsFile").click();
-        
-
-        // theCookieString = WTapps_Utils.getCookie("wtapps_fractal");
-        // if (theCookieString) {
-        //     FractalView.updateCurrentSettingsBasedOnCookieValues(theCookieString);
+    document.getElementById("settings_functions_loadSettingsFileDIV").innerHTML =
+        '<input type="file" id="fileInput4SettingsFile" style="display: none"/>';
+    document.getElementById("fileInput4SettingsFile").onchange = function (event) {
+        const file = event.target.files[0];
+        // console.log("Found ", file);
+        // if (typeof file == "undefined" || file == "") {
+        //     return;
         // }
-         
 
+        const reader = new FileReader();
+        // console.log(reader);
+        reader.onload = async function (e) {
+            // console.log("onload");
+            const contents = e.target.result;
+            // console.log(contents);
+            try {
+                // console.log("try contents",contents);
+                appObject.updateCurrentSettingsBasedOnCookieValues(contents);
+                appObject.redrawAfterLoadSettings();
+            } catch (error) {
+                console.log("ERROR with ", file);
+                return;
+            }
+        };
 
+        self.activeTabChanged("general");
+        reader.readAsText(file);
+    };
+    document.getElementById("fileInput4SettingsFile").click();
+
+    // theCookieString = WTapps_Utils.getCookie("wtapps_fractal");
+    // if (theCookieString) {
+    //     FractalView.updateCurrentSettingsBasedOnCookieValues(theCookieString);
+    // }
 }
-
 
 SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
     // keeps track of the elements for tabs an subsections
@@ -226,7 +229,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
     constructor(data) {
         // the input for this constructor is the optionsRegistry object, sent in by the application that requires a settings panel
         if (data) {
-            if (data.saveSettingsToCookie) { 
+            if (data.saveSettingsToCookie) {
                 data.tabs.push({
                     name: "resettings",
                     label: "SVGbtnSETTINGS",
@@ -301,7 +304,6 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
             // use the object sent in (via data variable) to be the optionsRegistry for this instance of SettingsOptionsObject
             this.optionsRegistry = data;
 
-
             // create the Tab Mapping object that maps buttons and panels to their respective tabs
             this.tabMapping = this.createTabMapping(data);
 
@@ -352,7 +354,6 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
             let theElement = { panelElement: tabName + "-panel", buttonElement: tabName + "-tab" };
             theMapping[tabName] = theElement;
         }
-       
 
         // condLog("createTabMapping - THE MAPPING: ", theMapping);
 
@@ -392,14 +393,13 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
             // condLog("createULelements - TAB:", tab, data.tabs[tab].name);
             let tabName = data.tabs[tab].name;
             let tabLabel = data.tabs[tab].label;
-            if (tabLabel == "SVGbtnSETTINGS")  {
+            if (tabLabel == "SVGbtnSETTINGS") {
                 tabLabel = SVGbtnSETTINGS;
             }
-            
+
             theUL += '<li id="' + tabName + '-tab">' + tabLabel + "</li>";
             theDIVs += '<div id="' + tabName + '-panel"></div>';
         }
-       
 
         theUL += "</ul>";
         // condLog("createULelements - THE List: ", theUL);
@@ -455,7 +455,6 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                 }
                 // console.log("Active tab:", tabName);
                 if (document.getElementById("saveSettingsChanges")) {
-
                     if (tabName == "resettings") {
                         document.getElementById("saveSettingsChanges").style.display = "none";
                         document.getElementById("settings_functions_compareB4resetDIV").innerHTML = "";
@@ -708,6 +707,15 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                         optionElement.checked = true;
                     }
 
+                    if (option.label.indexOf("&lt;") >= 0) {
+                        // console.log("Found &lt; in option label, replacing with <");
+                        option.label = option.label.replaceAll("&lt;", "<");
+                    }
+                    if (option.label.indexOf("&gt;") >= 0) {
+                        // console.log("Found &gt; in option label, replacing with >");
+                        option.label = option.label.replaceAll("&gt;", ">");
+                    }
+
                     let labelTextNode = document.createTextNode(" " + option.label);
 
                     let labelElement = document.createElement("label");
@@ -777,8 +785,7 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                                 subLabelElement.className = "treeapp-settings";
                                 let optionIMGNode = document.createElement("IMG");
                                 optionIMGNode.id = fullOptionName + "_IMG" + radioNum;
-                                
-                                
+
                                 optionIMGNode.src = value.text.substring(4);
                                 if (value.width > 0) {
                                     optionIMGNode.width = value.width;
@@ -787,13 +794,12 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                                 labelElement.appendChild(subLabelElement);
                             } else {
                                 let subLabelElement = document.createElement("label");
-                                subLabelElement.setAttribute("For",radioOptionElement.id);
+                                subLabelElement.setAttribute("For", radioOptionElement.id);
                                 subLabelElement.className = "treeapp-settings";
-                                let optionLabelTextNode = document.createTextNode(" " + value.text + " ");  
+                                let optionLabelTextNode = document.createTextNode(" " + value.text + " ");
                                 subLabelElement.appendChild(optionLabelTextNode);
                                 labelElement.appendChild(subLabelElement);
                             }
-                            
 
                             if (value.addOtherTextField === true) {
                                 // console.log("ADD AN OTHER TEXT FIELD RIGHT HERE !!!");
@@ -915,22 +921,19 @@ SettingsOptions.SettingsOptionsObject = class SettingsOptionsObject {
                         optionElement.innerHTML = option.default;
                     }
                     optionDivElement.appendChild(optionElement);
-                    
                 } else if (option.type == "button") {
                     condLog("TRYING to BUTTON", option);
                     optionElement = document.createElement("button");
                     optionElement.className = "btn btn-primary";
 
                     if (option.value) {
-                        optionElement.setAttribute("value",option.value);
+                        optionElement.setAttribute("value", option.value);
                     }
                     if (option.function) {
                         if (option.parameter) {
-                            optionElement.setAttribute(
-                                "onclick",option.function + "(" + option.parameter + ");"                                
-                            );
+                            optionElement.setAttribute("onclick", option.function + "(" + option.parameter + ");");
                         } else {
-                             optionElement.setAttribute( "onclick", option.function + "();");                                
+                            optionElement.setAttribute("onclick", option.function + "();");
                         }
                     }
 
