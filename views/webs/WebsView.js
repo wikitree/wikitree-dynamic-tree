@@ -2347,6 +2347,10 @@ import { Utils } from "../shared/Utils.js";
                     "Name",
                     "Gender",
                     "Privacy",
+                    "Photo",
+                    "BirthDecade",
+                    "RealName",
+                    "DataStatus",
                 ],
                 theOptions
             ).then(function (result) {
@@ -2950,6 +2954,10 @@ import { Utils } from "../shared/Utils.js";
                     "Name",
                     "Gender",
                     "Privacy",
+                    "Photo",
+                    "BirthDecade",
+                    "RealName",
+                    "DataStatus",
                 ],
                 { ancestors: 5 }
             ).then(function (result) {
@@ -6110,6 +6118,10 @@ import { Utils } from "../shared/Utils.js";
                     "Name",
                     "Gender",
                     "Privacy",
+                    "Photo",
+                    "BirthDecade",
+                    "RealName",
+                    "DataStatus",
                 ],
                 theOptions
             ).then(function (result) {
