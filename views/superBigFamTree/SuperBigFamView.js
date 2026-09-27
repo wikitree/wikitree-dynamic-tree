@@ -3445,7 +3445,7 @@ import { PDFs } from "../shared/PDFs.js";
 
             let primaryLeafID = primaryLeaf.Id;
             for (let sp = 0; sp < primaryLeafPerson._data.Spouses.length; sp++) {
-                let primarySpouseCode = code + "P" + (sp + 1);
+                let primarySpouseCode = code + "P" + make2Digit(sp + 1);
                 let primarySpouse = SuperBigFamView.theLeafCollection[primarySpouseCode];
                 let thisSpouseDIV = document.getElementById("wedgeInfo-" + primarySpouseCode);
 
@@ -3594,8 +3594,8 @@ import { PDFs } from "../shared/PDFs.js";
                 for (let sp = 0; spID > 0 && sp < primaryLeafPerson._data.Spouses.length; sp++) {
                     // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
 
-                    let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + (sp + 1)];
-                    let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + (sp + 1));
+                    let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + make2Digit(sp + 1)];
+                    let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + make2Digit(sp + 1));
 
                     if (!primarySpouse) {
                         continue; /// go back to the next value of sp
@@ -3626,8 +3626,8 @@ import { PDFs } from "../shared/PDFs.js";
                     // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
                     let clrNum = sp + 1;
 
-                    let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + (sp + 1)];
-                    let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + (sp + 1));
+                    let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + make2Digit(sp + 1)];
+                    let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + make2Digit(sp + 1));
 
                     if (!primarySpouse) {
                         continue; /// go back to the next value of sp
@@ -4562,7 +4562,7 @@ import { PDFs } from "../shared/PDFs.js";
 
     function drawLinesForFamilyOf(code, kidPrefix = "", levelNum = 0, clrNum = -1) {
         if (levelNum == 0) {
-            console.log("drawLinesForFamilyOf", { code }, { kidPrefix }, { levelNum }, { clrNum });
+            // console.log("drawLinesForFamilyOf", { code }, { kidPrefix }, { levelNum }, { clrNum });
         }
         let primaryLeaf = SuperBigFamView.theLeafCollection[code];
         if (!primaryLeaf) {
@@ -4753,8 +4753,8 @@ import { PDFs } from "../shared/PDFs.js";
                 // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
 
                 if (spID > 0) {
-                    let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + (sp + 1)];
-                    let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + (sp + 1));
+                    let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + make2Digit(sp + 1)];
+                    let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + make2Digit(sp + 1));
 
                     if (!primarySpouse) {
                         continue; /// go back to the next value of sp
@@ -4831,8 +4831,8 @@ import { PDFs } from "../shared/PDFs.js";
                         primaryLeafPerson._data.Spouses[sp].Id +
                         ":3530"
                 );
-                let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + (sp + 1)];
-                let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + (sp + 1));
+                let primarySpouse = SuperBigFamView.theLeafCollection[code + "P" + make2Digit(sp + 1)];
+                let thisSpouseDIV = document.getElementById("wedgeInfo-" + code + "P" + make2Digit(sp + 1));
 
                 if (doingDirectAncestorCode > "") {
                     primarySpouse = SuperBigFamView.theLeafCollection[doingDirectAncestorCode];
@@ -6091,10 +6091,10 @@ import { PDFs } from "../shared/PDFs.js";
                 `" stroke-width="3"/>`;
 
             // condLog(tBarVertLine);
-            console.log(
-                "Doing Direct Ancestor Code for " + code + " - NO BACKLIT COLOUR - backlitColour: " + backlitColour,
-                6005
-            );
+            // console.log(
+            //     "Doing Direct Ancestor Code for " + code + " - NO BACKLIT COLOUR - backlitColour: " + backlitColour,
+            //     6005
+            // );
 
             let dropLines = "";
             for (let ch = 0; ch < childrenXs.length; ch++) {
@@ -6392,13 +6392,13 @@ import { PDFs } from "../shared/PDFs.js";
             condLog(" DANGER DANGER WILL ROBINSON - DRAW FAMILY LINES CONTAINS * NOT A NUMBER * !!!!", code);
             return "";
         }
-        console.log(
-            "drawLinesForFamilyOf",
-            { useThickLinesForParentsAndSiblings },
-            code,
-            "DONE",
-            code == "A0" || code == "A0RF" ? allLinesPolySVG : "!"
-        );
+        // console.log(
+        //     "drawLinesForFamilyOf",
+        //     { useThickLinesForParentsAndSiblings },
+        //     code,
+        //     "DONE",
+        //     code == "A0" || code == "A0RF" ? allLinesPolySVG : "!"
+        // );
         return allLinesPolySVG;
     }
 
@@ -6408,7 +6408,7 @@ import { PDFs } from "../shared/PDFs.js";
         if (numA == 0) {
             return "";
         }
-        console.log("** drawLinesForPrimaryOnlyAndParents : BEGIN");
+        // console.log("** drawLinesForPrimaryOnlyAndParents : BEGIN");
         // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
         let primaryLeaf = SuperBigFamView.theLeafCollection["A0"];
         let dadLeaf = SuperBigFamView.theLeafCollection["A0RM"];
@@ -6595,7 +6595,7 @@ import { PDFs } from "../shared/PDFs.js";
         if (numA == 0) {
             return "";
         }
-        console.log("** drawLinesForPrimaryToBioParents : BEGIN");
+        // console.log("** drawLinesForPrimaryToBioParents : BEGIN");
         // const thisSpouse = primaryLeafPerson._data.Spouses[sp];
         let primaryLeaf = SuperBigFamView.theLeafCollection["A0"];
         let dadLeaf = SuperBigFamView.theLeafCollection["A0BM"];
@@ -6691,7 +6691,7 @@ import { PDFs } from "../shared/PDFs.js";
         }
 
         let linesToBioParents = bioDadLine + bioMomLine;
-        console.log("** drawLinesForPrimaryToBioParents :", { linesToBioParents });
+        // console.log("** drawLinesForPrimaryToBioParents :", { linesToBioParents });
         return linesToBioParents;
         //    }
     }
@@ -8327,17 +8327,17 @@ import { PDFs } from "../shared/PDFs.js";
         for (let a = 1; a < 10; a++) {
             // Parents in law - need an IF around this one because there is a CHECKBOX that should determine whether they should be shown or hidden
             if (!showInLaws) {
-                hideThisCode("P" + a + "R", theLeaves);
+                hideThisCode("P" + make2Digit(a) + "R", theLeaves);
             }
 
             // Partners of Partners - oust 'em, unless we add a Setting for this to make the Super Big even Super Bigger
-            hideThisCode("P" + a + "P", theLeaves);
+            hideThisCode("P" + make2Digit(a) + "P", theLeaves);
 
             // Siblings of Partners - oust 'em, unless we add a Setting for this to make the Super Big even Super Bigger
-            hideThisCode("P" + a + "S", theLeaves);
+            hideThisCode("P" + make2Digit(a) + "S", theLeaves);
 
             // Kids of Partners - oust 'em, unless we add a Setting for this to make the Super Big even Super Bigger - these would be kids from OTHER marriages
-            hideThisCode("P" + a + "K", theLeaves);
+            hideThisCode("P" + make2Digit(a) + "K", theLeaves);
         }
 
         // =====================================================================
@@ -8457,7 +8457,7 @@ import { PDFs } from "../shared/PDFs.js";
 
     function showInLawsAgain(theLeaves) {
         for (let a = 1; a < 10; a++) {
-            showThisCode("P" + a + "R", theLeaves);
+            showThisCode("P" + make2Digit(a) + "R", theLeaves);
         }
     }
 
@@ -8676,7 +8676,7 @@ import { PDFs } from "../shared/PDFs.js";
                 let totalNumExtraPartners = 0;
                 if (ahnenNum % 2 == 0) {
                     for (let i = 0; i < thisLeafPerson._data.Spouses.length; i++) {
-                        let thisLeafExtraPartnerCode = newCode + "P" + (i + 1);
+                        let thisLeafExtraPartnerCode = newCode + "P" + make2Digit(i + 1);
                         let thisLeafExtraPartner = SuperBigFamView.theLeafCollection[thisLeafExtraPartnerCode];
 
                         if (thisLeafExtraPartner) {
@@ -8714,7 +8714,7 @@ import { PDFs } from "../shared/PDFs.js";
 
                             condLog("Ordering ", thisOrdered);
 
-                            let thisLeafExtraPartnerCode = newCode + "P" + (i + 1);
+                            let thisLeafExtraPartnerCode = newCode + "P" + make2Digit(i + 1);
                             let thisLeafExtraPartner = SuperBigFamView.theLeafCollection[thisLeafExtraPartnerCode];
 
                             if (thisLeafExtraPartner) {
@@ -8945,12 +8945,12 @@ import { PDFs } from "../shared/PDFs.js";
         let maxX = thisLeaf.x;
 
         for (let s = 0; (numD > 0 || numC > 0) && s < thisLeafPerson._data.Spouses.length; s++) {
-            let thisLeafPartner = SuperBigFamView.theLeafCollection[code + "P" + (s + 1)];
+            let thisLeafPartner = SuperBigFamView.theLeafCollection[code + "P" + make2Digit(s + 1)];
             if (thisLeafPartner && !isNaN(thisLeafPartner.x)) {
                 // condLog("ALERT : partner.x : ", thisLeafPartner.x, " vs thisLeaf",thisLeaf.x);
                 rightSideMaxX = Math.max(rightSideMaxX, thisLeafPartner.x);
                 leftSideMinX = Math.min(leftSideMinX, thisLeafPartner.x);
-                repositionThisSpousesFamily(thisLeafPartner, code + "P" + (s + 1));
+                repositionThisSpousesFamily(thisLeafPartner, code + "P" + make2Digit(s + 1));
             }
         }
         maxX = Math.max(maxX, rightSideMaxX);
@@ -11344,7 +11344,7 @@ import { PDFs } from "../shared/PDFs.js";
                 let tmpPartner = thePeopleList[newLeaf.Id];
                 if (tmpPartner && tmpPartner._data.Children && tmpPartner._data.Children.length > 0) {
                     let tmpAncID =
-                        SuperBigFamView.theLeafCollection[newLeaf.Code.substring(0, newLeaf.Code.length - 2)].Id;
+                        SuperBigFamView.theLeafCollection[newLeaf.Code.substring(0, newLeaf.Code.length - 3)].Id;
                     condLog("HERE IS WHERE WE Compare tmpPartner & tmpAnc :", tmpPartner, tmpAncID);
                     let foundKidInCommon = false;
                     for (
@@ -11654,7 +11654,7 @@ import { PDFs } from "../shared/PDFs.js";
                 // DO NOT DISPLAY FLAG has been set - so - as far as this app is considered ... Partner is persona non charta ...
             } else if (theObj.Id && isOKtoAddLeaf(theObj.Id, newLeaf)) {
                 theNum++;
-                // condLog("GOING to ADD Partner:", newLeaf.FullCode + "P" + theNum + ":" + theObj.Id + "-");
+                // condLog("GOING to ADD Partner:", newLeaf.FullCode + "P" + make2Digit(theNum)  + ":" + theObj.Id + "-");
 
                 let thisName = "Partner of " + thisPeep._data.BirthNamePrivate;
                 if (thePeopleList[theObj.Id]) {
@@ -11664,8 +11664,8 @@ import { PDFs } from "../shared/PDFs.js";
                 addToLeafCollection(
                     {
                         Id: theObj.Id * 1.0,
-                        Code: newLeaf.Code + "P" + theNum,
-                        FullCode: newLeaf.FullCode + "P" + theNum + ":" + theObj.Id + "-",
+                        Code: newLeaf.Code + "P" + make2Digit(theNum),
+                        FullCode: newLeaf.FullCode + "P" + make2Digit(theNum) + ":" + theObj.Id + "-",
                         degree: newLeaf.degree + 1,
                         Chunk: newChunk4Partners,
                         Who: thisName,
