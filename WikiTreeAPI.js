@@ -10,7 +10,8 @@
 window.WikiTreeAPI = window.WikiTreeAPI || {};
 
 if (typeof API_URL === "undefined") {
-    var API_URL = "https://api.wikitree.com/api.php";
+    const isLocalDevelopment = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+    var API_URL = isLocalDevelopment ? "/api.php" : "https://api.wikitree.com/api.php";
 }
 
 const dateTokenCache = {};
