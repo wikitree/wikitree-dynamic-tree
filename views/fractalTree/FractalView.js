@@ -41,7 +41,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Fractal Tree app";
     const AboutPreamble =
         "The Fractal Tree app was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "31 May 2025";
+    const AboutUpdateDate = "30 Sep 2026";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fractalTree.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
@@ -3722,19 +3722,19 @@ import { PDFs } from "../shared/PDFs.js";
                     ancestorObject.ahnNum
                 }>${extraInfoForThisAnc}${extraBR}</span>
 						<div class="image-box" id=photoDivFor${ancestorObject.ahnNum} style="text-align: center"><img  id=photoImgFor${
-                    ancestorObject.ahnNum
-                } src="https://www.wikitree.com/${photoUrl}"></div>
+                            ancestorObject.ahnNum
+                        } src="https://www.wikitree.com/${photoUrl}"></div>
 						  <div class="name fontBold font${font4Name}" id=nameDivFor${ancestorObject.ahnNum}>
 						    ${getSettingsName(person)}
 						  </div>
 						  <div class="birth vital font${font4Info}" id=birthDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(
-                    person,
-                    "B"
-                )}</div>
+                              person,
+                              "B"
+                          )}</div>
 						  <div class="death vital font${font4Info}" id=deathDivFor${ancestorObject.ahnNum}>${getSettingsDateAndPlace(
-                    person,
-                    "D"
-                )}</div>
+                              person,
+                              "D"
+                          )}</div>
 						</div>
 					</div>
                     `;
