@@ -75,7 +75,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Fan Chart tree app";
     const AboutPreamble =
         "The Fan Chart was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "24 February 2026";
+    const AboutUpdateDate = "30 Sep 2026";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =

@@ -174,7 +174,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Super (Big Family) Tree app";
     const AboutPreamble =
         "The Super Big Family Tree app was originally created to be a member of the WikiTree Tree Apps.<br>It is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "27 Feb 2026";
+    const AboutUpdateDate = "30 Sep 2026";
     const AboutAppIcon = `<img height=30px src="https://apps.wikitree.com/apps/clarke11007/pix/SuperBigFamTree.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers = "Steve Adey";
@@ -823,10 +823,10 @@ import { PDFs } from "../shared/PDFs.js";
             let strokeColourString = thisPolyLine.getAttribute("stroke");
             let strokeColour = PDFs.convertColourNameToRGB(strokeColourString);
             if (strokeColourString == "#EEE") {
-                console.log("Skipping this PolyLine because it is #EEE");
+                condLog("Skipping this PolyLine because it is #EEE");
                 continue;
             } else {
-                console.log("Adding this PolyLine with strokeColour: ", { strokeColourString }, { strokeColour });
+                condLog("Adding this PolyLine with strokeColour: ", { strokeColourString }, { strokeColour });
             }
 
             PDFs.thisPDFlinesArray.push([
@@ -849,7 +849,7 @@ import { PDFs } from "../shared/PDFs.js";
             if (thisPerson.children && thisPerson.children.length > 0) {
                 if (thisPerson.children[0].getAttribute("width") > "") {
                     personWidth = parseInt(thisPerson.children[0].getAttribute("width"));
-                    console.log("personWidth: ", { personWidth });
+                    condLog("personWidth: ", { personWidth });
                 }
             }
 
@@ -3462,7 +3462,7 @@ import { PDFs } from "../shared/PDFs.js";
                 }
 
                 if (numSharedKids == 0) {
-                    console.log("THIS PERSON DOES NOT NEED THE A0 STEP PARENT CHUNK ASSIGNED !", primarySpouse.Who);
+                    condLog("THIS PERSON DOES NOT NEED THE A0 STEP PARENT CHUNK ASSIGNED !", primarySpouse.Who);
 
                     // SBFV.theChunkCollection: Remove from A0step CHUNK and add into A1C0 chunk  (create A1C0 chunk if needed)
                     // SBFV.theLeafCollection: change Chunk to A1C0
@@ -3477,7 +3477,7 @@ import { PDFs } from "../shared/PDFs.js";
                         moveFromOneChunkToAnother("A0stepIL", "A1C0IL", primarySpouseCode + "RF");
                     }
                 } else {
-                    console.log("THIS PERSON IS WORTHY of the  A0 STEP PARENT CHUNK !", primarySpouse.Who);
+                    condLog("THIS PERSON IS WORTHY of the  A0 STEP PARENT CHUNK !", primarySpouse.Who);
                 }
             }
         }
@@ -4807,8 +4807,8 @@ import { PDFs } from "../shared/PDFs.js";
             condLog("Children:", primaryLeafPerson._data.Children);
         }
         if (useThickLinesForParentsAndSiblings == true) {
-            console.log("Spouses:", primaryLeafPerson._data.Spouses);
-            console.log({ doNotDisplaySpousesList });
+            condLog("Spouses:", primaryLeafPerson._data.Spouses);
+            condLog({ doNotDisplaySpousesList });
         }
 
         for (let ord = 0; ord < primaryLeafPerson._data.SpousesOrdered.length; ord++) {
@@ -5491,13 +5491,13 @@ import { PDFs } from "../shared/PDFs.js";
                         `" stroke="` +
                         backlitColour +
                         `" stroke-width="9"/>`;
-                    console.log(
+                    condLog(
                         "Doing Direct Ancestor Code for " + code + " - backlitColour: " + backlitColour,
                         5486,
                         tBarVertLineBacklit
                     );
                 }
-                console.log({ doingDirectAncestorCode });
+                condLog({ doingDirectAncestorCode });
 
                 let tBarVertLine =
                     tBarVertLineBacklit +
@@ -5555,7 +5555,7 @@ import { PDFs } from "../shared/PDFs.js";
                             `" stroke-width="9"/>`;
 
                         if (code == "A0" && useThickLinesForParentsAndSiblings == true) {
-                            console.log({ kidBacklit });
+                            condLog({ kidBacklit });
                         }
                     }
                     dropLines +=
@@ -5897,7 +5897,7 @@ import { PDFs } from "../shared/PDFs.js";
         }
 
         if (code == "A0" && useThickLinesForParentsAndSiblings == true) {
-            console.log(allLinesPolySVG);
+            condLog(allLinesPolySVG);
         }
 
         if (primaryLeafPerson._data.Spouses.length == 0) {
@@ -7478,7 +7478,7 @@ import { PDFs } from "../shared/PDFs.js";
                 SuperBigFamView.numGensRetrieved + 1
             );
 
-            console.log("DO BIO AHNENTAFEL UPDATE HERE ??? (line 7226 in loadCousinsAtLevel " + newLevel + ") ");
+            condLog("DO BIO AHNENTAFEL UPDATE HERE ??? (line 7226 in loadCousinsAtLevel " + newLevel + ") ");
 
             condLog("NO ANCESTORS for COUSINS TO LOAD");
             endisableButtons(true);
@@ -7513,7 +7513,7 @@ import { PDFs } from "../shared/PDFs.js";
     function loadAncestorsAtLevel(newLevel) {
         const d = new Date();
         let ms = d.getUTCMinutes() + " : " + d.getUTCSeconds() + " : " + d.getUTCMilliseconds();
-        console.log(
+        condLog(
             "== function loadAncestorsAtLevel --> Need to load MORE ANCESTOR peeps from Generation ",
             newLevel,
             ms,
@@ -7633,7 +7633,7 @@ import { PDFs } from "../shared/PDFs.js";
                 SuperBigFamView.maxNumAncGens,
                 SuperBigFamView.numGensRetrieved + 1
             );
-            console.log("DO BIO AHNENTAFEL UPDATE HERE ??? (line 7381 in loadAncestorsAtLevel) " + newLevel + ") ");
+            condLog("DO BIO AHNENTAFEL UPDATE HERE ??? (line 7381 in loadAncestorsAtLevel) " + newLevel + ") ");
         } else {
             let loadingTD = document.getElementById("loadingTD");
             loadingTD.innerHTML = "loading Ancestors - gen" + newLevel + " - (step 1 of 4)";
@@ -8151,7 +8151,7 @@ import { PDFs } from "../shared/PDFs.js";
                             Adimensions[thisAncCode].Y = thisY + A0Boffset;
                             repositionThisAncestorsCluster(thisAncCode, thisX, thisY + A0Boffset);
 
-                            console.log(
+                            condLog(
                                 "Repositioning this combo anc: ",
                                 comboObj.AncCode,
                                 " @ (",
@@ -8192,7 +8192,7 @@ import { PDFs } from "../shared/PDFs.js";
                             Adimensions[thisAncCode].Y = thisY + A0Boffset;
                             repositionThisAncestorsCluster(thisAncCode, thisX, thisY + A0Boffset);
 
-                            console.log(
+                            condLog(
                                 "Repositioning this combo anc: ",
                                 comboObj.AncCode,
                                 " @ (",
@@ -10128,7 +10128,7 @@ import { PDFs } from "../shared/PDFs.js";
 
             SuperBigFamView.myAhnentafel.update(person);
             SuperBigFamView.bioAhnentafel.update(person, "Bio");
-            console.log("DO BIO AHNENTAFEL UPDATE HERE ??? (line 9655 in initialLoadDirectAncestors7) ");
+            condLog("DO BIO AHNENTAFEL UPDATE HERE ??? (line 9655 in initialLoadDirectAncestors7) ");
             if (!person._data.BioFather && !person._data.BioMother) {
                 condLog(
                     "No biological parents found for primary person after initial load of direct ancestors - HIDING the Family Selector Span"
@@ -10670,7 +10670,7 @@ import { PDFs } from "../shared/PDFs.js";
     }
 
     function checkForNullParents(self, id, person) {
-        console.log("checkForNullParents:", self, id, person);
+        condLog("checkForNullParents:", self, id, person);
         if (SuperBigFamView.thePeopleWithNullParents.length > 0) {
             flashWarningMessageBelowButtonBar(
                 "Please wait while initial Super Big Family Tree is loading .... checking for any people with null parents and trying to fill in any missing parent links ..."
@@ -12331,7 +12331,7 @@ import { PDFs } from "../shared/PDFs.js";
             }
         }
 
-        console.log("LeafyChunks : ", goodChunks);
+        condLog("LeafyChunks : ", goodChunks);
         let thePrimaryPersonID = SuperBigFamView.theLeafCollection["A0"].Id;
         let thePrimaryPerson = thePeopleList[thePrimaryPersonID];
 
@@ -12403,7 +12403,7 @@ import { PDFs } from "../shared/PDFs.js";
                                         // console.log("ADDING this node : ", thisCodeHere, thePersonForThisLeaf);
                                         theNodes.push(SuperBigFamView.theLeafCollection[thisCodeHere]);
                                     } else {
-                                        console.log("SKIPPING this node : ", thisCodeHere, thePersonForThisLeaf);
+                                        condLog("SKIPPING this node : ", thisCodeHere, thePersonForThisLeaf);
                                     }
                                 }
                             }
@@ -12858,7 +12858,7 @@ import { PDFs } from "../shared/PDFs.js";
                 thisDIVtoUpdate.textContent = getSettingsName(leafObject.Code); // REMEMBER that d = person;
                 if (thisDIVtoUpdate.textContent.trim() == "Unknown") {
                     theInfoBox.style.display = "none";
-                    console.log("HIDING leaf because name is unknown:", "*" + leafObject.Code + "*", theInfoBox);
+                    condLog("HIDING leaf because name is unknown:", "*" + leafObject.Code + "*", theInfoBox);
                 } else {
                     // console.log("SHOWING leaf because name is known:", "*" + leafObject.Code + "*", theInfoBox);
                 }
@@ -16583,7 +16583,7 @@ import { PDFs } from "../shared/PDFs.js";
         if (SuperBigFamView.lastLegendColourHighlighted == returnColour) {
             return "yellow";
         } else {
-            console.log(
+            condLog(
                 "Compare: ",
                 returnColour,
                 SuperBigFamView.lastLegendColourHighlighted,
