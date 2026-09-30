@@ -2976,7 +2976,8 @@ async function popupConnectionDIV(doReverse = "", pathNum = 0, overrideLastPerso
                     lifespan(person) +
                     `</text>`;
 
-                if (theBothParentsText > "" && theBothParentsText2 > "") {
+                if (theBothParentsText > "" && theBothParentsText2 > "" && theBothParentsText != theBothParentsText2) {
+                    // console.log("Both parents texts:", theBothParentsText, theBothParentsText2);
                     // BOTH PARENTS TEXT # 1
                     thisPopup.innerHTML =
                         "<svg id=tempSVG width=400 height=40><text id=testTextLength>" +
