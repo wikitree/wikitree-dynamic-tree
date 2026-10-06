@@ -56,6 +56,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "fractal": new FractalView(),
         "ahnentafel": new AhnentafelView(),
         "surnames": new SurnamesView(),
+        "surnametree": new SurnameTreeView(),
         "webs": new WebsView(),
         "familygroup": new FamilyView(),
         "printer-friendly": new PrinterFriendlyView(WikiTreeAPI, 6),
