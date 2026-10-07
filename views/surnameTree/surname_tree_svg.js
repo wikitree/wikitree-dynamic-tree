@@ -187,6 +187,73 @@ function addFlatTree(viewport, tree) {
     );
 }
 
+/** The oak as clip art: a trunk and puffs of leaves, each with a dark outline. */
+function addOutlinedTree(defs, viewport, tree) {
+    const trunkPath = circlesPath(tree.trunk);
+    // The trunk's outline is its shape drawn once fat and dark, and again on top in its own colour, so that only the outer edge
+    // of the whole shape is outlined and not every circle that it is made of.
+    viewport.appendChild(
+        svgElement("path", {
+            "class": "sutree-trunk-outline",
+            "d": trunkPath,
+            "fill": COLORS.trunkOutline,
+            "stroke": COLORS.trunkOutline,
+            "stroke-width": 7,
+            "stroke-linejoin": "round",
+        })
+    );
+    viewport.appendChild(svgElement("path", { class: "sutree-trunk", fill: COLORS.trunkOutlined, d: trunkPath }));
+
+    const trunkClip = svgElement("clipPath", { id: "suTreeTrunkClip" });
+    trunkClip.appendChild(svgElement("path", { d: trunkPath }));
+    defs.appendChild(trunkClip);
+    viewport.appendChild(
+        svgElement("path", {
+            "class": "sutree-bark",
+            "d": barkLines(tree)
+                .map((line) => line.map(([x, y], i) => `${i ? "L" : "M"}${round(x)} ${round(y)}`).join(""))
+                .join(""),
+            "fill": "none",
+            "stroke": COLORS.trunkOutline,
+            "stroke-width": 2.4,
+            "stroke-linecap": "round",
+            "stroke-linejoin": "round",
+            "opacity": 0.55,
+            "clip-path": "url(#suTreeTrunkClip)",
+            "pointer-events": "none",
+        })
+    );
+
+    // puffs of leaves, back to front, each lit at its upper left and drawn round with a dark line
+    tree.crown.forEach((lobe, i) => {
+        const fx = round(lobe.x + LIGHT.dx * lobe.r);
+        const fy = round(lobe.y + LIGHT.dy * lobe.r);
+        const gradient = svgElement("radialGradient", {
+            id: `suTreePuff${i}`,
+            gradientUnits: "userSpaceOnUse",
+            cx: fx,
+            cy: fy,
+            fx,
+            fy,
+            r: round(lobe.r * LIGHT.spread),
+        });
+        gradient.appendChild(svgElement("stop", { "offset": "0", "stop-color": COLORS.crownOutlined[0] }));
+        gradient.appendChild(svgElement("stop", { "offset": "1", "stop-color": COLORS.crownOutlined[1] }));
+        defs.appendChild(gradient);
+        viewport.appendChild(
+            svgElement("circle", {
+                "class": "sutree-crown",
+                "cx": round(lobe.x),
+                "cy": round(lobe.y),
+                "r": round(lobe.r),
+                "fill": `url(#suTreePuff${i})`,
+                "stroke": COLORS.outline,
+                "stroke-width": 3.5,
+            })
+        );
+    });
+}
+
 /** A picture used as the shape, faintly behind the words, so the outline can be seen. */
 function addBackdrop(viewport, shape) {
     if (!shape.picture) return;
@@ -231,6 +298,7 @@ export function renderTreeSvg(svg, items, tree = buildTree(1)) {
     const look = tree.look || "shaded";
     if (tree.kind === "image") addBackdrop(viewport, tree);
     else if (look === "flat") addFlatTree(viewport, tree);
+    else if (look === "outlined") addOutlinedTree(defs, viewport, tree);
     else addShadedTree(defs, viewport, tree);
 
     const words = new Map();

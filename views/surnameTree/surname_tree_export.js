@@ -19,7 +19,7 @@ export const SIZES = [
     { id: "medium", width: 1600, name: "Medium", use: "for the web and social media" },
     { id: "large", width: 3200, name: "Large", use: "for printing" },
 ];
-export const DEFAULT_SIZE = "medium";
+export const DEFAULT_SIZE = "small";
 export const MIN_WIDTH = 200;
 export const MAX_WIDTH = 6000; // 6000 x 5280 is about 32 million pixels, which browsers can still make
 

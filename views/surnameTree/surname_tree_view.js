@@ -13,6 +13,9 @@ import { mountApp } from "./surname_tree_app.js";
 /** The options in the address after the view (#name=...&view=surnametree&names=first&scope=cc7&degrees=5). */
 const URL_PARAMS = ["names", "scope", "generations", "degrees", "biological", "adoptive", "fill", "look"];
 
+/** Where the built-in pictures are kept: the folder this script is in. */
+const IMAGES_URL = new URL("./", import.meta.url).href;
+
 /** "0", "false", "no" and "off" are no; anything else given is yes; not given is left to the default. */
 const asFlag = (value) => (value === undefined ? undefined : !/^(0|false|no|off)$/i.test(String(value)));
 
@@ -39,6 +42,7 @@ window.SurnameTreeView = class SurnameTreeView extends View {
         this.close();
         const container = document.querySelector(container_selector);
         this.app = mountApp(container, person_id, {
+            imagesUrl: IMAGES_URL,
             names: params.names,
             look: params.look,
             scope: params.scope,

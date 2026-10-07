@@ -160,6 +160,59 @@ function drawFlatTree(g, tree) {
     fill(tree.crown, COLORS.crownFlat);
 }
 
+/** The oak as clip art: a trunk and puffs of leaves, each with a dark outline. */
+function drawOutlinedTree(g, tree) {
+    const circlesPath = (circles) => {
+        g.beginPath();
+        circles.forEach((c) => {
+            g.moveTo(c.x + c.r, c.y);
+            g.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+        });
+    };
+    // The trunk's outline is its shape drawn once fat and dark, and again on top in its own colour, so that only the outer edge
+    // of the whole shape is outlined and not every circle that it is made of.
+    circlesPath(tree.trunk);
+    g.fillStyle = COLORS.trunkOutline;
+    g.strokeStyle = COLORS.trunkOutline;
+    g.lineWidth = 7;
+    g.lineJoin = "round";
+    g.fill();
+    g.stroke();
+    circlesPath(tree.trunk);
+    g.fillStyle = COLORS.trunkOutlined;
+    g.fill();
+
+    g.save();
+    circlesPath(tree.trunk);
+    g.clip();
+    g.globalAlpha = 0.55;
+    g.strokeStyle = COLORS.trunkOutline;
+    g.lineWidth = 2.4;
+    g.lineCap = "round";
+    barkLines(tree).forEach((line) => {
+        g.beginPath();
+        line.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+        g.stroke();
+    });
+    g.restore();
+
+    // puffs of leaves, back to front, each lit at its upper left and drawn round with a dark line
+    tree.crown.forEach((lobe) => {
+        const fx = lobe.x + LIGHT.dx * lobe.r;
+        const fy = lobe.y + LIGHT.dy * lobe.r;
+        const puff = g.createRadialGradient(fx, fy, 0, fx, fy, lobe.r * LIGHT.spread);
+        puff.addColorStop(0, COLORS.crownOutlined[0]);
+        puff.addColorStop(1, COLORS.crownOutlined[1]);
+        g.beginPath();
+        g.arc(lobe.x, lobe.y, lobe.r, 0, Math.PI * 2);
+        g.fillStyle = puff;
+        g.fill();
+        g.strokeStyle = COLORS.outline;
+        g.lineWidth = 3.5;
+        g.stroke();
+    });
+}
+
 /** A picture used as the shape, faintly behind the words. shape.pictureImage is the loaded picture. */
 function drawBackdrop(g, shape) {
     if (!shape.pictureImage) return;
@@ -182,6 +235,7 @@ export function drawTree(canvas, items, scale = 2, tree = buildTree(1)) {
     const look = tree.look || "shaded";
     if (tree.kind === "image") drawBackdrop(g, tree);
     else if (look === "flat") drawFlatTree(g, tree);
+    else if (look === "outlined") drawOutlinedTree(g, tree);
     else drawShadedTree(g, tree);
 
     g.textAlign = "center";

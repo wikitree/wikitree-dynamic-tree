@@ -4,7 +4,7 @@ A word cloud in the shape of a tree, made from the names of a person's family. T
 is drawn. Hover a name to see how many profiles have it, click it to list them (full name, WikiTree ID, and born and died
 with places, each a link to the profile), and click a person in the list for a card. Zoom with the scroll wheel, move by
 dragging, or use the buttons. Each tree is different: its shape comes from the starting person, and **Shuffle** grows
-another. A picture (PNG or JPG, at a size you choose) or a PDF is an optional extra.
+another. **Save as** gives a picture (PNG or JPG; small, medium or large, small being the default) or a PDF.
 
 Created by Azure Robinson (Robinson-27225).
 
@@ -30,9 +30,12 @@ ticked. Marriages are neither, so they keep whichever kind the path already was.
 
 **Look**: **Shaded** is the oak with gradients, bark, a shadow under the leaves and a patch of ground. **Flat two-tone** is
 the crisp silhouette style of word art: a solid pale-green crown over a solid tan trunk, nothing shaded, with the words
-packed tight and many more small ones filling the gaps. The look can be changed without loading anything again.
+packed tight and many more small ones filling the gaps. **Outlined** is a cartoon oak: each puff of leaves and the trunk
+have a dark outline, with the words in the palette colours. The look can be changed without loading anything again.
 
-**Shape**: **Oak tree** or **My picture**. Choose a picture (PNG, JPG, GIF, WebP or SVG, under 15 MB) and the words fill
+**Shape**: **Oak tree (drawn)**, one of three pictures that come with the app (the **WikiTree logo**, the **WikiTree heart**
+and an **oak tree** picture), or **My picture**. For the logo and the heart, **Leave white empty** keeps the white parts of the
+design free of words. Choose your own picture (PNG, JPG, GIF, WebP or SVG, under 15 MB) and the words fill
 its silhouette, each taking the colour of the picture under it, with the picture faintly behind. The picture is read in your
 own browser and is not uploaded anywhere. A picture with transparent parts is cut out by its transparency; any other is cut
 out by its background, taken to be the colour along its edges. The **Cut-out** slider says how different from the
@@ -53,7 +56,7 @@ The options can be given after the view, so a link opens the tree as set:
 | `biological`  | `0` or `1`                                               | `1`         |
 | `adoptive`    | `0` or `1`                                               | `1`         |
 | `fill`        | `0` or `1` (repeat names in small type to fill the gaps) | `1`         |
-| `look`        | `shaded`, `flat`                                         | `shaded`    |
+| `look`        | `shaded`, `flat`, `outlined`                             | `shaded`    |
 
 For example: `#name=Example-42&view=surnametree&names=first&scope=cc7&degrees=5&adoptive=0`
 
@@ -68,6 +71,7 @@ For example: `#name=Example-42&view=surnametree&names=first&scope=cc7&degrees=5&
 | `surname_tree_svg.js`    | The SVG drawing, and wheel and drag zoom                                                              |
 | `surname_tree_zoom.js`   | Zoom and pan arithmetic                                                                               |
 | `surname_tree_image.js`  | A picture as the shape: cutting out its silhouette, and the colour of each word                       |
+| `images/`                | The WikiTree logo, the WikiTree heart and the oak picture that can be used as the shape               |
 | `surname_tree_list.js`   | The HTML for the list and the card                                                                    |
 | `surname_tree_draw.js`   | Canvas drawing and text measuring (for pictures)                                                      |
 | `surname_tree_export.js` | File types, sizes, drawing at a size, and the PDF writer (no library; one JPEG on one page)           |
@@ -79,8 +83,19 @@ The code has no dependencies of its own beyond the page's jQuery and the `WikiTr
 
 `buildTree(seed)` grows an oak from the starting person's number: a broad, rounded crown of leafy lobes of uneven size, with
 many small bumps round the edge, leaning one way and joined into one mass; a short, stout trunk that is widest at the ground
-and flares into roots spreading over it; thick limbs forking from the top of the trunk inside the leaves, each ending in a
-clump of leaves, with a branch off most of them. Ridges of bark run up the trunk and a soft patch of ground sits at its foot.
+and flares into roots spreading over it; a central leader rising through the crown, with limbs leaving it at staggered heights
+and alternate sides, each curving up to a clump of leaves. Ridges of bark run up the trunk and a soft patch of ground sits at its foot.
 `layoutWords()` places words largest first, each spiralling out until it fits wholly inside
 the crown or trunk and clear of the others, at any angle (the first few and the biggest stay level so they read easily).
 `renderTreeSvg()` draws it, with each clump of leaves lit at its upper left and shadowed at its lower right.
+
+## Tests
+
+The tests are in `tests/` at the top of this repository, and are only for development: the Tree Apps page uses nothing in
+that folder. They need Node.js.
+
+```
+cd tests
+npm install
+npm test
+```

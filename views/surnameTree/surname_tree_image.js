@@ -20,6 +20,8 @@ export const MAX_SENSITIVITY = 160;
 export const MIN_COVERAGE = 0.02;
 /** Bits of the picture smaller than this many cells are dust, and are dropped, unless nothing bigger exists. */
 const MIN_ISLAND = 40;
+/** With leaveWhite, a pixel whose red, green and blue are all at least this much counts as white. */
+const WHITE = 232;
 export const MAX_FILE_BYTES = 15 * 1024 * 1024;
 
 /** Where a picture of this size goes in the frame: as big as fits, centred. */
@@ -30,20 +32,17 @@ export function placeInFrame(width, height) {
     return { x: Math.round((WIDTH - w) / 2), y: Math.round((HEIGHT - h) / 2), w, h };
 }
 
-const median = (list) => list.slice().sort((a, b) => a - b)[Math.floor(list.length / 2)];
-
-/** The colour of the picture's background: the middle colour of the pixels along its four edges. */
-function edgeColour(pixels, rect) {
+/**
+ * The colours of the picture's background: the main colours along its four edges, at most three. A plain background is one
+ * colour; the grey and white squares of a "transparent" picture saved with its checkerboard are two. A colour counts when at
+ * least a tenth of the edge is that colour (or close to it, since a JPEG's colours drift a little).
+ */
+function edgeColours(pixels, rect) {
     const { width, data } = pixels;
-    const reds = [];
-    const greens = [];
-    const blues = [];
+    const samples = [];
     const take = (x, y) => {
         const at = (y * width + x) * 4;
-        if (data[at + 3] < 128) return;
-        reds.push(data[at]);
-        greens.push(data[at + 1]);
-        blues.push(data[at + 2]);
+        if (data[at + 3] >= 128) samples.push([data[at], data[at + 1], data[at + 2]]);
     };
     for (let x = rect.x; x < rect.x + rect.w; x += 2) {
         take(x, rect.y);
@@ -53,7 +52,27 @@ function edgeColour(pixels, rect) {
         take(rect.x, y);
         take(rect.x + rect.w - 1, y);
     }
-    return reds.length ? [median(reds), median(greens), median(blues)] : [255, 255, 255];
+    if (!samples.length) return [[255, 255, 255]];
+    const near = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) <= 36;
+    const total = samples.length;
+    const colours = [];
+    let left = samples;
+    while (left.length >= total * 0.1 && colours.length < 3) {
+        // the colour that the most of the remaining samples are close to
+        let best = left[0];
+        let bestCount = -1;
+        for (let i = 0; i < left.length; i += Math.max(1, Math.floor(left.length / 60))) {
+            const count = left.reduce((n, other) => n + (near(left[i], other) ? 1 : 0), 0);
+            if (count > bestCount) {
+                best = left[i];
+                bestCount = count;
+            }
+        }
+        const group = left.filter((other) => near(best, other));
+        colours.push([0, 1, 2].map((c) => Math.round(group.reduce((sum, other) => sum + other[c], 0) / group.length)));
+        left = left.filter((other) => !near(best, other));
+    }
+    return colours.length ? colours : [[255, 255, 255]];
 }
 
 /** Drop little isolated bits (dust, specks) from a mask of cells, keeping everything big enough to be part of the shape. */
@@ -94,19 +113,20 @@ function removeSpecks(mask, cols, rows) {
 /**
  * The shape in a picture. `pixels` is { width, height, data } (RGBA, like canvas ImageData) for the WIDTH x HEIGHT frame with
  * the picture placed in it at `rect` (see placeInFrame). A picture with transparent parts is cut out by its transparency;
- * any other is cut out by its background, taken to be the colour along its edges, and every pixel further from that
- * colour than `sensitivity` is the shape. Returns { kind: "image", masks, cellRgb, coverage, background }, where masks is
+ * any other is cut out by its background, taken to be the main colour or colours along its edges, and every pixel further
+ * from all of them than `sensitivity` is the shape. With `leaveWhite`, white (or nearly white) parts inside the picture are
+ * left empty too, so a white design on a coloured logo shows as a gap. Returns { kind: "image", masks, cellRgb, pixelMask, coverage, background }, where masks is
  * like buildMasks' (the whole shape is "crown", and there is no "trunk"), cellRgb holds the average colour of each cell
  * (three bytes a cell), and coverage is the share of the frame that the shape fills.
  */
-export function shapeFromPixels(pixels, rect, sensitivity = DEFAULT_SENSITIVITY) {
+export function shapeFromPixels(pixels, rect, sensitivity = DEFAULT_SENSITIVITY, { leaveWhite = false } = {}) {
     const { width, data } = pixels;
     let transparent = 0;
     for (let y = rect.y; y < rect.y + rect.h; y++) {
         for (let x = rect.x; x < rect.x + rect.w; x++) if (data[(y * width + x) * 4 + 3] < 128) transparent++;
     }
     const useAlpha = transparent / (rect.w * rect.h) > 0.03;
-    const background = useAlpha ? null : edgeColour(pixels, rect);
+    const background = useAlpha ? null : edgeColours(pixels, rect);
 
     const on = new Uint8Array(width * pixels.height);
     for (let y = rect.y; y < rect.y + rect.h; y++) {
@@ -115,10 +135,14 @@ export function shapeFromPixels(pixels, rect, sensitivity = DEFAULT_SENSITIVITY)
             if (data[at + 3] < 128) continue;
             if (
                 background &&
-                Math.hypot(data[at] - background[0], data[at + 1] - background[1], data[at + 2] - background[2]) <=
-                    sensitivity
+                background.some(
+                    (colour) =>
+                        Math.hypot(data[at] - colour[0], data[at + 1] - colour[1], data[at + 2] - colour[2]) <=
+                        sensitivity
+                )
             )
                 continue;
+            if (leaveWhite && Math.min(data[at], data[at + 1], data[at + 2]) >= WHITE) continue;
             on[y * width + x] = 1;
         }
     }
@@ -158,8 +182,9 @@ export function shapeFromPixels(pixels, rect, sensitivity = DEFAULT_SENSITIVITY)
         kind: "image",
         masks: { cols, rows, crown, trunk: new Uint8Array(cols * rows) },
         cellRgb,
+        pixelMask: on, // the shape pixel by pixel (WIDTH x HEIGHT, as in the frame), for a smooth outline behind the words
         coverage: filled / (cols * rows),
-        background: useAlpha ? "transparent" : background,
+        background: useAlpha ? "transparent" : background, // "transparent", or a list of [red, green, blue]
     };
 }
 
@@ -242,37 +267,67 @@ export function fileProblem(file) {
     return "";
 }
 
-/** Read a picture file into the frame: { pixels, rect }. Runs in the browser; the picture is not sent anywhere. */
-export function readImageFile(file) {
+/** Put a loaded picture in the frame, as { pixels, rect }. */
+function placeImage(image) {
+    const rect = placeInFrame(image.naturalWidth || 1000, image.naturalHeight || 1000);
+    const canvas = document.createElement("canvas");
+    canvas.width = WIDTH;
+    canvas.height = HEIGHT;
+    const g = canvas.getContext("2d", { willReadFrequently: true });
+    g.drawImage(image, rect.x, rect.y, rect.w, rect.h);
+    return { pixels: g.getImageData(0, 0, WIDTH, HEIGHT), rect };
+}
+
+/** Load a picture from an address into the frame: { pixels, rect }. `done` is called when it has loaded or failed. */
+function loadIntoFrame(url, done = () => {}) {
     return new Promise((resolve, reject) => {
-        const problem = fileProblem(file);
-        if (problem) return reject(new Error(problem));
-        const url = URL.createObjectURL(file);
         const image = new Image();
         image.onload = () => {
             try {
-                const rect = placeInFrame(image.naturalWidth || 1000, image.naturalHeight || 1000);
-                const canvas = document.createElement("canvas");
-                canvas.width = WIDTH;
-                canvas.height = HEIGHT;
-                const g = canvas.getContext("2d", { willReadFrequently: true });
-                g.drawImage(image, rect.x, rect.y, rect.w, rect.h);
-                resolve({ pixels: g.getImageData(0, 0, WIDTH, HEIGHT), rect });
+                resolve(placeImage(image));
             } catch (error) {
                 reject(new Error("That picture could not be read."));
             } finally {
-                URL.revokeObjectURL(url);
+                done();
             }
         };
         image.onerror = () => {
-            URL.revokeObjectURL(url);
+            done();
             reject(new Error("That picture could not be opened."));
         };
         image.src = url;
     });
 }
 
-/** The shape cut out of the picture, as a PNG data address for showing faintly behind the words ("" if it cannot be made). */
+/** Read a picture file into the frame: { pixels, rect }. Runs in the browser; the picture is not sent anywhere. */
+export function readImageFile(file) {
+    const problem = fileProblem(file);
+    if (problem) return Promise.reject(new Error(problem));
+    const url = URL.createObjectURL(file);
+    return loadIntoFrame(url, () => URL.revokeObjectURL(url));
+}
+
+/** Read one of the built-in pictures (see BUILT_IN_PICTURES) from where the view's files are kept. */
+export function readImageUrl(url) {
+    return loadIntoFrame(url);
+}
+
+/**
+ * Pictures that come with the view. `file` is in the images folder next to the view's script. `leaveWhite` is whether white
+ * parts inside the picture are left empty: right for a logo with a white design on a colour, so the design shows as a gap.
+ */
+export const BUILT_IN_PICTURES = [
+    { id: "wikitree-logo", name: "WikiTree logo", file: "images/wikitree-logo.png", leaveWhite: true },
+    { id: "wikitree-heart", name: "WikiTree heart", file: "images/wikitree-heart.png", leaveWhite: true },
+    { id: "oak-picture", name: "Oak tree (picture)", file: "images/oak-tree.jpg", leaveWhite: false },
+];
+
+/**
+ * The shape cut out of the picture, as a PNG data address for showing faintly behind the words ("" if it cannot be made).
+ * The words are laid out on a grid of CELL-sized squares, so a shape taken from the grid has stepped edges. The outline here
+ * comes from the picture's own pixels instead (the grid is used only to leave out specks), softened over a pixel so that it
+ * is smooth at any zoom.
+ */
 export function backdropDataUrl(shape, pixels) {
     try {
         const canvas = document.createElement("canvas");
@@ -280,15 +335,33 @@ export function backdropDataUrl(shape, pixels) {
         canvas.height = HEIGHT;
         const g = canvas.getContext("2d");
         const out = g.createImageData(WIDTH, HEIGHT);
-        const { cols, crown } = shape.masks;
+        const { cols, rows, crown } = shape.masks;
+        const near = (c, r) => {
+            // is this cell, or one beside it, part of the shape: the pixels at an edge belong to a cell that is not
+            for (let dr = -1; dr <= 1; dr++)
+                for (let dc = -1; dc <= 1; dc++) {
+                    const cc = c + dc;
+                    const rr = r + dr;
+                    if (cc >= 0 && rr >= 0 && cc < cols && rr < rows && crown[rr * cols + cc]) return true;
+                }
+            return false;
+        };
+        const mask = shape.pixelMask;
+        const inside = (x, y) => {
+            if (x < 0 || y < 0 || x >= WIDTH || y >= HEIGHT) return 0;
+            if (mask) return mask[y * WIDTH + x];
+            return crown[Math.floor(y / CELL) * cols + Math.floor(x / CELL)] ? 1 : 0;
+        };
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = 0; x < WIDTH; x++) {
-                if (!crown[Math.floor(y / CELL) * cols + Math.floor(x / CELL)]) continue;
+                let sum = 0;
+                for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) sum += inside(x + dx, y + dy);
+                if (!sum || !near(Math.floor(x / CELL), Math.floor(y / CELL))) continue;
                 const at = (y * WIDTH + x) * 4;
                 out.data[at] = pixels.data[at];
                 out.data[at + 1] = pixels.data[at + 1];
                 out.data[at + 2] = pixels.data[at + 2];
-                out.data[at + 3] = 255;
+                out.data[at + 3] = Math.round((sum / 9) * 255);
             }
         }
         g.putImageData(out, 0, 0);

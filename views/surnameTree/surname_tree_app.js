@@ -20,12 +20,14 @@ import {
 } from "./surname_tree_core.js";
 import { fetchScope } from "./surname_tree_data.js";
 import {
+    BUILT_IN_PICTURES,
     DEFAULT_SENSITIVITY,
     MAX_SENSITIVITY,
     MIN_COVERAGE,
     MIN_SENSITIVITY,
     backdropDataUrl,
     readImageFile,
+    readImageUrl,
     shapeFromPixels,
     wordColour,
 } from "./surname_tree_image.js";
@@ -72,8 +74,12 @@ export function mountApp(container, key, options) {
         seed: hashString(String(key)),
         shape: buildTree(hashString(String(key))), // what the words fill: an oak, or the shape cut out of a picture
         look: lookById(options.look).id,
-        shapeKind: "tree", // "tree" or "image"
-        picture: null, // { pixels, rect, name } once the member has chosen one
+        shapeKind: "tree", // "tree", "image" (the member's own picture), or the id of a built-in picture
+        picture: null, // { pixels, rect, name }: the picture now used as the shape
+        mine: null, // the member's own picture, kept while a built-in one is used
+        pictures: {}, // built-in pictures already loaded, by id
+        leaveWhite: false, // white parts inside a picture are left empty
+        imagesUrl: options.imagesUrl || "", // where the built-in pictures are kept, ending in /
         sensitivity: DEFAULT_SENSITIVITY,
         shapeNote: "",
         name: "",
@@ -102,13 +108,16 @@ export function mountApp(container, key, options) {
           <label>Look <select id="suTreeLook"></select></label>
           <label>Shape
             <select id="suTreeShapeKind">
-              <option value="tree">Oak tree</option>
+              <option value="tree">Oak tree (drawn)</option>
               <option value="image">My picture</option>
             </select>
           </label>
           <button type="button" id="suTreeChoose" title="Choose a picture to use as the shape" hidden>Choose picture…</button>
           <label id="suTreeSenseLabel" hidden title="Raise it to cut more of the background away; lower it to keep more of the picture">
             Cut-out <input type="range" id="suTreeSense" min="8" max="160" step="1">
+          </label>
+          <label id="suTreeWhiteLabel" hidden title="Leave the white parts of the picture empty, so a white design shows as a gap">
+            <input type="checkbox" id="suTreeWhite"> Leave white empty
           </label>
           <input type="file" id="suTreeFile" accept="image/*" hidden>
           <label>Reach <select id="suTreeScope"></select></label>
@@ -177,6 +186,10 @@ export function mountApp(container, key, options) {
             .appendTo(find("#suTreeLook"))
     );
     find("#suTreeSense").attr({ min: MIN_SENSITIVITY, max: MAX_SENSITIVITY }).val(state.sensitivity);
+    // the pictures that come with it go between the drawn oak and the member's own picture
+    BUILT_IN_PICTURES.forEach((picture) =>
+        $("<option>").val(picture.id).text(picture.name).insertBefore(find("#suTreeShapeKind option[value=image]"))
+    );
     NAME_KINDS.forEach((k) =>
         $("<option>")
             .val(k.id)
@@ -255,8 +268,8 @@ export function mountApp(container, key, options) {
         state.biological && state.adoptive
             ? "biological and adoptive"
             : state.biological
-            ? "biological only"
-            : "adoptive only";
+              ? "biological only"
+              : "adoptive only";
 
     const emptyMessage = () => {
         if (!state.biological) {
@@ -291,8 +304,10 @@ export function mountApp(container, key, options) {
         // of the tree as well as where the names go.
         state.shapeNote = "";
         let shape = null;
-        if (state.shapeKind === "image" && state.picture) {
-            shape = shapeFromPixels(state.picture.pixels, state.picture.rect, state.sensitivity);
+        if (state.shapeKind !== "tree" && state.picture) {
+            shape = shapeFromPixels(state.picture.pixels, state.picture.rect, state.sensitivity, {
+                leaveWhite: state.leaveWhite,
+            });
             if (shape.coverage < MIN_COVERAGE) {
                 shape = null;
                 state.shapeNote =
@@ -381,38 +396,79 @@ export function mountApp(container, key, options) {
         redraw();
     });
 
-    // ---- the shape: an oak, or a picture of the member's own
-    /** Show the controls that go with the shape: choosing a picture, and how much of it to cut out. */
+    // ---- the shape: a drawn oak, a picture that comes with the view, or a picture of the member's own
+    /** Show the controls that go with the shape: choosing a picture, how much of it to cut out, and whether white is left empty. */
     function setShapeKind(kind) {
         state.shapeKind = kind;
         find("#suTreeShapeKind").val(kind);
         find("#suTreeChoose").prop("hidden", kind !== "image");
-        find("#suTreeSenseLabel").prop("hidden", kind !== "image");
-        if (state.picture) find("#suTreeChoose").attr("title", `Using ${state.picture.name}. Choose another picture`);
+        find("#suTreeSenseLabel").prop("hidden", kind === "tree");
+        find("#suTreeWhiteLabel").prop("hidden", kind === "tree");
+        find("#suTreeWhite").prop("checked", state.leaveWhite);
+        if (kind === "image" && state.mine) {
+            find("#suTreeChoose").attr("title", `Using ${state.mine.name}. Choose another picture`);
+        }
     }
     const chooseFile = () => find("#suTreeFile")[0].click();
+
+    /** Use a picture that comes with the view, loading it the first time. */
+    async function useBuiltIn(picture) {
+        try {
+            if (!state.pictures[picture.id]) {
+                say("Loading the picture...");
+                state.pictures[picture.id] = {
+                    ...(await readImageUrl(state.imagesUrl + picture.file)),
+                    name: picture.name,
+                };
+            }
+            state.picture = state.pictures[picture.id];
+            state.leaveWhite = picture.leaveWhite;
+            setShapeKind(picture.id);
+            redraw();
+        } catch (error) {
+            say(error.message, true);
+            setShapeKind(state.shapeKind); // back to what was working
+        }
+    }
+
     find("#suTreeShapeKind").on("change", (e) => {
-        if (e.target.value === "image" && !state.picture) return chooseFile(); // setShapeKind follows once there is a picture
-        setShapeKind(e.target.value);
-        redraw();
+        const choice = e.target.value;
+        if (choice === "tree") {
+            setShapeKind("tree");
+            return redraw();
+        }
+        if (choice === "image") {
+            if (!state.mine) return chooseFile(); // setShapeKind follows once there is a picture
+            state.picture = state.mine;
+            state.leaveWhite = false;
+            setShapeKind("image");
+            return redraw();
+        }
+        useBuiltIn(BUILT_IN_PICTURES.find((picture) => picture.id === choice));
     });
     find("#suTreeChoose").on("click", chooseFile);
     find("#suTreeFile").on("change", async (e) => {
         const file = e.target.files && e.target.files[0];
         e.target.value = ""; // so the same picture can be chosen again
-        if (!file) return setShapeKind(state.picture ? "image" : "tree");
+        if (!file) return setShapeKind(state.shapeKind);
         say("Reading the picture...");
         try {
-            state.picture = { ...(await readImageFile(file)), name: file.name };
+            state.mine = { ...(await readImageFile(file)), name: file.name };
+            state.picture = state.mine;
+            state.leaveWhite = false;
             setShapeKind("image");
             redraw();
         } catch (error) {
             say(error.message, true);
-            setShapeKind(state.picture ? "image" : "tree");
+            setShapeKind(state.shapeKind);
         }
     });
     // the file chooser was closed without a choice
-    find("#suTreeFile").on("cancel", () => setShapeKind(state.picture ? "image" : "tree"));
+    find("#suTreeFile").on("cancel", () => setShapeKind(state.shapeKind));
+    find("#suTreeWhite").on("change", (e) => {
+        state.leaveWhite = e.target.checked;
+        redraw();
+    });
     find("#suTreeSense").on("change", (e) => {
         state.sensitivity = Number(e.target.value);
         redraw();
@@ -569,8 +625,8 @@ export function mountApp(container, key, options) {
             !format.sized
                 ? "A single page with the tree under its title."
                 : width
-                ? `The picture will be ${sizeLabel(width)}.`
-                : `Enter a width from ${MIN_WIDTH} to ${MAX_WIDTH.toLocaleString()} pixels.`
+                  ? `The picture will be ${sizeLabel(width)}.`
+                  : `Enter a width from ${MIN_WIDTH} to ${MAX_WIDTH.toLocaleString()} pixels.`
         );
         find("#suTreeSaveGo").prop("disabled", format.sized && !width);
     }
@@ -635,7 +691,7 @@ export function mountApp(container, key, options) {
     });
     find("#suTreeCopy").on("click", async () => {
         try {
-            const blob = await renderImage(state.items, "image/png", 1600, state.shape);
+            const blob = await renderImage(state.items, "image/png", widthFor(DEFAULT_SIZE), state.shape);
             await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
             say("Copied. Paste it into a post or a document.");
         } catch (e) {

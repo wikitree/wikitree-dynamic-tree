@@ -96,8 +96,8 @@ export function namesOf(person, kind = "surname") {
         kind === "first"
             ? [person.FirstName]
             : kind === "middle"
-            ? [person.MiddleName]
-            : [person.FirstName, person.MiddleName];
+              ? [person.MiddleName]
+              : [person.FirstName, person.MiddleName];
     const names = [];
     fields.forEach((field) => splitNames(field).forEach((name) => names.includes(name) || names.push(name)));
     return names;
@@ -656,31 +656,73 @@ export function buildTree(seed = 1) {
         );
     }
 
-    // ---- limbs that fork from the top of the trunk and end in clumps of leaves
+    // ---- the central leader, and limbs that leave the trunk at different heights and end in clumps of leaves
     const tips = [];
-    const lower = lobes.filter((c) => c.y + c.r > lowest - 240).sort((a, b) => a.x - b.x);
+    const limbs = [];
+
+    // Apical dominance: the main stem does not stop where the limbs begin. It goes on up through the crown, thinning as it goes.
+    const crownTop = Math.min(...lobes.map((c) => c.y - c.r));
+    const leaderTop = [fork[0] + between(-25, 25), lerp(fork[1], crownTop, between(0.45, 0.62))];
+    if (!crown.some((c) => Math.hypot(leaderTop[0] - c.x, leaderTop[1] - c.y) < c.r - 10)) {
+        // it must end inside the leaves: move it into the lobe nearest to where it was going
+        const near = crown.reduce((a, b) =>
+            Math.hypot(leaderTop[0] - b.x, leaderTop[1] - b.y) - b.r <
+            Math.hypot(leaderTop[0] - a.x, leaderTop[1] - a.y) - a.r
+                ? b
+                : a
+        );
+        leaderTop[0] = near.x;
+        leaderTop[1] = near.y;
+    }
+    const leaderRise = fork[1] - leaderTop[1];
+    trunk.push(
+        ...limb(
+            fork,
+            [fork[0] + between(-20, 20), fork[1] - leaderRise * 0.35],
+            [leaderTop[0] + between(-20, 20), leaderTop[1] + leaderRise * 0.3],
+            leaderTop,
+            spine[spine.length - 1].r * 0.85,
+            between(10, 15),
+            0.9
+        )
+    );
+    tips.push({ x: leaderTop[0], y: leaderTop[1] });
+
+    // Side limbs leave the upper trunk one after another, alternating left and right as leaves do on a twig. The lowest is the
+    // longest and runs nearly level, as an oak's heavy lower limbs do (it grows reaction wood on its underside to hold itself
+    // up); the ones above are shorter. Each bends upward at its end, towards the light.
+    const lower = lobes.filter((c) => c.y + c.r > lowest - 240);
     const limbCount = Math.min(lower.length, random() < 0.4 ? 4 : 3);
     const used = new Set();
-    for (let i = 0; i < limbCount; i++) {
-        const wanted = lerp(210, 790, (i + 0.5) / limbCount) + between(-50, 50);
-        const target = lower
-            .filter((c) => !used.has(c))
-            .sort((a, b) => Math.abs(a.x - wanted) - Math.abs(b.x - wanted))[0];
+    let side = random() < 0.5 ? -1 : 1;
+    for (let i = 0; i < limbCount; i++, side = -side) {
+        // where it leaves the trunk: the lowest first, each one higher up
+        const along = lerp(0.58, 0.97, limbCount === 1 ? 0 : i / (limbCount - 1));
+        const start = spine[Math.round(along * (spine.length - 1))];
+        // its target: of the clumps on its side, the one that reaches furthest out; failing that, any that is left
+        const free = lower.filter((c) => !used.has(c));
+        const onSide = free
+            .filter((c) => (c.x - trunkAxis) * side > 0)
+            .sort((a, b) => Math.abs(b.x - trunkAxis) - Math.abs(a.x - trunkAxis));
+        const target = (
+            onSide.length ? onSide : free.sort((a, b) => Math.abs(b.x - trunkAxis) - Math.abs(a.x - trunkAxis))
+        )[0];
         used.add(target);
         // the tip is well inside the clump, so the limb is hidden in the leaves where it ends
         const tip = [target.x + between(-0.3, 0.3) * target.r, target.y + between(-0.2, 0.35) * target.r];
-        const dx = tip[0] - fork[0];
+        const dx = tip[0] - start.x;
         const thisLimb = limb(
-            fork,
-            [fork[0] + dx * between(0.05, 0.3), fork[1] - between(40, 110)],
-            [tip[0] - dx * between(0.1, 0.35), tip[1] + between(30, 100)],
+            [start.x, start.y],
+            [start.x + dx * between(0.4, 0.55), start.y + between(-30, 5)], // going out nearly level
+            [tip[0] - dx * between(0.1, 0.25), tip[1] + between(45, 100)], // and coming up into the tip
             tip,
-            between(32, 42),
+            Math.min(start.r * 0.7, between(32, 42)),
             between(8, 12),
             between(0.6, 1)
         );
         trunk.push(...thisLimb);
         tips.push({ x: tip[0], y: tip[1] });
+        limbs.push({ side, start: { x: start.x, y: start.y }, tip: { x: tip[0], y: tip[1] } });
         // a branch off most limbs, forking away and growing up into the leaves
         if (random() < 0.85) {
             const at = thisLimb[Math.floor(thisLimb.length * between(0.35, 0.7))];
@@ -688,12 +730,12 @@ export function buildTree(seed = 1) {
             if (near.length) {
                 const goal = near[Math.floor(random() * near.length)];
                 const end = [goal.x + between(-0.35, 0.35) * goal.r, goal.y + between(-0.35, 0.35) * goal.r];
-                const side = end[0] > at.x ? 1 : -1;
+                const away = end[0] > at.x ? 1 : -1;
                 trunk.push(
                     ...limb(
                         [at.x, at.y],
-                        [at.x + side * between(5, 25), at.y - between(20, 60)],
-                        [end[0] - side * between(10, 40), end[1] + between(20, 60)],
+                        [at.x + away * between(5, 25), at.y - between(20, 60)],
+                        [end[0] - away * between(10, 40), end[1] + between(20, 60)],
                         end,
                         at.r * 0.75,
                         5,
@@ -704,7 +746,7 @@ export function buildTree(seed = 1) {
             }
         }
     }
-    return { crown, trunk, spine, tips, axis: trunkAxis, seed };
+    return { crown, trunk, spine, tips, limbs, leaderTop: { x: leaderTop[0], y: leaderTop[1] }, axis: trunkAxis, seed };
 }
 
 /**
@@ -789,6 +831,10 @@ function centroid(mask, cols) {
 /** The most surnames laid out, and how many in a row may fail to fit before the rest are given up on. */
 export const MAX_WORDS = 600;
 const MAX_MISSES = 15;
+/** The rescue pass for names that found no room: it starts no bigger than RESCUE_START, may go as small as RESCUE_MIN_FONT, and gives up after this many in a row. */
+const RESCUE_START = 14;
+const RESCUE_MIN_FONT = 6;
+const MAX_RESCUE_MISSES = 150;
 
 export const MAX_FONT = 118;
 export const MIN_FONT = 10;
@@ -796,7 +842,8 @@ export const MIN_FONT = 10;
 /**
  * How the picture looks. "Shaded" is the oak with gradients, a shadow under the leaves, bark, and roots in a patch of
  * ground, and words spaced with a little air round them. "Flat two-tone" is the crisp, silhouette style of word art: solid
- * colours, nothing shaded, and words packed tight, with many more small ones filling the gaps. `gapCells` is the gap
+ * colours, nothing shaded, and words packed tight, with many more small ones filling the gaps. "Outlined" is the cartoon
+ * look of clip art: puffy clusters of leaves and a trunk with dark outlines, and the words packed fairly tight. `gapCells` is the gap
  * left round a word (in layout cells), `minFont` the smallest a word may become, `shrink` how much a word that does not
  * fit is made smaller each try, and fillLimit, fillMisses and fillSize how the small repeats that fill the gaps go.
  */
@@ -820,6 +867,16 @@ export const LOOKS = [
         fillLimit: 2200,
         fillMisses: 80,
         fillSize: [8, 17],
+    },
+    {
+        id: "outlined",
+        name: "Outlined",
+        gapCells: 1.1,
+        minFont: 8,
+        shrink: 0.92,
+        fillLimit: 1500,
+        fillMisses: 55,
+        fillSize: [9, 18],
     },
 ];
 
@@ -964,11 +1021,11 @@ export function layoutWords({
         return null;
     };
 
-    const place = (word, size, regionName, angle, rank, inGaps = false) => {
+    const place = (word, size, regionName, angle, rank, inGaps = false, smallest = tune.minFont) => {
         const region = regions[regionName];
         if (region.empty) return null;
         let fontSize = size;
-        while (fontSize >= tune.minFont) {
+        while (fontSize >= smallest) {
             const w = measure(word.text, fontSize);
             const h = fontSize * CAP_HEIGHT;
             const cover = boxOffsets(w, h, angle, CELL * 0.5);
@@ -1017,14 +1074,33 @@ export function layoutWords({
         misses = done ? 0 : misses + 1;
     }
 
+    // The cells still free, for the passes below to try (see findSpotInGaps)
+    Object.values(regions).forEach((region) => {
+        region.pool = [];
+        for (let cell = 0; cell < region.mask.length; cell++)
+            if (region.mask[cell] && !taken[cell]) region.pool.push(cell);
+    });
+
+    // Rescue: pass one gives up after a run of names that find no room, and a name may simply not have fitted where the
+    // spiral looked. Every name left over gets a second try in the gaps, at any size down to a very small one, so that a
+    // surname is left out only when there is truly no room for it.
+    const placedWords = new Set(placed.map((item) => item.text));
+    let rescueMisses = 0;
+    for (let index = 0; index < Math.min(words.length, MAX_WORDS) && rescueMisses < MAX_RESCUE_MISSES; index++) {
+        const word = words[index];
+        if (placedWords.has(word.text)) continue;
+        const size = Math.min(fontSizeFor(word.count, minCount, maxCount), RESCUE_START);
+        const regionName = random() < 0.8 ? "crown" : "trunk";
+        const angle = chooseAngle(random, 99, size);
+        const done =
+            place(word, size, regionName, angle, index, true, RESCUE_MIN_FONT) ||
+            place(word, size, regionName === "crown" ? "trunk" : "crown", angle, index, true, RESCUE_MIN_FONT);
+        rescueMisses = done ? 0 : rescueMisses + 1;
+        if (done) placedWords.add(word.text);
+    }
+
     // Pass two: if the member wants the tree filled, repeat the names at small sizes until nothing more fits.
     if (fillGaps) {
-        // the cells still free, for the gap-filling words to try (see findSpotInGaps)
-        Object.values(regions).forEach((region) => {
-            region.pool = [];
-            for (let cell = 0; cell < region.mask.length; cell++)
-                if (region.mask[cell] && !taken[cell]) region.pool.push(cell);
-        });
         let missed = 0;
         let i = 0;
         const limit = tune.fillLimit;
@@ -1087,6 +1163,12 @@ export const COLORS = {
     groundCentre: "#cfdcb6",
     groundEdge: "#cfdcb6",
     crownShadow: "#2f5d34",
+    outline: "#27481f", // the outlined look: the line round each puff of leaves
+    trunkOutline: "#4a2e1c",
+    crownOutlined: ["#d6ecb8", "#bfe09a"], // light and mid green of a puff of leaves
+    trunkOutlined: "#e8c3a6",
+    crownWordsOutlined: ["#1d5a1a", "#24661f", "#2c7226", "#1a4f18", "#2f7a2a"],
+    trunkWordsOutlined: ["#5d3309", "#6b3a0c", "#4a2a08", "#7a4510"],
     crownFlat: "#d4ecd4", // the flat look: one green for the crown and one tan for the trunk
     trunkFlat: "#e9dbc2",
     crownWords: ["#1f8f2b", "#2ba03a", "#3aaa49", "#52b85a", "#1a7a26", "#6cc274"],
@@ -1124,10 +1206,18 @@ export const LIGHT = { dx: -0.32, dy: -0.38, spread: 1.2 };
 export function colorFor(item, look = "shaded") {
     // a word in a shape made from a picture has the colour of the picture under it
     if (item.color) return item.color;
-    const list = item.region === "trunk" ? COLORS.trunkWords : COLORS.crownWords;
+    const outlined = look === "outlined";
+    const list =
+        item.region === "trunk"
+            ? outlined
+                ? COLORS.trunkWordsOutlined
+                : COLORS.trunkWords
+            : outlined
+              ? COLORS.crownWordsOutlined
+              : COLORS.crownWords;
     const picked = list[(item.rank * 7 + item.text.length) % list.length];
-    // the flat look is two plain tones, so the words are not made lighter or darker by where they are
-    if (look === "flat") return picked;
+    // the flat and outlined looks are plain tones, so the words are not made lighter or darker by where they are
+    if (look === "flat" || outlined) return picked;
     const [h, s, l] = hexToHsl(picked);
     const toward = (item.x / WIDTH - 0.5) * 8 + (item.y / HEIGHT - 0.4) * 12; // positive towards the lower right
     return hslToHex(h, s, clamp(l - toward, 16, 58));
