@@ -16,6 +16,8 @@ import {
     hashString,
     layoutWords,
     scopeById,
+    unseenNote,
+    unseenRows,
     seededRandom,
 } from "./surname_tree_core.js";
 import { fetchScope } from "./surname_tree_data.js";
@@ -46,12 +48,14 @@ import {
     sizeLabel,
     widthFor,
 } from "./surname_tree_export.js";
-import { PAGE_SIZE, cardHtml, countText, listHtml } from "./surname_tree_list.js";
+import { PAGE_SIZE, cardHtml, countText, escapeHtml, listHtml } from "./surname_tree_list.js";
 import { attachZoom, renderTreeSvg } from "./surname_tree_svg.js";
 
 // The Surname Tree app itself: a chart drawn in a container, with its controls, list and card. mountApp is given the
 // container, the person to start from (their number or WikiTree ID) and the starting options.
 
+/** Up to this many names that found no room are named in the note under the tree; more than that are listed in a popup. */
+const UNSEEN_LISTED = 3;
 const pluralize = (n, one, many) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
 
 // ---------------------------------------------------------------------------------------------
@@ -94,6 +98,7 @@ export function mountApp(container, key, options) {
         listShown: PAGE_SIZE,
         listEntries: [],
         request: 0,
+        unseen: [], // the names that found no room
         saveFormat: "png",
         saveSize: DEFAULT_SIZE,
         customWidth: "2000",
@@ -172,6 +177,13 @@ export function mountApp(container, key, options) {
             <div class="sutree-list-body" id="suTreeListBody"></div>
           </aside>
           <div class="sutree-card" id="suTreeCard" role="dialog" aria-label="Profile card" hidden></div>
+          <div class="sutree-unseen" id="suTreeUnseen" role="dialog" aria-label="Names that did not fit" hidden>
+            <div class="sutree-unseen-head">
+              <strong id="suTreeUnseenTitle"></strong>
+              <button type="button" id="suTreeUnseenClose" aria-label="Close the list">&times;</button>
+            </div>
+            <div class="sutree-unseen-body" id="suTreeUnseenBody"></div>
+          </div>
         </div>
         <p class="sutree-status" id="suTreeStatus" role="status"></p>
       </div>
@@ -238,14 +250,16 @@ export function mountApp(container, key, options) {
     const zoom = attachZoom(svg);
     let wordGroups = new Map();
 
-    const say = (text, isError = false) => find("#suTreeStatus").text(text).toggleClass("sutree-error", isError);
+    const say = (text, isError = false) =>
+        find("#suTreeStatus").text(text).removeAttr("title").toggleClass("sutree-error", isError);
     const actionButtons = "#suTreeCopy, #suTreeSaveAs, #suTreeShuffle, #suTreeZoomIn, #suTreeZoomOut, #suTreeZoomReset";
     const wordFor = (text) => state.words.find((w) => w.text === text);
 
     // ---- Escape closes the card, and leaves full screen
     const onKey = (e) => {
         if (e.key !== "Escape") return;
-        if (!card.hidden) hideCard();
+        if (!unseen.hidden) closeUnseen();
+        else if (!card.hidden) hideCard();
         else if ($app.hasClass("sutree-full")) toggleFull();
     };
     $(document).on("keydown.suTree", onKey);
@@ -288,6 +302,7 @@ export function mountApp(container, key, options) {
     /** Choose who to show, lay the words out, and draw. */
     function refresh() {
         hideCard();
+        closeUnseen();
         const chosen = chooseByRelation(state.raw.entries, state);
         state.words = groupNames(chosen, state.kind);
         // (a person with two first names is in two words, but is one person)
@@ -341,14 +356,20 @@ export function mountApp(container, key, options) {
                 "person",
                 "people"
             )} ` + `(${scope.name}, ${state.amount[scope.id]} ${scope.units}, ${typesText()}).`;
-        const unseen =
-            shown < state.words.length
-                ? ` ${(state.words.length - shown).toLocaleString()} rarer ${kind.nouns} did not fit.`
-                : "";
+        // the names that found no room are told: the first few in the note, and more when the pointer rests on it
+        const left = state.words.filter((w) => !wordGroups.has(w.text)).map((w) => w.text);
+        const unseenText = unseenNote(left, kind.noun, kind.nouns, UNSEEN_LISTED);
         const cut = state.raw.truncated ? " Only the first 60,000 people were read." : "";
         say(
-            `${state.caption}${unseen}${cut}${state.shapeNote} Hover a ${kind.noun} to see how many profiles it has, and click it to list them.`
+            `${state.caption}${unseenText}${cut}${state.shapeNote} Hover a ${kind.noun} to see how many profiles it has, and click it to list them.`
         );
+        if (left.length > UNSEEN_LISTED) {
+            state.unseen = left;
+            $("<button>", { "type": "button", "class": "sutree-linkbutton", "aria-haspopup": "dialog" })
+                .text("See the list")
+                .on("click", openUnseen)
+                .appendTo(find("#suTreeStatus").append(" "));
+        }
         if (state.selected) {
             if (wordFor(state.selected)) openList(state.selected, state.listShown);
             else closeList();
@@ -538,7 +559,13 @@ export function mountApp(container, key, options) {
         if (!word) return;
         const stage = find(".sutree-stage")[0];
         const rect = stage.getBoundingClientRect();
-        tip.innerHTML = `<b></b> <span class="sutree-tip-count"></span><div class="sutree-tip-hint">Click to list them</div>`;
+        // a name seen more than once has small copies that fill the gaps; say so, since it can look like a mistake
+        const copies = (wordGroups.get(surname) || []).length;
+        tip.innerHTML =
+            `<b></b> <span class="sutree-tip-count"></span><div class="sutree-tip-hint">Click to list them</div>` +
+            (copies > 1
+                ? `<div class="sutree-tip-hint">This name is shown ${copies} times. The small copies fill the gaps; untick Fill the gaps to see each name once.</div>`
+                : "");
         tip.querySelector("b").textContent = surname;
         tip.querySelector(".sutree-tip-count").textContent = countText(word);
         tip.style.left = `${Math.max(4, Math.min(event.clientX - rect.left + 14, rect.width - 260))}px`;
@@ -617,6 +644,41 @@ export function mountApp(container, key, options) {
         card.style.right = `${Math.max(8, main.right - listBox.left + 10)}px`;
         card.style.top = `${Math.max(8, Math.min(link.top - main.top - 10, main.height - card.offsetHeight - 8))}px`;
     }
+    // ---- the names that did not fit, when there are more than a few: a list with how many profiles each has
+    const unseen = find("#suTreeUnseen")[0];
+    function openUnseen() {
+        const kind = kindById(state.kind);
+        const { rows, more } = unseenRows(state.words, state.unseen || []);
+        hideCard();
+        find("#suTreeUnseenTitle").text(
+            `${pluralize(state.unseen.length, `rarer ${kind.noun}`, `rarer ${kind.nouns}`)} did not fit`
+        );
+        find("#suTreeUnseenBody").html(
+            `<p class="sutree-unseen-hint">There was no room left for these, even in small type. Click one to list its people.</p>` +
+                `<ul class="sutree-unseen-list">${rows
+                    .map(
+                        (row) =>
+                            `<li><button type="button" class="sutree-unseen-name" data-name="${escapeHtml(row.text)}">` +
+                            `${escapeHtml(row.text)}</button> <span>${pluralize(row.count, "profile", "profiles")}</span></li>`
+                    )
+                    .join("")}</ul>` +
+                (more
+                    ? `<p class="sutree-unseen-hint">and ${more.toLocaleString()} more, each with fewer profiles.</p>`
+                    : "")
+        );
+        unseen.hidden = false;
+        find("#suTreeUnseenClose")[0].focus();
+    }
+    function closeUnseen() {
+        unseen.hidden = true;
+    }
+    find("#suTreeUnseenClose").on("click", closeUnseen);
+    find("#suTreeUnseenBody").on("click", ".sutree-unseen-name", (e) => {
+        const name = e.currentTarget.dataset.name;
+        closeUnseen();
+        openList(name);
+    });
+
     function hideCard() {
         card.hidden = true;
         card.innerHTML = "";

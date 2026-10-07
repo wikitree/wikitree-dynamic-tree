@@ -43,6 +43,10 @@ background a colour must be to count as part of the shape: raise it to cut more 
 made easy to read as text (never very light or very dark). If no shape can be found, the oak is shown and a note says so.
 Shuffle, the names, Reach, zoom, the list and the card, and saving all work in a picture's shape too.
 
+**Names that did not fit.** Every name is tried again in any gap, in smaller type, before it is left out. The note under the tree
+says how many were left out: one to three are named in it, and for more there is a **See the list** link, which opens a list of
+them with how many profiles each has. Click one in the list to see its people.
+
 ## Options in the address
 
 The options can be given after the view, so a link opens the tree as set:
