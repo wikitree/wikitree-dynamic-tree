@@ -18,6 +18,7 @@ import {
     buildTree,
     colorFor,
     crownColors,
+    frameOf,
 } from "./surname_tree_core.js";
 
 /** A tall, narrow, heavy face, like the capitals on a tree-shaped word cloud. Whatever is installed first is used. */
@@ -222,18 +223,24 @@ function drawBackdrop(g, shape) {
     g.restore();
 }
 
-/** Draw the tree (trunk and limbs, then the clumps of leaves, then the words) on a canvas sized to WIDTH x HEIGHT times `scale`. */
+/**
+ * Draw the tree (trunk and limbs, then the clumps of leaves, then the words) on a canvas sized to the drawing's frame times
+ * `scale`: WIDTH x HEIGHT for a tree or a picture's shape, the banner's much wider frame for a banner.
+ */
 export function drawTree(canvas, items, scale = 2, tree = buildTree(1)) {
-    canvas.width = Math.round(WIDTH * scale);
-    canvas.height = Math.round(HEIGHT * scale);
+    const frame = frameOf(tree);
+    canvas.width = Math.round(frame.w * scale);
+    canvas.height = Math.round(frame.h * scale);
     const g = canvas.getContext("2d");
-    g.setTransform(canvas.width / WIDTH, 0, 0, canvas.height / HEIGHT, 0, 0);
-    g.fillStyle = "#fff";
-    g.fillRect(0, 0, WIDTH, HEIGHT);
+    g.setTransform(canvas.width / frame.w, 0, 0, canvas.height / frame.h, 0, 0);
+    g.fillStyle = tree.kind === "banner" ? tree.background : "#fff";
+    g.fillRect(0, 0, frame.w, frame.h);
 
     // what goes behind the words: the picture the member chose, or an oak, shaded or flat
     const look = tree.look || "shaded";
-    if (tree.kind === "image") drawBackdrop(g, tree);
+    if (tree.kind === "banner") {
+        // nothing but the colour behind the words, which is already painted
+    } else if (tree.kind === "image") drawBackdrop(g, tree);
     else if (look === "flat") drawFlatTree(g, tree);
     else if (look === "outlined") drawOutlinedTree(g, tree);
     else drawShadedTree(g, tree);

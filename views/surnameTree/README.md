@@ -43,6 +43,14 @@ background a colour must be to count as part of the shape: raise it to cut more 
 made easy to read as text (never very light or very dark). If no shape can be found, the oak is shown and a note says so.
 Shuffle, the names, Reach, zoom, the list and the card, and saving all work in a picture's shape too.
 
+**Wide banner (profile background).** Choose **Wide banner (profile background)** under **Shape** and the names fill a wide, short
+picture edge to edge, with no tree shape: the greens of the oak's canopy on a pale green background. **Words** can be the canopy
+greens or one colour, and **Background** is any colour. **Save as** then offers 1,280, 1,920 and 2,560 pixel widths (2,560 by 400
+at the largest, the default). WikiTree has no set size for a background image: it tiles the image like wallpaper behind the top
+of a profile page, mostly showing in the margins either side of the page, so a banner wider than the screen is not repeated. To
+use it, save the picture, upload it to WikiTree, and set it as the background image of your profile (see
+[Help:Background Images](https://www.wikitree.com/wiki/Help:Background_Images)).
+
 **Names that did not fit.** Every name is tried again in any gap, in smaller type, before it is left out. The note under the tree
 says how many were left out: one to three are named in it, and for more there is a **See the list** link, which opens a list of
 them with how many profiles each has. Click one in the list to see its people.

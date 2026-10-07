@@ -809,6 +809,44 @@ export function buildMasks(tree = buildTree(DEFAULT_TREE_SEED)) {
     return { cols, rows, crown, trunk };
 }
 
+// ---------------------------------------------------------------------------------------------
+// The wide banner: the whole area filled with names, for a profile's background
+// ---------------------------------------------------------------------------------------------
+
+/** The banner's size when saved at full size, in pixels. WikiTree has no set size; this is wide enough not to repeat on most screens. */
+export const BANNER_PIXELS = { width: 2560, height: 400 };
+/** The banner's frame in logical pixels: as wide as the tree's, and as tall as the banner's shape. */
+export const BANNER_FRAME = {
+    x: 0,
+    y: 0,
+    w: WIDTH,
+    h: (WIDTH * BANNER_PIXELS.height) / BANNER_PIXELS.width, // 156.25: the same shape as 2560 x 400
+};
+/** The largest and smallest the words are in the banner, in logical pixels (the tree's are bigger, as it is much taller). */
+export const BANNER_FONTS = { maxFont: 40, minFont: 12 };
+export const DEFAULT_BANNER_BACKGROUND = "#e9f4e1";
+export const DEFAULT_BANNER_WORD = "#2e6b2a";
+
+/** The part of the drawing that is shown: the whole frame for a tree or a picture's shape, the banner's frame for a banner. */
+export const frameOf = (shape) => (shape && shape.bounds) || { x: 0, y: 0, w: WIDTH, h: HEIGHT };
+
+/**
+ * The banner's shape: every cell of its frame is for words, with no trunk. `background` is the colour behind the words;
+ * `wordColor` is one colour for every word, or "" for the greens of the oak's canopy.
+ */
+export function buildBannerShape({ background = DEFAULT_BANNER_BACKGROUND, wordColor = "" } = {}) {
+    const cols = Math.ceil(BANNER_FRAME.w / CELL);
+    const rows = Math.ceil(BANNER_FRAME.h / CELL);
+    return {
+        kind: "banner",
+        look: "outlined", // the canopy's own dark greens
+        bounds: BANNER_FRAME,
+        masks: { cols, rows, crown: new Uint8Array(cols * rows).fill(1), trunk: new Uint8Array(cols * rows) },
+        background,
+        wordColor,
+    };
+}
+
 /** The middle of a mask, in cells. */
 function centroid(mask, cols) {
     let sx = 0;
@@ -941,6 +979,7 @@ export function wordCells(item) {
  * measure: (text, fontSize) => width in logical pixels
  * masks:   from buildMasks(tree), or made from a picture (see surname_tree_image.js)
  * look:    "shaded" or "flat" (see LOOKS): how tightly the words are packed and how small they may become
+ * fonts:    { maxFont, minFont } for the biggest and the rarest names, where the shape is not as tall as the tree (the banner)
  * Returns [{ text, count, region: "crown" | "trunk", x, y, size, angle, w, h, rank }] where x, y is the middle of the
  * word, angle its turn in degrees, and w, h the size of its box before turning.
  */
@@ -951,6 +990,7 @@ export function layoutWords({
     fillGaps = true,
     masks = buildMasks(),
     look = "shaded",
+    fonts = {},
 }) {
     const tune = lookById(look);
     const { cols, rows } = masks;
@@ -1064,7 +1104,7 @@ export function layoutWords({
     let misses = 0;
     for (let index = 0; index < Math.min(words.length, MAX_WORDS) && misses < MAX_MISSES; index++) {
         const word = words[index];
-        const size = fontSizeFor(word.count, minCount, maxCount);
+        const size = fontSizeFor(word.count, minCount, maxCount, fonts.maxFont, fonts.minFont);
         const regionName = index >= 3 && index % 5 === 4 ? "trunk" : "crown";
         const angle = chooseAngle(random, index, size);
         // if one part of the tree has no room for it, the other may
@@ -1089,7 +1129,7 @@ export function layoutWords({
     for (let index = 0; index < Math.min(words.length, MAX_WORDS) && rescueMisses < MAX_RESCUE_MISSES; index++) {
         const word = words[index];
         if (placedWords.has(word.text)) continue;
-        const size = Math.min(fontSizeFor(word.count, minCount, maxCount), RESCUE_START);
+        const size = Math.min(fontSizeFor(word.count, minCount, maxCount, fonts.maxFont, fonts.minFont), RESCUE_START);
         const regionName = random() < 0.8 ? "crown" : "trunk";
         const angle = chooseAngle(random, 99, size);
         const done =

@@ -2,7 +2,7 @@
 Created By: Azure Robinson (Robinson-27225)
 */
 
-import { HEIGHT, WIDTH } from "./surname_tree_core.js";
+import { WIDTH, frameOf } from "./surname_tree_core.js";
 import { drawTree } from "./surname_tree_draw.js";
 
 export const FORMATS = [
@@ -20,23 +20,37 @@ export const SIZES = [
     { id: "large", width: 3200, name: "Large", use: "for printing" },
 ];
 export const DEFAULT_SIZE = "small";
+/** Widths offered for the profile-background banner. WikiTree tiles a background image, so it should be wider than the screen. */
+export const BANNER_SIZES = [
+    { id: "small", width: 1280, name: "Small", use: "for narrow screens" },
+    { id: "medium", width: 1920, name: "Medium", use: "for most screens" },
+    { id: "large", width: 2560, name: "Large", use: "for wide screens" },
+];
+export const DEFAULT_BANNER_SIZE = "large";
+/** The sizes offered for a shape, and the one chosen at first. */
+export const sizesFor = (shape) => (shape && shape.kind === "banner" ? BANNER_SIZES : SIZES);
+export const defaultSizeFor = (shape) => (shape && shape.kind === "banner" ? DEFAULT_BANNER_SIZE : DEFAULT_SIZE);
 export const MIN_WIDTH = 200;
 export const MAX_WIDTH = 6000; // 6000 x 5280 is about 32 million pixels, which browsers can still make
 
-/** The tree's picture is this much taller than it is wide. */
-export const imageHeight = (width) => Math.round((width * HEIGHT) / WIDTH);
+/** The tree's picture is this much taller than it is wide (the banner's, much less so): the height for a width, for a shape. */
+export const imageHeight = (width, shape) => {
+    const frame = frameOf(shape);
+    return Math.round((width * frame.h) / frame.w);
+};
 
 /** The width in pixels for a size choice ("small", "medium", "large" or "custom" with a typed width), or 0 if invalid. */
-export function widthFor(sizeId, customWidth) {
+export function widthFor(sizeId, customWidth, shape) {
     if (sizeId === "custom") {
         const n = Math.round(Number(customWidth));
         return Number.isFinite(n) && n >= MIN_WIDTH && n <= MAX_WIDTH ? n : 0;
     }
-    const size = SIZES.find((s) => s.id === sizeId);
+    const size = sizesFor(shape).find((s) => s.id === sizeId);
     return size ? size.width : 0;
 }
 
-export const sizeLabel = (width) => `${width.toLocaleString()} × ${imageHeight(width).toLocaleString()} pixels`;
+export const sizeLabel = (width, shape) =>
+    `${width.toLocaleString()} × ${imageHeight(width, shape).toLocaleString()} pixels`;
 
 export const exportFileName = (key, format, width, prefix = "surname-tree") =>
     `${prefix}-${key}${formatById(format).sized ? `-${width}px` : ""}.${formatById(format).extension}`;
@@ -184,7 +198,10 @@ export async function renderPdf(items, { title, caption, paper, tree }) {
     const blob = await renderImage(items, "image/jpeg", width, tree);
     if (!blob) return null;
     const jpeg = await blobBytes(blob);
-    return new Blob([buildPdf({ jpeg, pixelWidth: width, pixelHeight: imageHeight(width), title, caption, paper })], {
-        type: "application/pdf",
-    });
+    return new Blob(
+        [buildPdf({ jpeg, pixelWidth: width, pixelHeight: imageHeight(width, tree), title, caption, paper })],
+        {
+            type: "application/pdf",
+        }
+    );
 }

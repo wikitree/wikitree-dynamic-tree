@@ -16,6 +16,11 @@ import {
     hashString,
     layoutWords,
     scopeById,
+    BANNER_FONTS,
+    DEFAULT_BANNER_BACKGROUND,
+    DEFAULT_BANNER_WORD,
+    buildBannerShape,
+    frameOf,
     unseenNote,
     unseenRows,
     seededRandom,
@@ -36,11 +41,12 @@ import {
 import { makeMeasure } from "./surname_tree_draw.js";
 import {
     DEFAULT_SIZE,
+    defaultSizeFor,
+    sizesFor,
     FORMATS,
     MAX_WIDTH,
     MIN_WIDTH,
     PAPERS,
-    SIZES,
     exportFileName,
     formatById,
     renderImage,
@@ -101,6 +107,10 @@ export function mountApp(container, key, options) {
         unseen: [], // the names that found no room
         saveFormat: "png",
         saveSize: DEFAULT_SIZE,
+        sizeGroup: "tree", // whether the sizes now offered are the tree's or the banner's
+        bannerBackground: DEFAULT_BANNER_BACKGROUND, // the wide banner: the colour behind the words
+        bannerWords: "canopy", // "canopy" (the greens of the oak's leaves) or "one" (one colour, bannerWordColor)
+        bannerWordColor: DEFAULT_BANNER_WORD,
         customWidth: "2000",
         paper: "letter",
     };
@@ -115,8 +125,19 @@ export function mountApp(container, key, options) {
             <select id="suTreeShapeKind">
               <option value="tree">Oak tree (drawn)</option>
               <option value="image">My picture</option>
+              <option value="banner">Wide banner (profile background)</option>
             </select>
           </label>
+          <span id="suTreeBannerBox" class="sutree-bannerbox" hidden>
+            <label>Words
+              <select id="suTreeBannerWords">
+                <option value="canopy">Greens of the canopy</option>
+                <option value="one">One colour</option>
+              </select>
+            </label>
+            <input type="color" id="suTreeBannerWordColor" aria-label="Colour of the words" hidden>
+            <label>Background <input type="color" id="suTreeBannerBackground"></label>
+          </span>
           <button type="button" id="suTreeChoose" title="Choose a picture to use as the shape" hidden>Choose picture…</button>
           <label id="suTreeSenseLabel" hidden title="Raise it to cut more of the background away; lower it to keep more of the picture">
             Cut-out <input type="range" id="suTreeSense" min="8" max="160" step="1">
@@ -230,14 +251,31 @@ export function mountApp(container, key, options) {
             .append(document.createTextNode(` ${f.name}`))
             .appendTo(find(".sutree-formats"))
     );
-    SIZES.forEach((size) =>
-        $("<option>")
-            .val(size.id)
-            .text(`${size.name}: ${sizeLabel(size.width)} (${size.use})`)
-            .appendTo(find("#suTreeSize"))
-    );
-    $("<option>").val("custom").text("Custom width…").appendTo(find("#suTreeSize"));
-    find("#suTreeSize").val(state.saveSize);
+    /** The sizes offered for the shape now shown (the banner's are wider), keeping the choice when it still exists. */
+    function fillSizes() {
+        const sizes = sizesFor(state.shape);
+        const $size = find("#suTreeSize").empty();
+        sizes.forEach((size) =>
+            $("<option>")
+                .val(size.id)
+                .text(`${size.name}: ${sizeLabel(size.width, state.shape)} (${size.use})`)
+                .appendTo($size)
+        );
+        $("<option>").val("custom").text("Custom width…").appendTo($size);
+        // each kind of shape has its own usual size, so the choice starts again when the kind changes
+        const group = state.shape.kind === "banner" ? "banner" : "tree";
+        if (state.sizeGroup !== group) {
+            state.sizeGroup = group;
+            state.saveSize = defaultSizeFor(state.shape);
+        } else if (state.saveSize !== "custom" && !sizes.some((size) => size.id === state.saveSize)) {
+            state.saveSize = defaultSizeFor(state.shape);
+        }
+        $size.val(state.saveSize);
+    }
+    fillSizes();
+    find("#suTreeBannerBackground").val(state.bannerBackground);
+    find("#suTreeBannerWordColor").val(state.bannerWordColor);
+    find("#suTreeBannerWords").val(state.bannerWords);
     find("#suTreeCustom").attr({ min: MIN_WIDTH, max: MAX_WIDTH }).val(state.customWidth);
     Object.entries(PAPERS).forEach(([id, paper]) =>
         $("<option>").val(id).text(paper.name).appendTo(find("#suTreePaper"))
@@ -247,7 +285,7 @@ export function mountApp(container, key, options) {
     const svg = find("#suTreeSvg")[0];
     const tip = find("#suTreeTip")[0];
     const card = find("#suTreeCard")[0];
-    const zoom = attachZoom(svg);
+    const zoom = attachZoom(svg, undefined, () => frameOf(state.shape));
     let wordGroups = new Map();
 
     const say = (text, isError = false) =>
@@ -319,7 +357,12 @@ export function mountApp(container, key, options) {
         // of the tree as well as where the names go.
         state.shapeNote = "";
         let shape = null;
-        if (state.shapeKind !== "tree" && state.picture) {
+        if (state.shapeKind === "banner") {
+            shape = buildBannerShape({
+                background: state.bannerBackground,
+                wordColor: state.bannerWords === "one" ? state.bannerWordColor : "",
+            });
+        } else if (state.shapeKind !== "tree" && state.picture) {
             shape = shapeFromPixels(state.picture.pixels, state.picture.rect, state.sensitivity, {
                 leaveWhite: state.leaveWhite,
             });
@@ -333,16 +376,20 @@ export function mountApp(container, key, options) {
             }
         }
         if (!shape) shape = buildTree(state.seed);
-        shape.look = state.look;
+        if (shape.kind !== "banner") shape.look = state.look;
         state.shape = shape;
+        fillSizes();
         state.items = layoutWords({
             words: state.words,
             measure: makeMeasure(),
             random: seededRandom(state.seed),
             fillGaps: state.fillGaps,
-            masks: shape.kind === "image" ? shape.masks : buildMasks(shape),
-            look: state.look,
+            masks: shape.kind === "image" || shape.kind === "banner" ? shape.masks : buildMasks(shape),
+            look: shape.kind === "banner" ? "flat" : state.look, // the banner's words are packed tightly
+            fonts: shape.kind === "banner" ? BANNER_FONTS : undefined,
         });
+        // every word one colour, when the member chose one for the banner
+        if (shape.kind === "banner" && shape.wordColor) state.items.forEach((item) => (item.color = shape.wordColor));
         // a word in a picture's shape has the colour of the picture under it
         if (shape.kind === "image") state.items.forEach((item) => (item.color = wordColour(shape, item)));
         wordGroups = renderTreeSvg(svg, state.items, shape).words;
@@ -422,9 +469,15 @@ export function mountApp(container, key, options) {
     function setShapeKind(kind) {
         state.shapeKind = kind;
         find("#suTreeShapeKind").val(kind);
+        const banner = kind === "banner";
         find("#suTreeChoose").prop("hidden", kind !== "image");
-        find("#suTreeSenseLabel").prop("hidden", kind === "tree");
-        find("#suTreeWhiteLabel").prop("hidden", kind === "tree");
+        find("#suTreeSenseLabel").prop("hidden", kind === "tree" || banner);
+        find("#suTreeWhiteLabel").prop("hidden", kind === "tree" || banner);
+        // the banner has its own colours; the look (shaded, flat, outlined) is for the trees
+        find("#suTreeBannerBox").prop("hidden", !banner);
+        find("#suTreeBannerWordColor").prop("hidden", state.bannerWords !== "one");
+        find("#suTreeLook").prop("disabled", banner);
+        find(".sutree-stage").toggleClass("sutree-banner", banner);
         find("#suTreeWhite").prop("checked", state.leaveWhite);
         if (kind === "image" && state.mine) {
             find("#suTreeChoose").attr("title", `Using ${state.mine.name}. Choose another picture`);
@@ -470,6 +523,10 @@ export function mountApp(container, key, options) {
             setShapeKind("tree");
             return redraw();
         }
+        if (choice === "banner") {
+            setShapeKind("banner");
+            return redraw();
+        }
         if (choice === "image") {
             if (!state.mine) return askForPicture(); // setShapeKind follows once there is a picture
             state.picture = state.mine;
@@ -480,6 +537,20 @@ export function mountApp(container, key, options) {
         useBuiltIn(BUILT_IN_PICTURES.find((picture) => picture.id === choice));
     });
     find("#suTreeChoose").on("click", chooseFile);
+    // the banner's colours: the words (the canopy's greens, or one colour) and what is behind them
+    find("#suTreeBannerWords").on("change", (e) => {
+        state.bannerWords = e.target.value;
+        find("#suTreeBannerWordColor").prop("hidden", state.bannerWords !== "one");
+        redraw();
+    });
+    find("#suTreeBannerWordColor").on("input change", (e) => {
+        state.bannerWordColor = e.target.value;
+        redraw();
+    });
+    find("#suTreeBannerBackground").on("input change", (e) => {
+        state.bannerBackground = e.target.value;
+        redraw();
+    });
     find("#suTreeFile").on("change", async (e) => {
         const file = e.target.files && e.target.files[0];
         e.target.value = ""; // so the same picture can be chosen again
@@ -694,12 +765,12 @@ export function mountApp(container, key, options) {
         find("#suTreeSizeRow").prop("hidden", !format.sized);
         find("#suTreeCustomLabel").prop("hidden", !format.sized || state.saveSize !== "custom");
         find("#suTreePaperRow").prop("hidden", format.sized);
-        const width = widthFor(state.saveSize, state.customWidth);
+        const width = widthFor(state.saveSize, state.customWidth, state.shape);
         find("#suTreeSizeNote").text(
             !format.sized
                 ? "A single page with the tree under its title."
                 : width
-                  ? `The picture will be ${sizeLabel(width)}.`
+                  ? `The picture will be ${sizeLabel(width, state.shape)}.`
                   : `Enter a width from ${MIN_WIDTH} to ${MAX_WIDTH.toLocaleString()} pixels.`
         );
         find("#suTreeSaveGo").prop("disabled", format.sized && !width);
@@ -732,7 +803,7 @@ export function mountApp(container, key, options) {
     });
     find("#suTreeSaveGo").on("click", async () => {
         const format = formatById(state.saveFormat);
-        const width = format.sized ? widthFor(state.saveSize, state.customWidth) : 0;
+        const width = format.sized ? widthFor(state.saveSize, state.customWidth, state.shape) : 0;
         if (format.sized && !width) return syncSavePanel();
         find("#suTreeSaveGo").prop("disabled", true);
         say("Preparing the file...");
@@ -765,7 +836,12 @@ export function mountApp(container, key, options) {
     });
     find("#suTreeCopy").on("click", async () => {
         try {
-            const blob = await renderImage(state.items, "image/png", widthFor(DEFAULT_SIZE), state.shape);
+            const blob = await renderImage(
+                state.items,
+                "image/png",
+                widthFor(defaultSizeFor(state.shape), "", state.shape),
+                state.shape
+            );
             await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
             say("Copied. Paste it into a post or a document.");
         } catch (e) {

@@ -18,6 +18,7 @@ import {
     buildTree,
     colorFor,
     crownColors,
+    frameOf,
 } from "./surname_tree_core.js";
 import { TREE_FONT, trunkSpan } from "./surname_tree_draw.js";
 import {
@@ -254,6 +255,20 @@ function addOutlinedTree(defs, viewport, tree) {
     });
 }
 
+/** The banner's colour behind the words, over its whole frame. */
+function addBannerBackground(viewport, shape) {
+    viewport.appendChild(
+        svgElement("rect", {
+            class: "sutree-banner-bg",
+            x: 0,
+            y: 0,
+            width: shape.bounds.w,
+            height: shape.bounds.h,
+            fill: shape.background,
+        })
+    );
+}
+
 /** A picture used as the shape, faintly behind the words, so the outline can be seen. */
 function addBackdrop(viewport, shape) {
     if (!shape.picture) return;
@@ -278,7 +293,8 @@ function addBackdrop(viewport, shape) {
  */
 export function renderTreeSvg(svg, items, tree = buildTree(1)) {
     svg.replaceChildren();
-    svg.setAttribute("viewBox", `0 0 ${WIDTH} ${HEIGHT}`);
+    const frameBox = frameOf(tree);
+    svg.setAttribute("viewBox", `0 0 ${frameBox.w} ${frameBox.h}`);
     svg.setAttribute("xmlns", NS);
     svg.setAttribute("font-family", TREE_FONT);
     svg.setAttribute("role", "group");
@@ -289,14 +305,15 @@ export function renderTreeSvg(svg, items, tree = buildTree(1)) {
     // Everything is clipped to the drawing's own frame. Without this, the part of the trunk's foot that is below the ground
     // shows when the page gives the picture a taller box than its shape (the SVG then shows what lies outside its frame).
     const frame = svgElement("clipPath", { id: "suTreeFrame" });
-    frame.appendChild(svgElement("rect", { x: 0, y: 0, width: WIDTH, height: HEIGHT }));
+    frame.appendChild(svgElement("rect", { x: 0, y: 0, width: frameBox.w, height: frameBox.h }));
     defs.appendChild(frame);
     const viewport = svgElement("g", { "class": "sutree-viewport", "clip-path": "url(#suTreeFrame)" });
     svg.appendChild(viewport);
 
     // What goes behind the words: the picture the member chose, or an oak, shaded or flat.
     const look = tree.look || "shaded";
-    if (tree.kind === "image") addBackdrop(viewport, tree);
+    if (tree.kind === "banner") addBannerBackground(viewport, tree);
+    else if (tree.kind === "image") addBackdrop(viewport, tree);
     else if (look === "flat") addFlatTree(viewport, tree);
     else if (look === "outlined") addOutlinedTree(defs, viewport, tree);
     else addShadedTree(defs, viewport, tree);
@@ -348,7 +365,7 @@ export function renderTreeSvg(svg, items, tree = buildTree(1)) {
  * Wheel to zoom about the pointer, drag to move, and buttons (zoomIn, zoomOut, reset). `wasDragged()` is true just after a drag, so the click that
  * ends a drag is not taken as a click on a word.
  */
-export function attachZoom(svg, onChange = () => {}) {
+export function attachZoom(svg, onChange = () => {}, frameNow = () => undefined) {
     let t = IDENTITY;
     let dragged = false;
     // the drawing is replaced whenever the tree is laid out again, so the group to move is looked up each time
@@ -358,13 +375,18 @@ export function attachZoom(svg, onChange = () => {}) {
         show();
         onChange(t);
     };
-    const centre = () => ({ x: WIDTH / 2, y: HEIGHT / 2 });
+    // the frame of the drawing now shown (the banner's is not the tree's)
+    const frame = () => {
+        const f = frameNow();
+        return f ? { w: f.w, h: f.h } : { w: WIDTH, h: HEIGHT };
+    };
+    const centre = () => ({ x: frame().w / 2, y: frame().h / 2 });
 
     svg.addEventListener(
         "wheel",
         (event) => {
             event.preventDefault();
-            const p = clientToView(svg.getBoundingClientRect(), event.clientX, event.clientY);
+            const p = clientToView(svg.getBoundingClientRect(), event.clientX, event.clientY, frame());
             apply(zoomAbout(t, wheelFactor(event), p.x, p.y));
         },
         { passive: false }
@@ -376,7 +398,7 @@ export function attachZoom(svg, onChange = () => {}) {
         let lastX = event.clientX;
         let lastY = event.clientY;
         const move = (e) => {
-            const scale = viewScale(svg.getBoundingClientRect());
+            const scale = viewScale(svg.getBoundingClientRect(), frame());
             if (Math.abs(e.clientX - event.clientX) + Math.abs(e.clientY - event.clientY) > 3) dragged = true;
             if (dragged) apply(panBy(t, (e.clientX - lastX) / scale, (e.clientY - lastY) / scale));
             lastX = e.clientX;

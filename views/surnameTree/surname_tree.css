@@ -450,3 +450,34 @@
   font-weight: bold;
   text-align: left;
 }
+
+/* the wide banner: the stage is as tall as the banner, not the tree */
+.sutree-stage.sutree-banner {
+  flex: 0 1 auto;
+  width: 100%;
+  align-self: flex-start;
+}
+.sutree-stage.sutree-banner svg {
+  height: auto;
+  aspect-ratio: 1000 / 156;
+}
+.sutree-bannerbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.sutree-bannerbox input[type="color"] {
+  width: 2.2rem;
+  height: 1.7rem;
+  padding: 0;
+  border: 1px solid #c9c9c0;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+
+/* a hidden control stays hidden whatever display the page's own styles give it */
+.sutree-app [hidden] {
+  display: none !important;
+}
