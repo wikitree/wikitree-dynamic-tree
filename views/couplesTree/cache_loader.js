@@ -1,6 +1,8 @@
 export class CacheLoader {
     static APP_ID = "CacheLoader";
     static DEFAULT_PRIMARY_FIELDS = [
+        "BioFather",
+        "BioMother",
         "BirthDate",
         "BirthLocation",
         "DataStatus",
@@ -84,6 +86,11 @@ export class CacheLoader {
                 const mapOfPeopleData = pData[field];
                 if (mapOfPeopleData) {
                     for (const rData of Object.values(mapOfPeopleData)) {
+                        // The getPerson people subfields like Parents, Spouses, Children, and Siblings
+                        // are not supposed to have people subfields themselves, but recently empty Spouses subfields
+                        // have been added for no apparent reason, so we just delete them so we can
+                        // distinguish between no spouses and unloaded spouses.
+                        if (rData.Spouses && rData.Spouses.length == 0) delete rData.Spouses;
                         peopleToAdd.push(rData);
                     }
                 }

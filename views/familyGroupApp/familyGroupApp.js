@@ -167,6 +167,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 keys: WTID,
                 fields: "Spouse,NoChildren,IsLiving,BirthDate,BirthLocation,BirthName,BirthDateDecade,DeathDate,DeathDateDecade,DeathLocation,IsLiving,Father,FirstName,Gender,Id,LastNameAtBirth,LastNameCurrent,Prefix,Suffix,LastNameOther,Nicknames,Derived.LongName,Derived.LongNamePrivate,Derived.BirthName,Derived.BirthNamePrivate,Manager,MiddleName,MiddleInitial,Mother,Name,Photo,RealName,ShortName,Touched,DataStatus,Bio,Privacy",
                 bioFormat: bioFormat,
+                appId: "familyGroupApp",
             };
 
             $.ajax({

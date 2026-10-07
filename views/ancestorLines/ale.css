@@ -102,16 +102,21 @@ div.ale td {
 
 .ale .link {
   fill: none;
-  stroke: #ccc;
   stroke-width: 2px;
 }
 
+.ale .link.dotted {
+  stroke-dasharray: 2, 2;
+}
+
 .ale .link.ofinterest {
-  stroke: lightcoral;
+  stroke: lightcoral !important;
+  stroke-dasharray: none;
 }
 
 .ale .link.marked {
-  stroke: green;
+  stroke: green !important;
+  stroke-dasharray: none;
 }
 
 .ale .links line {
@@ -132,6 +137,11 @@ div.ale td {
 .ale #edgeFactor,
 .ale #tHFactor {
   width: 4em;
+}
+
+.ale .alt-parent-icon text {
+  font-weight: 700;
+  font-size: 8px;
 }
 
 .ale #help-text {

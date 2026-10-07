@@ -254,6 +254,11 @@
   /* color: #fc7171; */
 }
 
+.cct .alt-parent-icon text {
+  font-weight: 700;
+  font-size: 8px;
+}
+
 .cct .a-radio {
   background-color: var(--a-colour);
   border: 2px solid var(--a-colour);

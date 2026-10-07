@@ -32,6 +32,8 @@ window.CouplesTreeView = class CouplesTreeView extends View {
     static #DESCRIPTION = "Click on the question mark in the green circle below right for help.";
     static APP_ID = "CouplesTree";
     static WANTED_PRIMARY_FIELDS = [
+        "BioFather",
+        "BioMother",
         "BirthDate",
         "BirthLocation",
         "DataStatus",
@@ -149,6 +151,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
      * tree. A Couple may also consist of only a single Person if they do not have a (known) spouse.
      */
     class Couple {
+        // ParentMode:
+        static NORMAL = "n";
+        static BIO = "b";
+
         constructor(idPrefix, { a, b, focus, isRoot = false } = {}) {
             this.idPrefix = idPrefix;
             this.isRoot = isRoot;
@@ -173,6 +179,9 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                     `Internal ERROR: The focus of a couple cannot be undefined: a=${a}, b=${b}, focus=${focus}`
                 );
             }
+            // Absence of a couple's prefix in parentMode implies NORMAL
+            if (a) a.parentMode = a.parentMode || new Set();
+            if (b) b.parentMode = b.parentMode || new Set();
 
             // If a couple has a male partner, we want a male to be in a.
             // Similarly we want a female partner to be in b, if present.
@@ -250,6 +259,23 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 : this.a?.hasAChild() || this.b?.hasAChild();
         }
 
+        getParentMode(side) {
+            return this[side]?.parentMode?.has(this.idPrefix) ? Couple.BIO : Couple.NORMAL;
+        }
+
+        toggleParentMode(side) {
+            const p = this[side];
+            if (!p || p.isNoSpouse) return;
+
+            // Absence of a couple's prefix in parentMode implies NORMAL
+            p.parentMode = p.parentMode || new Set();
+            if (p.parentMode.has(this.idPrefix)) {
+                p.parentMode.delete(this.idPrefix);
+            } else {
+                p.parentMode.add(this.idPrefix);
+            }
+        }
+
         isComplete() {
             return this.a && this.b;
         }
@@ -260,6 +286,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
 
         hasNoSpouse() {
             return (this.a && this.a.isNoSpouse) || (this.b && this.b.isNoSpouse);
+        }
+
+        definitelyHasNoSpouse() {
+            return this.hasNoSpouse() && (this.a?.definitelyHasNoSpouse() || this.b?.definitelyHasNoSpouse());
         }
 
         isAncestorExpandable() {
@@ -427,7 +457,6 @@ window.CouplesTreeView = class CouplesTreeView extends View {
 
             const d3Container = d3.select(container);
             const svg = d3Container.append("svg").attr("width", width).attr("height", height);
-            this.svg = svg;
             const g = svg.append("g").attr("class", "svg-layer");
 
             d3Container
@@ -450,6 +479,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 .style("width", 0)
                 .style("height", 0);
 
+            this.svg = svg;
             this.g = g;
             this.htmlLayer = htmlLayer;
 
@@ -485,7 +515,6 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             this.ancestorTree.setExpandCallback(function (couple) {
                 return self.loadMore(couple, ANCESTORS);
             });
-
             this.descendantTree.setExpandCallback(function (couple) {
                 return self.loadMore(couple, DESCENDANTS);
             });
@@ -493,7 +522,6 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             this.ancestorTree.setContractCallback(function (couple) {
                 return self.removeAncestors(couple);
             });
-
             this.descendantTree.setContractCallback(function (couple) {
                 return self.removeDescendants(couple);
             });
@@ -502,13 +530,17 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             this.ancestorTree.setPartnerChangeCallback(function (coupleId, personId, newPartnerId) {
                 return self.changePartner(coupleId, personId, newPartnerId);
             });
-
             this.descendantTree.setPartnerChangeCallback(function (coupleId, personId, newPartnerId) {
                 return self.changePartner(coupleId, personId, newPartnerId);
             });
 
+            this.ancestorTree.setLoadAdditionalCallback(function (ids) {
+                return self.loadAdditional(ids);
+            });
+
             // Setup pattern
-            svg.append("defs")
+            this.svg
+                .append("defs")
                 .append("pattern")
                 .attrs({
                     id: "loader",
@@ -805,8 +837,19 @@ window.CouplesTreeView = class CouplesTreeView extends View {
          * Main WikiTree API calls
          */
 
+        // async getFullPerson(id) {
+        //     return await window.CouplesTreeView.peopleCache.getWithLoad(id, ["Parents", "Spouses", "Children"]);
+        // }
         async getFullPerson(id) {
-            return await window.CouplesTreeView.peopleCache.getWithLoad(id, ["Parents", "Spouses", "Children"]);
+            const person = await window.CouplesTreeView.peopleCache.getWithLoad(id, ["Parents", "Spouses", "Children"]);
+            const bioIds = person.getBioParentIds();
+            if (bioIds.length > 0) {
+                const bioPromises = bioIds.map((bioId) =>
+                    window.CouplesTreeView.peopleCache.getWithLoad(bioId, ["Parents", "Spouses", "Children"])
+                );
+                await Promise.all(bioPromises);
+            }
+            return person;
         }
 
         async getWithSpousesAndChildren(id) {
@@ -815,6 +858,13 @@ window.CouplesTreeView = class CouplesTreeView extends View {
 
         async getWithSpouses(id) {
             return await window.CouplesTreeView.peopleCache.getWithLoad(id, ["Spouses"]);
+        }
+
+        async loadAdditional(ids) {
+            const self = this;
+            condLog(`loadAdditional for ids ${ids}`, ids);
+            const loadPromises = ids.map((id) => self.getFullPerson(id));
+            await Promise.all(loadPromises);
         }
     }); // End CoupleTreeViewer class definition
 
@@ -827,8 +877,8 @@ window.CouplesTreeView = class CouplesTreeView extends View {
      * -1 (backward, i.e. descendants).
      */
     class Tree {
-        constructor(svg, direction) {
-            this.svg = svg;
+        constructor(g, direction) {
+            this.g = g;
             this.direction = direction != DESCENDANTS ? ANCESTORS : DESCENDANTS;
             this.selector = this.getSelector();
             this.root = null;
@@ -899,6 +949,11 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             this._partnerChangeCallback = fn;
             return this;
         }
+
+        setLoadAdditionalCallback(fn) {
+            this._loadAdditional = fn;
+            return this;
+        }
         /**
          * Draw/redraw the tree
          */
@@ -909,6 +964,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 const links = rootHierarchy.links();
                 this.drawLinks(links);
                 this.drawHTMLNodes(nodes);
+                this.drawAltParentIcons(nodes);
             } else {
                 throw new Error("Missing root");
             }
@@ -921,7 +977,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             const self = this;
 
             // Get a list of existing links
-            const link = this.svg.selectAll("path.link." + this.selector).data(links, function (link) {
+            const link = self.g.selectAll("path.link." + self.selector).data(links, function (link) {
                 return link.target.data.getId();
             });
 
@@ -931,7 +987,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             // Add new links
             link.enter()
                 .append("path")
-                .attr("class", "link " + this.selector)
+                .attr("class", "link " + self.selector)
                 .merge(link)
                 // Update the paths
                 .attr("d", function (d) {
@@ -983,6 +1039,21 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 targetY
             );
         }
+
+        getCoupleLeftEdge(d) {
+            return this.direction * d.y - halfBoxWidth;
+        }
+        getCoupleTopEdge(d) {
+            const couple = d.data;
+            return couple.definitelyHasNoSpouse() ? d.x - halfBoxHeight : d.x - boxHeight;
+            // return couple.definitelyHasNoSpouse() ? d.x - halfBoxHeight : d.x - boxHeight - spacing / 2;
+        }
+        getCoupleHeight(d) {
+            const couple = d.data;
+            return couple.definitelyHasNoSpouse() ? halfBoxHeight : 2 * boxHeight;
+            // return couple.definitelyHasNoSpouse() ? halfBoxHeight : 2 * boxHeight + spacing;
+        }
+
         /**
          * Draw the couple boxes.
          */
@@ -1014,11 +1085,9 @@ window.CouplesTreeView = class CouplesTreeView extends View {
             coupleDivs
                 .style("position", "absolute")
                 .style("width", boxWidth + "px")
-                .style("height", (d) => (d.data.hasNoSpouse() ? halfBoxHeight + "px" : 2 * boxHeight + spacing + "px"))
-                .style("left", (d) => self.direction * d.y - halfBoxWidth + "px")
-                .style("top", (d) => {
-                    return d.data.hasNoSpouse() ? d.x - halfBoxHeight + "px" : d.x - boxHeight - spacing / 2 + "px";
-                });
+                .style("height", (d) => self.getCoupleHeight(d) + "px")
+                .style("left", (d) => self.getCoupleLeftEdge(d) + "px")
+                .style("top", (d) => self.getCoupleTopEdge(d) + "px");
 
             // Draw the plus icons
             const expandable = coupleDivs.filter(function (d) {
@@ -1037,13 +1106,16 @@ window.CouplesTreeView = class CouplesTreeView extends View {
 
             coupleDivs.selectAll(".person.box").on("click", function (event, d) {
                 event.stopPropagation();
-                const couple = this.parentNode.parentNode.__data__;
-                const person = this.classList.contains("L") ? couple.data.a : couple.data.b;
+                const jd = this.parentNode.parentNode.__data__;
+                const couple = jd.data;
+                const person = this.classList.contains("L") ? couple.a : couple.b;
                 if (!person || person.isNoSpouse) return;
 
-                if (event.altKey) {
+                // if (event.altKey) {
+                if (event.ctrlKey || event.metaKey) {
                     // provide a way to examine the current node and internal person structure
-                    console.log(person.toString(), person, this.parentNode.__data__);
+                    console.log(`${couple.toString()} (is${couple.isExpanded ? "" : "Not"}Expanded)`, jd, couple);
+                    console.log(person.toString(), person);
                     return;
                 }
 
@@ -1066,6 +1138,143 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 const newPartnerId = this.getAttribute("spouse-id");
                 self._partnerChangeCallback(coupleId, personId, newPartnerId);
             });
+        }
+
+        // Draw DNA / Not DNA icons on the branches to parents for every person that have a biological parent.
+        // Clicking on the icon toggles between showing the biological parent(s) or the adoptive parent(s).
+        drawAltParentIcons(nodes) {
+            const self = this;
+            if (self.direction !== ANCESTORS) return;
+
+            const iconWidth = 20;
+            const iconHeight = 10;
+            const iconLeftOffset = 6;
+            const iconTopOffset = 6;
+
+            // The icons are anchored at their top left corner. The icon for the a side is positioned at a fixed
+            // offset from the top right corner of the couple box. The icon for the b side is vertically flipped,
+            // i.e. its opposite the bottom right corner of the couple box.
+
+            const iconCouples = self.g
+                .selectAll("g.parent-icon." + self.selector)
+                .data(
+                    nodes.filter((d) => d.data.a?.hasABioParent() || d.data.b?.hasABioParent()),
+                    (d) => d.data.getId()
+                )
+                .join(
+                    (enter) => enter.append("g").attr("class", "parent-icon " + self.selector),
+                    (update) => update,
+                    (exit) => exit.remove()
+                )
+                .attr("transform", (d) => {
+                    const left = self.getCoupleLeftEdge(d);
+                    const top = self.getCoupleTopEdge(d);
+
+                    return `translate(${left + boxWidth + iconLeftOffset}, ${top})`;
+                });
+
+            const icons = iconCouples
+                .selectAll("g.alt-parent-icon")
+                .data(getAltParentIconData, (d) => d.side)
+                .join(
+                    (enter) => {
+                        const g = enter.append("g").attr("class", "alt-parent-icon").style("cursor", "pointer");
+                        g.append("rect");
+                        g.append("text");
+                        g.append("line");
+                        return g;
+                    },
+                    (update) => update,
+                    (exit) => exit.remove()
+                )
+                .attr("transform", (d) => {
+                    const coupleHeight = self.getCoupleHeight(d.node);
+                    // mirror the position of the icon for the second person in the couple
+                    const y =
+                        d.side === "a"
+                            ? iconTopOffset
+                            : d.node.data.definitelyHasNoSpouse()
+                              ? boxHeight - iconTopOffset / 2 - iconHeight
+                              : coupleHeight - iconTopOffset - iconHeight;
+                    return `translate(0, ${y})`;
+                });
+
+            icons
+                .select("rect")
+                .attr("width", iconWidth)
+                .attr("height", iconHeight)
+                .attr("rx", 1.2)
+                .attr("fill", "none")
+                .attr("stroke", "#25422D");
+
+            icons
+                .select("text")
+                .attr("x", iconWidth / 2)
+                .attr("y", iconHeight / 2 + 1) // +1 to optically center the text
+                .attr("text-anchor", "middle")
+                .attr("dominant-baseline", "middle")
+                .attr("fill", "#25422D")
+                .text((d) => (d.parentMode === Couple.BIO ? "BIO" : "DNA"))
+                .append("title")
+                .text(
+                    (d) => `Show the ${d.parentMode === Couple.BIO ? "adoptive" : "biological"} parent(s) of ${d.name}`
+                );
+
+            icons
+                .select("line")
+                .style("display", (d) => (d.parentMode === Couple.BIO ? "none" : null))
+                .attr("x1", 1)
+                .attr("y1", iconHeight - 1)
+                .attr("x2", iconWidth - 1)
+                .attr("y2", 1)
+                .attr("stroke", "#25422D")
+                .attr("stroke-width", 1);
+
+            icons.on("click", async function (event, d) {
+                const couple = d.node.data;
+                const person = couple[d.side];
+                const loaded = person.getLoadedBioParentIds();
+                const toLoad = person.getBioParentIds().filter((id) => !loaded.includes(id));
+
+                if (toLoad.length > 0) {
+                    const icon = d3.select(this);
+                    const loader = icon
+                        .append("image")
+                        .attr("width", 16)
+                        .attr("height", 16)
+                        .attr("xlink:href", "https://www.wikitree.com/images/icons/ajax-loader-snake-333-trans.gif")
+                        .attr("x", (iconWidth - 16) / 2)
+                        .attr("y", (iconHeight - 16) / 2);
+
+                    await self._loadAdditional(toLoad);
+                    loader.remove();
+                }
+
+                couple.toggleParentMode(d.side);
+                self.draw();
+            });
+
+            function getAltParentIconData(d) {
+                const couple = d.data;
+                const result = [];
+                if (couple.a?.hasABioParent()) {
+                    result.push({
+                        side: "a",
+                        node: d,
+                        parentMode: couple.getParentMode("a"),
+                        name: couple.a.getDisplayName(),
+                    });
+                }
+                if (couple.b?.hasABioParent()) {
+                    result.push({
+                        side: "b",
+                        node: d,
+                        parentMode: couple.getParentMode("b"),
+                        name: couple.b.getDisplayName(),
+                    });
+                }
+                return result;
+            }
         }
 
         drawCouple(couple) {
@@ -1227,7 +1436,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         drawPlus(couples, selector) {
             const self = this;
 
-            let buttons = self.svg.selectAll("g.plus." + selector).data(couples, function (d) {
+            let buttons = self.g.selectAll("g.plus." + selector).data(couples, function (d) {
                 return d.data.getId();
             });
 
@@ -1238,7 +1447,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 .append(drawPlus(selector))
                 .on("click", function (event, d) {
                     const plus = d3.select(this);
-                    const loader = self.svg
+                    const loader = self.g
                         .append("image")
                         .attrs({
                             "height": 16,
@@ -1265,7 +1474,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         drawMinus(couples, selector) {
             const self = this;
 
-            let buttons = self.svg.selectAll("g.minus." + selector).data(couples, function (d) {
+            let buttons = self.g.selectAll("g.minus." + selector).data(couples, function (d) {
                 return d.data.getId();
             });
 
@@ -1276,7 +1485,7 @@ window.CouplesTreeView = class CouplesTreeView extends View {
                 .append(drawMinus(selector))
                 .on("click", function (event, d) {
                     const minus = d3.select(this);
-                    const loader = self.svg
+                    const loader = self.g
                         .append("image")
                         .attrs({
                             height: 16,
@@ -1384,22 +1593,32 @@ window.CouplesTreeView = class CouplesTreeView extends View {
      * Manage the ancestors tree
      */
     class AncestorTree extends Tree {
-        constructor(svg) {
-            super(svg, ANCESTORS);
+        constructor(g) {
+            super(g, ANCESTORS);
 
             this.children(function (couple) {
                 condLog(`AncestorTree children for ${couple.toString()}`, couple);
                 const children = [];
                 if (couple.a?.getExpandedParentIds()) {
-                    const father = couple.a.getFather();
-                    const mother = couple.a.getMother();
+                    const parentMode = couple.getParentMode("a");
+                    let father = couple.a.getFather();
+                    let mother = couple.a.getMother();
+                    if (parentMode === Couple.BIO) {
+                        if (couple.a.getBioFather()) father = couple.a.getBioFather();
+                        if (couple.a.getBioMother()) mother = couple.a.getBioMother();
+                    }
                     if (father || mother) {
                         children.push(new Couple(couple.idPrefix + "_a", { a: father, b: mother }));
                     }
                 }
                 if (couple.b?.getExpandedParentIds()) {
-                    const father = couple.b.getFather();
-                    const mother = couple.b.getMother();
+                    const parentMode = couple.getParentMode("b");
+                    let father = couple.b.getFather();
+                    let mother = couple.b.getMother();
+                    if (parentMode === Couple.BIO) {
+                        if (couple.b.getBioFather()) father = couple.b.getBioFather();
+                        if (couple.b.getBioMother()) mother = couple.b.getBioMother();
+                    }
                     if (father || mother) {
                         children.push(new Couple(couple.idPrefix + "_b", { a: father, b: mother }));
                     }

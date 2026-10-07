@@ -4,6 +4,8 @@ import { Utils } from "../shared/Utils.js";
 import { spell } from "../../lib/utilities.js";
 
 export class AncestorLinesExplorer {
+    static MAX_GENERATIONS = 25;
+    static DEFAULT_MAX_GENERATIONS = 5;
     static #COOKIE_NAME = "wt_ale_options";
     static #helpText = `
         <xx>[ x ]</xx>
@@ -17,7 +19,7 @@ export class AncestorLinesExplorer {
             <em><b>Warning</b>: A "full" (or complete) ancesstor tree of 15 generations or higher (e.g. for Windsor-1)
             WILL take a long time to retrieve and an even longer time to draw (a 15 generation tree can contain 32768 people).
             It may even crash your browser.
-            It is possible, however, to retrieve 20 generations of trees that are relatively sparse in the older
+            It is possible, however, to retrieve ${AncestorLinesExplorer.MAX_GENERATIONS} generations of trees that are relatively sparse in the older
             generations.</em> The more generations are requested in a load, the longer it may take, so please be patient.
             Once loaded, you can save the data locally to your device and re-load it much faster later.
         </p>
@@ -41,6 +43,13 @@ export class AncestorLinesExplorer {
                 If you hover your pointer over a person, the birth- and death date and location of that person is displayed.
             </li><li>
                 The names of people marked as a <b>Brick Wall</b> (see below) are displayed in the selected colour.
+            </li><li>
+                If a person has a biological and adoptive parent, the adoptive parent will be shown by deafult and a 
+                <small><strike>DNA</strike></small> button will appear at the start of the link to that parent. 
+                Clicking the button will cycle through displaying the biological parent and their ancestors, 
+                both sets of parents, or just the adoptive parent. The button's label will change, showing which parent(s) are
+                currently being displayed. In addition, the links to adoptive parents and their subtree will be dotted lines, 
+                with each different adoptive subree of ancestors using different coloured links.
             </li>
         </ul>
         <h3>Options</h3>
@@ -130,21 +139,6 @@ export class AncestorLinesExplorer {
                   <option value="3">3</option>
                   <option value="4">4</option>
                   <option value="5" selected>5</option>
-                  <option value="6">6</option>
-                  <option value="7">7</option>
-                  <option value="8">8</option>
-                  <option value="9">9</option>
-                  <option value="10">10</option>
-                  <option value="11">11</option>
-                  <option value="12">12</option>
-                  <option value="13">13</option>
-                  <option value="14">14</option>
-                  <option value="15">15</option>
-                  <option value="16">16</option>
-                  <option value="17">17</option>
-                  <option value="18">18</option>
-                  <option value="19">19</option>
-                  <option value="20">20</option>
                 </select>
                 <button id="getAncestorsButton" class="btn btn-primary btn-sm" title="Get ancestor data up to this generation from WikiTree">
                   Get 11 Generations and Draw Tree</button
@@ -339,7 +333,7 @@ export class AncestorLinesExplorer {
                           <input
                             id="bioCheck"
                             type="checkbox"
-                            title="Anyone with only one parent." />
+                            title="Anyone with issues reported by Bio Check." />
                           <label
                             for="bioCheck"
                             title="Anyone with issues reported by Bio Check."
@@ -411,7 +405,16 @@ export class AncestorLinesExplorer {
             </div>
         </div>`);
 
-        AncestorLinesExplorer.updateMaxLevelSelection(20, 5);
+        $("#generation")
+            .empty()
+            .append(
+                ...AncestorLinesExplorer.generateLevelOptions(
+                    2,
+                    AncestorLinesExplorer.MAX_GENERATIONS,
+                    AncestorLinesExplorer.DEFAULT_MAX_GENERATIONS
+                )
+            );
+
         AncestorLinesExplorer.retrieveOptionsFromCookie();
         AncestorLinesExplorer.applyParameters(params);
 
@@ -420,9 +423,11 @@ export class AncestorLinesExplorer {
         $("#generation")
             .off("change")
             .on("change", function () {
-                const maxGen = $("#generation").val();
+                const maxGen = Number(this.value);
+                const selected = Math.min(Number($("#maxLevel").val()), maxGen);
+
                 AncestorLinesExplorer.setGetPeopleButtonText(maxGen);
-                AncestorLinesExplorer.updateMaxLevelSelection(maxGen, $("#maxLevel").val());
+                AncestorLinesExplorer.updateMaxLevelSelection(maxGen, selected);
             });
         $("#generation").trigger("change");
 
@@ -534,11 +539,22 @@ export class AncestorLinesExplorer {
     }
 
     static applyParameters(params) {
-        const maxGen = Number(params["maxgen"] || 0);
-        if (maxGen) $("#generation").val(maxGen);
+        let maxGen = Number(params["maxgen"] || 0);
+        // console.log(`Found maxGen param: ${maxGen}`);
+        if (maxGen) {
+            maxGen = Math.min(maxGen, AncestorLinesExplorer.MAX_GENERATIONS);
+            $("#generation").val(maxGen);
+            // console.log(`#generation is now ${$("#generation").val()}`);
+        }
 
         const limitGen = Number(params["limitgen"] || maxGen);
-        if (limitGen) $("#maxLevel").val(limitGen);
+        // console.log(`New limitGen value: ${limitGen}`);
+        if (limitGen) {
+            // console.log(`Setting maxLevel to ${limitGen}`);
+            AncestorLinesExplorer.updateMaxLevelSelection(Math.max(maxGen, limitGen), limitGen);
+            $("#maxLevel").val(limitGen);
+            // console.log(`maxLevel is now ${$("#maxLevel").val()}`);
+        }
 
         if (params.hasOwnProperty("poi")) {
             $("#otherWtIds").val(params["poi"]);
@@ -624,12 +640,24 @@ export class AncestorLinesExplorer {
         }
     }
 
+    static generateLevelOptions(first, last, selected) {
+        const len = last - first + 1;
+        return Array.from(
+            { length: len },
+            (_, i) =>
+                new Option(
+                    i + first == 0 ? "All" : String(i + first),
+                    i + first,
+                    i + first == selected,
+                    i + first == selected
+                )
+        );
+    }
+
     static updateMaxLevelSelection(maxLevel, selected) {
-        const select = document.getElementById("maxLevel");
-        select.options.length = 0;
-        for (let i = 0; i <= maxLevel; ++i) {
-            select.options[i] = new Option(`${i == 0 ? "All" : i}`, i, i == 5, i == selected);
-        }
+        $("#maxLevel")
+            .empty()
+            .append(...AncestorLinesExplorer.generateLevelOptions(0, maxLevel, selected));
     }
 
     static setGetPeopleButtonText(n) {
@@ -694,18 +722,36 @@ export class AncestorLinesExplorer {
 
         const gen = $("#generation").val();
         const maxNrPeople = 2 ** gen - 2;
-        const nrAncestorProfiles = AncestorTree.profileCount - 1;
-        const nrDuplicates = AncestorTree.nrDuplicatesUpToGen(gen);
-        $("#aleFieldset .report").remove();
-        $("#aleFieldset").append(
-            `<span class="report">Out of ${maxNrPeople} possible direct ancestors in ${gen} generations, ${nrAncestorProfiles} (${(
-                (nrAncestorProfiles / maxNrPeople) *
-                100
-            ).toFixed(2)}%) have WikiTree profiles and out of them, ${nrDuplicates} (${(
-                (nrDuplicates / nrAncestorProfiles) *
-                100
-            ).toFixed(2)}%) occur more than once due to pedigree collapse.</span>`
+        const nrUniqueProfiles = AncestorTree.uniqueProfileCount - 1;
+        const nrProfiledPositions = AncestorTree.profiledPositionCount - 1;
+        const [nrDuplicates, nrPosOccupiedByDupes] = AncestorTree.nrDuplicatesUpToGen(gen);
+        console.log(
+            `maxNrPeople: ${maxNrPeople}, nrUniqueProfiles: ${nrUniqueProfiles}, nrDuplicates: ${nrDuplicates}, nrPosOccupiedByDupes: ${nrPosOccupiedByDupes}, nrProfiledPositions: ${nrProfiledPositions}`
         );
+
+        const commonReport = `Out of ${maxNrPeople.toLocaleString()} possible direct ancestors in ${gen} generations, ${nrProfiledPositions.toLocaleString()} (${(
+            (nrProfiledPositions / maxNrPeople) *
+            100
+        ).toFixed(2)}%) ${nrProfiledPositions > 1 ? "have WikiTree profiles" : "has a WikiTree profile"}`;
+        const duplicateReport =
+            nrDuplicates == 0
+                ? ", with no pedigree collapse."
+                : `. Due to pedigree collapse, these ${nrProfiledPositions} positions with profiles are filled by ${nrUniqueProfiles.toLocaleString()} (${(
+                      (nrUniqueProfiles / nrProfiledPositions) *
+                      100
+                  ).toFixed(2)}%) individual${nrUniqueProfiles > 1 ? "s" : ""}, ${nrDuplicates.toLocaleString()} (${(
+                      (nrDuplicates / nrUniqueProfiles) *
+                      100
+                  ).toFixed(2)}%) of whom ${nrDuplicates > 1 ? "occur" : "occurs"} more than once in the tree. ${
+                      nrDuplicates > 1 ? `These ${nrDuplicates} occupy` : `This profile occupies`
+                  } ${nrPosOccupiedByDupes.toLocaleString()} (${((nrPosOccupiedByDupes / maxNrPeople) * 100).toFixed(
+                      2
+                  )}%) of the positions in the tree (${((nrPosOccupiedByDupes / nrProfiledPositions) * 100).toFixed(
+                      2
+                  )}% of the positions with profiles).`;
+
+        $("#aleFieldset .report").remove();
+        $("#aleFieldset").append(`<span class="report">${commonReport}${duplicateReport}</span>`);
 
         const counts = AncestorTree.markAndCountBricks({
             noParents: document.getElementById("noParents").checked,
@@ -727,15 +773,10 @@ export class AncestorLinesExplorer {
         let fullTreelevel = document.getElementById("maxLevel").value;
         if (fullTreelevel == 0) fullTreelevel = Number.MAX_SAFE_INTEGER;
         AncestorLinesExplorer.clearDisplay();
-        const otherWtIds = $("#otherWtIds")
-            .val()
-            .trim()
-            .split(",")
-            .map((s) => s.trim())
-            .map((s) => s.replaceAll(" ", "_"))
-            .filter((s) => s.length > 0);
 
-        const [pathsRoot, nodes, links, pathEndpoints, pathGens] = AncestorTree.findPaths(otherWtIds);
+        const [pathsRoot, nodes, links, pathEndpoints, pathGens] = AncestorTree.findPaths(
+            AncestorLinesExplorer.getIdsOfInterest()
+        );
         showTree(
             AncestorTree,
             nodes,
@@ -750,6 +791,16 @@ export class AncestorLinesExplorer {
             labelsLeftOnly
         );
         $("#theSvg").floatingScroll("update");
+    }
+
+    static getIdsOfInterest() {
+        return $("#otherWtIds")
+            .val()
+            .trim()
+            .split(",")
+            .map((s) => s.trim())
+            .map((s) => s.replaceAll(" ", "_"))
+            .filter((s) => s.length > 0);
     }
 
     static async retrieveAncestorsFromWT(wtId, nrGenerations) {
@@ -820,7 +871,7 @@ export class AncestorLinesExplorer {
             AncestorTree.replaceWith(people);
             Utils.hideShakingTree();
             $(wtViewRegistry.WT_ID_TEXT).val(AncestorTree.root.getWtId());
-            const maxGen = Math.min(AncestorTree.maxGeneration, 20);
+            const maxGen = Math.min(AncestorTree.maxGeneration, AncestorLinesExplorer.MAX_GENERATIONS);
             $("#generation").val(maxGen);
             AncestorLinesExplorer.setGetPeopleButtonText(maxGen);
             AncestorLinesExplorer.findPathsAndDrawTree(event);
@@ -882,6 +933,12 @@ export class AncestorLinesExplorer {
             $("#birthScale").prop("checked", opt.birthScale);
             $("#privatise").prop("checked", opt.privatise);
             $("#anonLiving").prop("checked", opt.anonLiving);
+            AncestorLinesExplorer.updateMaxLevelSelection(opt.maxLevel, AncestorLinesExplorer.DEFAULT_MAX_GENERATIONS);
+        } else {
+            AncestorLinesExplorer.updateMaxLevelSelection(
+                AncestorLinesExplorer.MAX_GENERATIONS,
+                AncestorLinesExplorer.DEFAULT_MAX_GENERATIONS
+            );
         }
     }
 

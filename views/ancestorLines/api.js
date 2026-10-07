@@ -1,8 +1,10 @@
 export class API {
     static APP_ID = "AncestorLineExplorer";
-    static MAX_API_DEPTH = 10; // how many generations we are prepared to retrieve per API call
-    static GET_PERSON_LIMIT = 1000;
+    static MAX_API_DEPTH = 25; // how many generations we are prepared to retrieve per API call
+    static GET_PERSON_LIMIT = 1025;
     static PRIMARY_FIELDS = [
+        "BioFather",
+        "BioMother",
         "BirthDate",
         "BirthDateDecade",
         "BirthLocation",
@@ -26,14 +28,12 @@ export class API {
         "Name",
         "Nicknames",
         "NoChildren",
-        // "Photo",
+        // "PhotoData", // added for Person Popups (but not used in ancestor tree)
         "Prefix",
         "Privacy",
         "RealName",
+        // "Spouse", // added for Person Popups (but not used in ancestor tree)
         "Suffix",
-
-        "Spouse", // added for Person Popups
-        "PhotoData"
     ];
 
     static FOR_BIO_CHECK = ["Bio", "IsMember", "Manager"];

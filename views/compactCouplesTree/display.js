@@ -5,6 +5,7 @@
 //
 import { CCTE } from "./cct_explorer.js";
 import { Utils } from "../shared/Utils.js";
+import { Couple } from "../compactDescendantsTree/couple.js";
 
 // const DOWN_ARROW = "\u21e9";
 // const UP_ARROW = "\u21e7";
@@ -15,6 +16,11 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
     const SEPARATION = 500;
     const markedNodes = new Set();
     const markedPaths = new Map();
+
+    const AltParentIcon = {
+        width: 20,
+        height: 10,
+    };
 
     // Set the dimensions and margins of the diagram
     const aName = theTree.rootCouple.aPerson()?.getDisplayName();
@@ -415,6 +421,108 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             }
         }
 
+        drawAltParentsButton("a");
+        drawAltParentsButton("b");
+        function drawAltParentsButton(side) {
+            nodeEnter
+                .filter((d) => hasAlternateParents(d.data.get(side)))
+                .append("g")
+                .attr("class", "alt-parent-icon")
+                .attr("transform", function () {
+                    const y = side === "a" ? -4 : 14;
+                    return `translate(18, ${y})`;
+                })
+                .style("cursor", "pointer")
+                .each(function (d) {
+                    const g = d3.select(this);
+
+                    if (d.data.getParentMode(side) === Couple.BIO) {
+                        drawParentIcon(g, "BIO", false);
+                    } else {
+                        drawParentIcon(g, "DNA", true);
+                    }
+                })
+                .on("click", async function (event, d) {
+                    const couple = d.data;
+                    const person = couple.get(side);
+                    const loaded = person.getLoadedBioParentIds();
+                    const toLoad = person.getBioParentIds().filter((id) => !loaded.includes(id));
+                    const coupleExpanded = couple.isExpanded();
+
+                    if (!coupleExpanded || toLoad.length > 0) {
+                        const loader = placeLoadingIcon(d3.select(this));
+                        if (coupleExpanded) {
+                            await loadAdditional(toLoad);
+                        } else {
+                            await ccte.getFullPerson(person.getId());
+                        }
+                        loader.remove();
+                    }
+                    d.data.toggleParentMode(side);
+                    // rebuildChildrenForSide(d, side);
+
+                    ccte.drawTree();
+
+                    function placeLoadingIcon(d) {
+                        return d
+                            .append("image")
+                            .attr("width", 16)
+                            .attr("height", 16)
+                            .attr("xlink:href", "https://www.wikitree.com/images/icons/ajax-loader-snake-333-trans.gif")
+                            .attr("x", (AltParentIcon.width - 16) / 2)
+                            .attr("y", (AltParentIcon.height - 16) / 2);
+                    }
+                })
+                .append("title")
+                .text(
+                    (d) =>
+                        `Show the ${
+                            d.data.getParentMode(side) === Couple.BIO ? "adoptive" : "biological"
+                        } parent(s) of ${d.data.get(side).getDisplayName()}`
+                );
+
+            async function loadAdditional(ids) {
+                condLog(`loadAdditional for ids ${ids}`, ids);
+                const loadPromises = ids.map((id) => ccte.getFullPerson(id));
+                await Promise.all(loadPromises);
+            }
+            function hasAlternateParents(person) {
+                if (!person) return false;
+                return person.getBioFatherId() || person.getBioMotherId();
+            }
+            function drawParentIcon(sel, label, struck) {
+                // Rectangle (top-left relative to bottom-left anchor)
+                sel.append("rect")
+                    .attr("x", 0)
+                    .attr("y", -AltParentIcon.height)
+                    .attr("width", AltParentIcon.width)
+                    .attr("height", AltParentIcon.height)
+                    .attr("rx", 1.2)
+                    .attr("fill", "none")
+                    .attr("stroke", "#25422D");
+
+                // Text centered inside box
+                sel.append("text")
+                    .attr("x", AltParentIcon.width / 2)
+                    .attr("y", -AltParentIcon.height / 2 + 1)
+                    .attr("text-anchor", "middle")
+                    .attr("dominant-baseline", "middle")
+                    .attr("fill", "#25422D")
+                    .text(label);
+
+                // Optional strike-through
+                if (struck) {
+                    sel.append("line")
+                        .attr("x1", 1)
+                        .attr("y1", -1)
+                        .attr("x2", AltParentIcon.width - 1)
+                        .attr("y2", -AltParentIcon.height + 1)
+                        .attr("stroke", "#25422D")
+                        .attr("stroke-width", 1);
+                }
+            }
+        }
+
         // Flag duplicate nodes with coloured square
         flagDuplicates("a");
         flagDuplicates("b");
@@ -439,12 +547,15 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
 
         // Add labels for the nodes
 
-        // Node symbols (square or circle) have a diameter of 12 and the two of them are 8 apart,
+        // Node symbols (square or circle) have a diameter of 12 and the edges of the two are 8 apart,
         // ie. from top/bottom of one to the centre point between them is 16.
         // Spouses triangle top right is 17 from the centre of the node symbol.
+        // But the bio parent icon right edge can be at 40 from the centre.
         // Children triangle is 10 high and its bottom is 28 from the centre point between the two node symbols.
         const deltaY = 16; // tolerance for treating nodes as "same row"
-        const padding = 17; // space to keep between text and previous node position
+        const padding = 40; // space to keep between text and previous node position
+        const aTextBottom = -7;
+        const bTextBottom = 13;
         const flagAncestors = document.getElementById("flagAncestors").checked;
         const rightEdges = collectRightEdges();
 
@@ -458,13 +569,13 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                 const rightEdge = d.y + padding;
 
                 // a row
-                const aRow = Math.round((d.x + -7) / deltaY);
+                const aRow = Math.round((d.x + aTextBottom) / deltaY);
                 let edges = rightEdges.get(aRow) || [];
                 edges.push([col, rightEdge]);
                 rightEdges.set(aRow, edges);
 
                 // b row
-                const bRow = Math.round((d.x + 13) / deltaY);
+                const bRow = Math.round((d.x + bTextBottom) / deltaY);
                 edges = rightEdges.get(bRow) || [];
                 edges.push([col, rightEdge]);
                 rightEdges.set(bRow, edges);
@@ -509,7 +620,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
 
             // Create a group for the label
             const labelGroup = link.append("g").attr("transform", function () {
-                const dy = side === "a" ? -7 : 13;
+                const dy = side === "a" ? aTextBottom : bTextBottom;
                 return `translate(-13,${dy})`;
             });
 
@@ -533,7 +644,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                     const width = this.getBBox().width;
 
                     // use final layout positions instead of initial stacked position
-                    const row = Math.round((d.x + (side === "a" ? -7 : 13)) / deltaY);
+                    const row = Math.round((d.x + (side === "a" ? aTextBottom : bTextBottom)) / deltaY);
                     const col = Math.round(d.y / deltaY);
                     const prevRightmost = getPreviousEdge(row, col);
 

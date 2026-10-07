@@ -14,6 +14,9 @@ import {
 window.OneNameTrees = class OneNameTrees extends View {
     static APP_ID = "ONS";
     static VERBOSE = false;
+    // More profiles than this is more than we can load, so the results are of no use to us.
+    static MAX_PROFILES = 5000;
+    static VARIANTS_KEY = "ONTsurnameVariants";
     static PRIVACY_LEVELS = new Map([
         [60, "Privacy: Open"],
         [50, "Public"],
@@ -33,8 +36,6 @@ window.OneNameTrees = class OneNameTrees extends View {
     constructor(container_selector, person_id) {
         super(container_selector, person_id);
 
-        this.shouldLogIds = [9202358, 9202367];
-
         this.userId =
             Cookies.get("wikidb_wtb_UserID") || Cookies.get("loggedInID") || Cookies.get("WikiTreeAPI_userId");
         this.defaultSettings = { periodLength: 50, onlyLastNameAtBirth: false };
@@ -47,12 +48,13 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.surname = $("#surname").val()
             ? $("#surname").val().replaceAll("_", " ").replace(/\-\d+/, "").trim()
             : this.wtid
-            ? this.wtid.replaceAll("_", " ").replace(/\-\d+/, "").trim()
-            : "";
+              ? this.wtid.replaceAll("_", " ").replace(/\-\d+/, "").trim()
+              : "";
         this.surnameWatchlistIds = null;
         this.watchlistIds = [];
         this.watchlist = JSON.parse(localStorage.getItem(`${this.userId}_watchlist`)) || null;
         this.watchlistPromise = null;
+        this.relatedProfileNameFieldCache = new Map();
         this.centuries = this.parseCenturies($("#centuries").val());
         this.header = null;
         this.displayedIndividuals = new Set();
@@ -64,6 +66,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.parentToChildrenMap = {};
         this.peopleById = {};
         this.peopleByIdKeys = [];
+        this.wtPlusMatches = new Set();
         this.familyTreeStats = {};
         this.monthName = ["Unk", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         this.familyTreeStatistics = {};
@@ -357,6 +360,8 @@ window.OneNameTrees = class OneNameTrees extends View {
                 title="Clear the cache of stored data for the watchlist">Clear cached watchlist</button>
                 <button id="clearCacheAll"  class="btn, btn-secondary btn-sm"
                 title="Clear the cache of all stored data">Clear all cached items</button>
+                <button id="manageStorage"  class="btn, btn-secondary btn-sm"
+                title="See what is stored in your browser and choose what to delete">Manage stored data</button>
             </div>
         </div>`);
     }
@@ -378,8 +383,11 @@ window.OneNameTrees = class OneNameTrees extends View {
             $(this.bodyHTML).appendTo($("#view-container"));
         }
         this.shakingTree.hide().appendTo($("body"));
-        // Call fetchData to fetch and store data on initial load
-        this.fetchData();
+        this.storageManager.removeLegacyItems();
+        // Use the variants we saved last time so a search doesn't have to wait for the network,
+        // then refresh them in the background.
+        this.loadCachedVariants();
+        this.nameVariantsPromise = this.fetchData();
         this.addListeners();
         this.documentReady();
         $("#submit").trigger("click");
@@ -401,7 +409,7 @@ window.OneNameTrees = class OneNameTrees extends View {
         $("#view-select").off("change.oneNameTrees");
         $(document).off("keyup.oneNameTrees");
         $(document).off("click.oneNameTrees");
-        $("#controlWrapper,#dancingTree,#toggleOptions,#help").remove();
+        $("#controlWrapper,#dancingTree,#toggleOptions,#help,#oneNameTreesStorage").remove();
         $(
             "#lifespanGraph,#peopleCountGraph,#namesTable,#unsourcedProfiles,#unconnectedProfiles,#noRelationsProfiles,#locationsVisualisation,#migrationSankey,#periodMigrants"
         ).remove();
@@ -495,7 +503,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                     wtViewRegistry.showNotice("Refreshing data...");
                 }, 100);
                 $this.reset();
-                $this.clearONSidsCache(surname); // Clear the cache for this surname
+                $this.storageManager.clearCachedItems(surname); // Clear the cache for this surname
                 $this.startTheFetching(surname, location, centuries);
             }
         });
@@ -792,8 +800,9 @@ window.OneNameTrees = class OneNameTrees extends View {
             closePopup($(this).closest("div"));
         });
         $(document).on("dblclick.oneNameTrees", ".popup", function (e) {
-            // If the double-clicked element is not, and is not within, #oneNameTreesSettings, close the popup
-            if (!$(e.target).closest("#oneNameTreesSettings").length) {
+            // If the double-clicked element is not, and is not within, the settings or storage
+            // popups (which have controls of their own), close the popup
+            if (!$(e.target).closest("#oneNameTreesSettings,#oneNameTreesStorage").length) {
                 closePopup($(this));
             }
         });
@@ -892,8 +901,8 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
 
             try {
-                this.cancelFetchController = new AbortController();
-                const signal = this.cancelFetchController.signal;
+                $this.cancelFetchController = new AbortController();
+                const signal = $this.cancelFetchController.signal;
 
                 // First API call: Get DNA Tests by Test Taker
 
@@ -905,7 +914,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                     },
                     signal
                 );
-                if (!this.isActive()) {
+                if (!$this.isActive()) {
                     return; // We are no longer the current view, exit immediately without cleanup
                 }
 
@@ -919,7 +928,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                     },
                     signal
                 );
-                if (!this.isActive()) {
+                if (!$this.isActive()) {
                     return; // We are no longer the current view, exit immediately without cleanup
                 }
 
@@ -938,7 +947,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                     });
 
                     const connectedProfilesResults = await Promise.all(connectedProfilesPromises);
-                    if (!this.isActive()) {
+                    if (!$this.isActive()) {
                         return; // We are no longer the current view, exit immediately without cleanup
                     }
 
@@ -973,9 +982,21 @@ window.OneNameTrees = class OneNameTrees extends View {
         $(document).on("click.oneNameTrees", "#clearCachedWatchlist", function () {
             $this.storageManager.clearCachedWatchlist();
         });
+        $(document).on("click.oneNameTrees", "#manageStorage", function () {
+            const popup = $this.storageManager.showStorageDialog();
+            $this.setHighestZIndex(popup);
+        });
 
         $(document).on("click.oneNameTrees", ".dnaTestModal .close-button", function () {
             $(this).closest(".dnaTestModal").fadeOut();
+        });
+
+        // A click anywhere else closes the DNA modals. The DNA icons are excluded because the
+        // click that opens a modal reaches the document too, and would otherwise close it again.
+        $(document).on("click.oneNameTrees", function (e) {
+            if ($(e.target).closest(".dnaTestModal,.DNA").length === 0) {
+                $(".dnaTestModal:visible").fadeOut();
+            }
         });
     }
 
@@ -1319,32 +1340,17 @@ window.OneNameTrees = class OneNameTrees extends View {
     filterFilteredResultsByLNAB() {
         const surnameVariants = this.getSurnameVariants();
         const filteredResults = this.filteredResults;
+        const standardizedSurnameVariants = surnameVariants.map((variant) => this.standardizeString(variant));
 
         // Convert the object to an array of [key, value] pairs, filter, then convert back
         const filteredResultsByLNAB = Object.fromEntries(
             Object.entries(filteredResults).filter(([id, person]) => {
-                return surnameVariants.includes(person.LastNameAtBirth);
+                const isMatch = standardizedSurnameVariants.includes(this.standardizeString(person.LastNameAtBirth));
+                return isMatch;
             })
         );
 
         this.onlyLastNameAtBirth = filteredResultsByLNAB;
-    }
-
-    updateAccessOrder(key) {
-        let accessOrder = localStorage.getItem("accessOrder");
-        accessOrder = accessOrder ? JSON.parse(accessOrder) : [];
-
-        // Remove the key if it already exists to update its position
-        const index = accessOrder.indexOf(key);
-        if (index !== -1) {
-            accessOrder.splice(index, 1);
-        }
-
-        // Push the key to the end to mark it as the most recently used
-        accessOrder.push(key);
-
-        // Save the updated access order
-        localStorage.setItem("accessOrder", JSON.stringify(accessOrder));
     }
 
     async fetchData() {
@@ -1365,9 +1371,18 @@ window.OneNameTrees = class OneNameTrees extends View {
         } catch (error) {}
     }
 
+    loadCachedVariants() {
+        const csvData = this.storageManager.getItemAndUpdateAccessOrder(OneNameTrees.VARIANTS_KEY);
+        if (csvData) {
+            this.nameVariants = this.parseCSV(csvData);
+        }
+    }
+
     parseAndStoreCSV(csvData) {
         this.nameVariants = this.parseCSV(csvData);
-        this.storeData(this.nameVariants);
+        // Keep the raw CSV (about 25KB) rather than the map we expand it into (over 2MB), so that
+        // we have something to fall back on without taking up storage the searches could use.
+        this.storageManager.saveWithLRUStrategy(OneNameTrees.VARIANTS_KEY, csvData);
     }
 
     parseCSV(csvData) {
@@ -1394,16 +1409,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         return result;
     }
 
-    storeData(data) {
-        const objectData = Object.fromEntries(data);
-        localStorage.setItem("surnameData", JSON.stringify(objectData));
-    }
-
-    retrieveData() {
-        const storedData = localStorage.getItem("surnameData");
-        return storedData ? new Map(Object.entries(JSON.parse(storedData))) : new Map();
-    }
-
     standardizeString(str) {
         if (!str) {
             return "";
@@ -1416,6 +1421,192 @@ window.OneNameTrees = class OneNameTrees extends View {
             .toLowerCase();
     }
 
+    getStandardizedOtherLastNames(lastNameOther) {
+        if (!lastNameOther) {
+            return [];
+        }
+
+        return lastNameOther
+            .split(",")
+            .map((name) => this.standardizeString(name).trim())
+            .filter((name) => name);
+    }
+
+    profileHasTargetSurname(person, standardizedSurnameVariants) {
+        const standardizedLastNameAtBirth = this.standardizeString(person?.LastNameAtBirth);
+        const standardizedLastNameCurrent = this.standardizeString(person?.LastNameCurrent);
+        const standardizedLastNameOthers = this.getStandardizedOtherLastNames(person?.LastNameOther);
+
+        return standardizedSurnameVariants.some(
+            (variant) =>
+                variant === standardizedLastNameAtBirth ||
+                variant === standardizedLastNameCurrent ||
+                standardizedLastNameOthers.includes(variant)
+        );
+    }
+
+    hasDirectTargetRelative(person, standardizedSurnameVariants) {
+        const father = person?.Father ? this.combinedResults[person.Father] : null;
+        const mother = person?.Mother ? this.combinedResults[person.Mother] : null;
+
+        if (father && this.profileHasTargetSurname(father, standardizedSurnameVariants)) {
+            return true;
+        }
+        if (mother && this.profileHasTargetSurname(mother, standardizedSurnameVariants)) {
+            return true;
+        }
+
+        if (Array.isArray(person?.Spouses)) {
+            const hasTargetSpouse = person.Spouses.some((spouse) => {
+                const spouseProfile = spouse?.Id ? this.combinedResults[spouse.Id] : null;
+                return spouseProfile && this.profileHasTargetSurname(spouseProfile, standardizedSurnameVariants);
+            });
+            if (hasTargetSpouse) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    async enrichNameFieldsForRelatedWtPlusMatches(standardizedSurnameVariants) {
+        if (!this.wtPlusMatches?.size) {
+            return;
+        }
+
+        const candidates = Object.values(this.combinedResults).filter((person) => {
+            if (!person?.Id || !person?.Name) {
+                return false;
+            }
+            if (!this.wtPlusMatches.has(String(person.Id))) {
+                return false;
+            }
+            if (this.profileHasTargetSurname(person, standardizedSurnameVariants)) {
+                return false;
+            }
+            if (person?.LastNameOther) {
+                return false;
+            }
+            return this.hasDirectTargetRelative(person, standardizedSurnameVariants);
+        });
+
+        if (candidates.length === 0) {
+            return;
+        }
+
+        const uncachedCandidates = candidates.filter((person) => !this.relatedProfileNameFieldCache.has(person.Name));
+        const limitedCandidates = uncachedCandidates;
+        const cacheHits = candidates.length - uncachedCandidates.length;
+        let fetchedProfiles = 0;
+        let fetchFailures = 0;
+        let appliedUpdates = 0;
+
+        wtViewRegistry.showNotice(
+            `Checking related profiles for missing surname fields... candidates: ${candidates.length}, fetches needed: ${limitedCandidates.length}, cache hits: ${cacheHits}`
+        );
+
+        // Reuse already-resolved profiles to avoid repeated getProfile calls in the same run.
+        candidates.forEach((person) => {
+            const cachedProfile = this.relatedProfileNameFieldCache.get(person.Name);
+            if (!cachedProfile || !cachedProfile.Id || !this.combinedResults[cachedProfile.Id]) {
+                return;
+            }
+            this.combinedResults[cachedProfile.Id].LastNameAtBirth =
+                cachedProfile.LastNameAtBirth || this.combinedResults[cachedProfile.Id].LastNameAtBirth;
+            this.combinedResults[cachedProfile.Id].LastNameCurrent =
+                cachedProfile.LastNameCurrent || this.combinedResults[cachedProfile.Id].LastNameCurrent;
+            this.combinedResults[cachedProfile.Id].LastNameOther =
+                cachedProfile.LastNameOther || this.combinedResults[cachedProfile.Id].LastNameOther;
+            appliedUpdates += 1;
+        });
+
+        if (limitedCandidates.length === 0) {
+            wtViewRegistry.showNotice(
+                `Related profile enrichment complete. candidates: ${candidates.length}, fetched: 0, cache hits: ${cacheHits}, updates applied: ${appliedUpdates}`
+            );
+            return;
+        }
+
+        const chunkSize = 25;
+        for (let i = 0; i < limitedCandidates.length; i += chunkSize) {
+            if (!this.isActive() || this.cancelling) {
+                return;
+            }
+
+            const chunk = limitedCandidates.slice(i, i + chunkSize);
+            const chunkResults = await Promise.all(
+                chunk.map(async (person) => {
+                    try {
+                        const result = await WikiTreeAPI.postToAPI({
+                            appId: OneNameTrees.APP_ID,
+                            action: "getProfile",
+                            key: person.Name,
+                            fields: "Id,LastNameAtBirth,LastNameCurrent,LastNameOther",
+                        });
+                        const profile = result?.[0]?.profile || null;
+                        if (profile) {
+                            fetchedProfiles += 1;
+                        } else {
+                            fetchFailures += 1;
+                        }
+                        this.relatedProfileNameFieldCache.set(person.Name, profile);
+                        return profile;
+                    } catch (error) {
+                        fetchFailures += 1;
+                        this.relatedProfileNameFieldCache.set(person.Name, null);
+                        return null;
+                    }
+                })
+            );
+
+            chunkResults.forEach((profile) => {
+                if (!profile?.Id || !this.combinedResults[profile.Id]) {
+                    return;
+                }
+                this.combinedResults[profile.Id].LastNameAtBirth =
+                    profile.LastNameAtBirth || this.combinedResults[profile.Id].LastNameAtBirth;
+                this.combinedResults[profile.Id].LastNameCurrent =
+                    profile.LastNameCurrent || this.combinedResults[profile.Id].LastNameCurrent;
+                this.combinedResults[profile.Id].LastNameOther =
+                    profile.LastNameOther || this.combinedResults[profile.Id].LastNameOther;
+                appliedUpdates += 1;
+            });
+        }
+
+        wtViewRegistry.showNotice(
+            `Related profile enrichment complete. candidates: ${candidates.length}, fetched: ${fetchedProfiles}, cache hits: ${cacheHits}, failures: ${fetchFailures}, updates applied: ${appliedUpdates}`
+        );
+    }
+
+    getAkaLastNamesDisplay(person) {
+        const seen = new Set();
+        const ownLastNames = new Set([
+            this.standardizeString(person.LastNameAtBirth),
+            this.standardizeString(person.LastNameCurrent),
+        ]);
+
+        const names = [];
+        if (person?.LastNameOther) {
+            person.LastNameOther.split(",")
+                .map((name) => name.trim())
+                .filter((name) => name)
+                .forEach((name) => {
+                    const standardized = this.standardizeString(name);
+                    if (seen.has(standardized) || ownLastNames.has(standardized)) {
+                        return;
+                    }
+                    seen.add(standardized);
+                    names.push(name);
+                });
+        }
+
+        if (names.length === 0) {
+            return "";
+        }
+
+        return ` <span class='akaLastNames'>aka ${names.join(", ")}</span>`;
+    }
+
     getSurnameVariants() {
         const surname = $("#surname").val();
         return this.findSurnameVariants(surname);
@@ -1424,9 +1615,6 @@ window.OneNameTrees = class OneNameTrees extends View {
     findSurnameVariants(surname) {
         if (!surname) {
             return [];
-        }
-        if (!this.nameVariants.size) {
-            this.nameVariants = this.retrieveData();
         }
         if (surname.includes(",")) {
             this.surnames = surname.split(/,\s*/);
@@ -1451,53 +1639,8 @@ window.OneNameTrees = class OneNameTrees extends View {
         $("#loadingBarContainer").hide();
     }
 
-    clearONSidsCache(surname) {
-        // Construct the key prefix to match
-        const prefix = `ONTids_${surname.replace(" ", "_").toLowerCase()}`;
-
-        // Iterate over all keys in localStorage
-        for (const key in localStorage) {
-            // Check if the key starts with the specified prefix
-            if (key.startsWith(prefix)) {
-                // Remove the item from localStorage
-                localStorage.removeItem(key);
-            }
-        }
-    }
-
     saveWithLRUStrategy(key, value) {
-        try {
-            // Attempt to save the item
-            localStorage.setItem(key, value);
-            this.updateAccessOrder(key); // Update access order upon successful save
-        } catch (error) {
-            if (error.name === "QuotaExceededError") {
-                // When storage is full, remove the least recently used item
-                let accessOrder = localStorage.getItem("accessOrder");
-                accessOrder = accessOrder ? JSON.parse(accessOrder) : [];
-
-                while (accessOrder.length > 0 && error?.name === "QuotaExceededError") {
-                    const oldestKey = accessOrder.shift(); // Remove the oldest accessed key
-                    localStorage.removeItem(oldestKey); // Remove the oldest item
-                    localStorage.setItem("accessOrder", JSON.stringify(accessOrder)); // Update the access order in storage
-
-                    try {
-                        localStorage.setItem(key, value); // Try to save again
-                        this.updateAccessOrder(key); // Update access order upon successful save
-                        error = null; // Clear error if save is successful
-                    } catch (e) {
-                        error = e; // Update error if still failing
-                    }
-                }
-
-                if (error) {
-                    console.error("Unable to free up enough space in localStorage.");
-                }
-            } else {
-                // Handle other errors
-                console.error("Error saving to localStorage:", error);
-            }
-        }
+        return this.storageManager.saveWithLRUStrategy(key, value);
     }
 
     activateCancel() {
@@ -1608,10 +1751,16 @@ window.OneNameTrees = class OneNameTrees extends View {
         if (cachedDataString) {
             const cachedData = JSON.parse(cachedDataString);
 
-            $("#refreshData").show();
+            if (this.tooManyResults(cachedData)) {
+                // Stored by an earlier version. We can't use this many results, so don't keep them around.
+                this.storageManager.removeItem(cacheKey);
+                $("#refreshData").hide();
+            } else {
+                $("#refreshData").show();
 
-            this.yDNAdata = cachedData.yDNA;
-            this.auDNAdata = cachedData.auDNA;
+                this.yDNAdata = cachedData.yDNA;
+                this.auDNAdata = cachedData.auDNA;
+            }
 
             return [false, cachedData]; // Return cached data if available
         }
@@ -1643,8 +1792,13 @@ window.OneNameTrees = class OneNameTrees extends View {
                 return; // We are no longer the current view, exit immediately without cleanup
             }
 
-            // Cache the fetched data
-            localStorage.setItem(cacheKey, JSON.stringify(data));
+            // Only cache what we can actually use. An over-the-limit result is discarded rather
+            // than left taking up space we'd rather keep for searches that do work.
+            if (this.tooManyResults(data)) {
+                this.storageManager.removeItem(cacheKey);
+            } else {
+                this.storageManager.saveWithLRUStrategy(cacheKey, JSON.stringify(data));
+            }
 
             this.yDNAdata = data.yDNA;
             this.auDNAdata = data.auDNA;
@@ -1660,14 +1814,22 @@ window.OneNameTrees = class OneNameTrees extends View {
         }
     }
 
+    resultCount(data) {
+        return data?.main?.response?.found || 0;
+    }
+
+    tooManyResults(data) {
+        return this.resultCount(data) > OneNameTrees.MAX_PROFILES;
+    }
+
     numberOfProfiles(resultObj) {
         return !resultObj
             ? 0
             : Array.isArray(resultObj)
-            ? resultObj.length
-            : typeof resultObj === "object"
-            ? Object.keys(resultObj).length
-            : 0;
+              ? resultObj.length
+              : typeof resultObj === "object"
+                ? Object.keys(resultObj).length
+                : 0;
     }
 
     async getPeopleViaPagedCalls(ids, options = {}) {
@@ -1777,6 +1939,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             }
         }
     }
+
     isCorrectLocationMatch(location, input, exclusionMap) {
         const lowerLocation = this.standardizeString(location);
         const lowerInput = this.standardizeString(input);
@@ -1894,21 +2057,11 @@ window.OneNameTrees = class OneNameTrees extends View {
         const centuries = this.parseCenturies($("#centuries").val());
         const firstCentury = centuries.length > 0 ? Math.min(...centuries) : null;
         const locationInput = $("#location").val()?.trim();
+        const standardizedSurnameVariants = surnameVariants.map((variant) => this.standardizeString(variant));
 
         const $this = this;
         Object.values(this.combinedResults).forEach((person) => {
-            // Standardize the person's surnames for comparison
-            const standardizedLastNameAtBirth = $this.standardizeString(person?.LastNameAtBirth) || "";
-            const standardizedLastNameCurrent = $this.standardizeString(person?.LastNameCurrent) || "";
-            const standardizedLastNameOther = $this.standardizeString(person?.LastNameOther) || "";
-
-            // Check if any standardized surname variants include the standardized person's surnames
-            const isSurnameMatch = surnameVariants.some(
-                (variant) =>
-                    $this.standardizeString(variant) === standardizedLastNameAtBirth ||
-                    $this.standardizeString(variant) === standardizedLastNameCurrent ||
-                    $this.standardizeString(variant) === standardizedLastNameOther
-            );
+            const isSurnameMatch = this.profileHasTargetSurname(person, standardizedSurnameVariants);
 
             // Determine the person's birth century for filtering
             const birthYear = parseInt(person?.BirthDate?.substring(0, 4));
@@ -1920,8 +2073,9 @@ window.OneNameTrees = class OneNameTrees extends View {
                 (birthCentury && birthCentury >= firstCentury) ||
                 !person.BirthDate ||
                 person.BirthDate == "0000-00-00";
+            const isLocationMatch = this.isLocationMatch(person, locationInput);
 
-            if (isSurnameMatch && isCenturyMatch && this.isLocationMatch(person, locationInput)) {
+            if (isSurnameMatch && isCenturyMatch && isLocationMatch) {
                 $this.filteredResults[person.Id] = person;
             }
         });
@@ -2000,6 +2154,9 @@ window.OneNameTrees = class OneNameTrees extends View {
             // If no variants are found, use the surname as-is
             surnameVariants.push(this.surname);
         }
+        const standardizedSurnameVariants = surnameVariants.map((variant) => this.standardizeString(variant));
+
+        await this.enrichNameFieldsForRelatedWtPlusMatches(standardizedSurnameVariants);
         //
 
         if ($this.cancelling) {
@@ -2043,49 +2200,6 @@ window.OneNameTrees = class OneNameTrees extends View {
         return;
     }
 
-    /*
-    prioritizeTargetName(sortedPeople) {
-        let updatedPeople = [...sortedPeople]; // Clone the array to avoid direct modifications
-
-        for (let i = 0; i < updatedPeople.length; i++) {
-            let person = updatedPeople[i];
-            let personShouldLog = this.shouldLog(person.Id);
-
-            if (personShouldLog) {
-            }
-
-            if (person.Spouses && person.Spouses.length > 0) {
-                const spouseIds = person.Spouses.map((spouse) => spouse.Id);
-
-                spouseIds.forEach((spouseId) => {
-                    // Find the spouse in sortedPeople by comparing Id values after type conversion
-                    let spouseIndex = sortedPeople.findIndex((p) => String(p.Id) === String(spouseId));
-
-                    if (spouseIndex !== -1) {
-                        let spouse = sortedPeople[spouseIndex];
-                        let spouseShouldLog = this.shouldLog(spouse.Id);
-
-                        if (personShouldLog || spouseShouldLog) {
-                        }
-
-                        if (this.shouldPrioritize(spouse, person)) {
-                            spouse.shouldBeRoot = false;
-                            // Remove the spouse from their original position in the updated list
-                            updatedPeople = updatedPeople.filter((p) => String(p.Id) !== String(spouse.Id));
-                            // Recalculate person's index in the updated list
-                            let newPersonIndex = updatedPeople.findIndex((p) => String(p.Id) === String(person.Id));
-                            // Insert the spouse after the person in the updated list
-                            updatedPeople.splice(newPersonIndex + 1, 0, spouse);
-                        }
-                    }
-                });
-            }
-        }
-
-        this.sortedPeople = updatedPeople; // Update the original array reference if needed
-    }
-    */
-
     prioritizeTargetName(sortedPeople) {
         let updatedPeople = [...sortedPeople]; // Clone the array to avoid direct modifications
 
@@ -2116,14 +2230,8 @@ window.OneNameTrees = class OneNameTrees extends View {
         this.sortedPeople = updatedPeople; // Update the original array reference if needed
     }
 
-    shouldLog(id) {
-        return this.shouldLogIds.includes(id);
-    }
-
     shouldPrioritize(spouse, person) {
         // Convert the target surname and its variants into standardized forms for comparison
-
-        const shouldLog = this.shouldLog(spouse.Id) || this.shouldLog(person.Id);
         const standardizedVariants = this.getSurnameVariants().map((variant) => this.standardizeString(variant));
 
         // Standardize the spouse and person's last names for comparison
@@ -2286,6 +2394,7 @@ window.OneNameTrees = class OneNameTrees extends View {
 
         const categoryHTML = this.createCategoryHTML(person);
         const dates = this.displayDates(person);
+        const akaLastNames = this.getAkaLastNamesDisplay(person);
         const privacySticker = person.Privacy == 60 ? "" : this.getPrivacySticker(person);
 
         let html = `<li class='level_${level} person ${duplicateClass}' data-id='${personIdStr}' data-name='${
@@ -2294,7 +2403,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             person?.Mother
         }' data-gender='${gender}' data-full-name='${fullName}' data-dates='${dates}'> ${toggleButton}${descendantsCount}<a href="https://www.wikitree.com/wiki/${
             person.Name
-        }" target="_blank">${fullName}</a> <span class="wtid">(${
+        }" target="_blank">${fullName}</a>${akaLastNames} <span class="wtid">(${
             person.Name || ""
         })</span> ${duplicateLink} <span class='dates'>${dates}</span> ${categoryHTML} ${privacySticker}`;
 
@@ -2333,8 +2442,8 @@ window.OneNameTrees = class OneNameTrees extends View {
                             ancestor.gender
                         }'>
             ${ancestor.fullName} <span class='dates'>${ancestor.dates}</span> <span class='wtid'>(${
-                            ancestor.wtid
-                        })</span>
+                ancestor.wtid
+            })</span>
           </li>`
                 )
                 .join("")
@@ -2713,6 +2822,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                 }
 
                 const spouseName = new PersonName(spouseInfo).withParts(["FullName"]);
+                const spouseAkaLastNames = this.getAkaLastNamesDisplay(spouseInfo);
                 if (married && married !== "0000-00-00") {
                     married = this.formatDate(married);
                     married = ` (Married: ${married})`;
@@ -2732,7 +2842,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                     spouseInfo.Id
                 }' data-gender='${gender}' data-marriage-date='${marriageDate}'>m. <a href="https://www.wikitree.com/wiki/${
                     spouseInfo.Name
-                }" target="_blank">${spouseName}</a> <span class='wtid'>(${
+                }" target="_blank">${spouseName}</a>${spouseAkaLastNames} <span class='wtid'>(
                     spouseInfo.Name || ""
                 })</span>${duplicateLink} <span class='dates'>${this.displayDates(
                     spouseInfo
@@ -4724,6 +4834,14 @@ window.OneNameTrees = class OneNameTrees extends View {
     }
 
     async startTheFetching(surname, location, centuries) {
+        // The query is built from the surname variants, so if we have none cached we have to wait
+        // for the list to arrive before we can go any further.
+        if (!this.nameVariants.size) {
+            await this.nameVariantsPromise;
+            if (!this.isActive()) {
+                return; // We are no longer the current view, exit immediately without cleanup
+            }
+        }
         if (this.userId) {
             if (!this.surnameWatchlistNames) {
                 this.watchlistPromise = WikiTreeAPI.getWatchlist("One Name Trees", 5000, 1, 0, [
@@ -4748,6 +4866,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             return;
         }
         const ids = data.main.response.profiles;
+        this.wtPlusMatches = new Set(ids.map((id) => String(id)));
         const found = data.main.response.found;
         if (found === 0) {
             $this.disableCancel();
@@ -4755,15 +4874,15 @@ window.OneNameTrees = class OneNameTrees extends View {
             wtViewRegistry.showNotice("No results found.");
             $("#refreshData").prop("disabled", false);
             return;
-        } else if (found > 5000) {
+        } else if (found > OneNameTrees.MAX_PROFILES) {
             let roundedFound = Math.floor(found / 1000) * 1000;
             function formatNumber(number, locales, options) {
                 return new Intl.NumberFormat(locales, options).format(number);
             }
             const formattedRoundedFound = formatNumber(roundedFound, "en-US");
-            const message = `<p>There are over ${formattedRoundedFound} results.</p>
-                                   <p>This is too many for WikiTree to handle.</p>
-                                   <p>Please add a location or a century (or centuries) and go again.</p>`;
+            const message = `There are over ${formattedRoundedFound} results. 
+                                   This is too many for WikiTree to handle. 
+                                   Please add a location or a century (or centuries) and go again.`;
             wtViewRegistry.showNotice(message);
             $this.disableCancel();
             $this.shakingTree.hide();
@@ -4794,6 +4913,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             wtViewRegistry.showNotice("Watchlist saved...");
         }
         const surnameVariants = this.getSurnameVariants(surname);
+        const standardizedSurnameVariants = surnameVariants.map((variant) => this.standardizeString(variant));
         if (this.watchlist) {
             if (!watchlistFetched) {
                 wtViewRegistry.showNotice("Using stored watchlist...");
@@ -4802,10 +4922,14 @@ window.OneNameTrees = class OneNameTrees extends View {
             this.surnameWatchlistIds = [];
             this.watchlist.watchlist.forEach((person) => {
                 if (person.Name) {
+                    const standardizedLastNameAtBirth = this.standardizeString(person.LastNameAtBirth);
+                    const standardizedLastNameCurrent = this.standardizeString(person.LastNameCurrent);
+                    const standardizedLastNameOthers = this.getStandardizedOtherLastNames(person.LastNameOther);
+
                     if (
-                        (surnameVariants.includes(person.LastNameAtBirth) ||
-                            surnameVariants.includes(person.LastNameCurrent) ||
-                            surnameVariants.includes(person.LastNameOther)) &&
+                        (standardizedSurnameVariants.includes(standardizedLastNameAtBirth) ||
+                            standardizedSurnameVariants.includes(standardizedLastNameCurrent) ||
+                            standardizedLastNameOthers.some((name) => standardizedSurnameVariants.includes(name))) &&
                         !ids.includes(person.Id)
                     ) {
                         this.surnameWatchlistIds.push(person.Id);
@@ -5152,6 +5276,14 @@ window.OneNameTrees = class OneNameTrees extends View {
 };
 
 class LocalStorageManager {
+    // Keys we no longer write, but which may be sitting in a user's storage from an earlier version.
+    static LEGACY_KEYS = ["surnameData"];
+    // Our single-purpose keys, which don't describe themselves the way the search caches do.
+    static KEY_LABELS = {
+        ONTsurnameVariants: "Surname variants list",
+        surnameData: "Surname variants list",
+    };
+
     constructor() {
         this.accessOrder = [];
         this.maxCapacity = 5 * 1024 * 1024; // 5MB, adjust as needed
@@ -5159,16 +5291,34 @@ class LocalStorageManager {
         // Attempt to read the accessOrder from localStorage or initialize it
         const storedOrder = localStorage.getItem("accessOrder");
         if (storedOrder) {
-            this.accessOrder = JSON.parse(storedOrder);
+            try {
+                this.accessOrder = JSON.parse(storedOrder);
+            } catch (error) {
+                this.accessOrder = [];
+            }
         }
         this.checkAndRebuildAccessOrderIfNeeded(); // Ensure accessOrder is accurate on initialization
+    }
+
+    removeLegacyItems() {
+        LocalStorageManager.LEGACY_KEYS.forEach((key) => {
+            if (localStorage.getItem(key) !== null) {
+                this.removeItem(key);
+            }
+        });
+    }
+
+    removeItem(key) {
+        localStorage.removeItem(key);
+        this.accessOrder = this.accessOrder.filter((item) => item !== key);
+        this.updateLocalStorageAccessOrder();
     }
 
     clearONSidsCache() {
         const prefix = "ONSids_";
         for (const key of Object.keys(localStorage)) {
             if (key.startsWith(prefix)) {
-                localStorage.removeItem(key);
+                this.removeItem(key);
             }
         }
     }
@@ -5195,7 +5345,7 @@ class LocalStorageManager {
         for (const key of Object.keys(localStorage)) {
             // Use the pattern to check the key
             if (pattern(key)) {
-                localStorage.removeItem(key);
+                this.removeItem(key);
             }
         }
 
@@ -5207,7 +5357,7 @@ class LocalStorageManager {
         const suffix = "_watchlist";
         for (const key of Object.keys(localStorage)) {
             if (key.endsWith(suffix)) {
-                localStorage.removeItem(key);
+                this.removeItem(key);
                 this.showTempMessage("Clearing cached watchlist...");
             }
         }
@@ -5257,8 +5407,7 @@ class LocalStorageManager {
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key.startsWith("ONTids_")) {
-                const item = JSON.parse(localStorage.getItem(key));
-                const dataDate = item.debug && item.debug.dataDate;
+                const dataDate = this.getDataDate(key);
                 if (dataDate) {
                     itemDates.push({ key, dataDate });
                 }
@@ -5270,6 +5419,112 @@ class LocalStorageManager {
         this.accessOrder = itemDates.map((item) => item.key);
         // Persist the updated access order
         this.updateLocalStorageAccessOrder();
+    }
+
+    getDataDate(key) {
+        try {
+            const item = JSON.parse(localStorage.getItem(key));
+            // The WikiTree+ response we store puts dataDate under each query's own "debug" section.
+            return item?.main?.debug?.dataDate || item?.debug?.dataDate || null;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    isOneNameTreesDataKey(key) {
+        return (
+            key.startsWith("ONTids_") ||
+            key.startsWith("ONSids_") ||
+            key.endsWith("_watchlist") ||
+            Object.prototype.hasOwnProperty.call(LocalStorageManager.KEY_LABELS, key)
+        );
+    }
+
+    ordinal(number) {
+        const suffixes = ["th", "st", "nd", "rd"];
+        const remainder = number % 100;
+        return `${number}${suffixes[(remainder - 20) % 10] || suffixes[remainder] || suffixes[0]}`;
+    }
+
+    /**
+     * Turn a cache key back into something a person can read.
+     * The key is built as ONTids_surname_location_centuries, and both surname and location can
+     * themselves contain underscores, so this is a best guess: centuries are always digits and
+     * hyphens, and the first chunk is taken as the surname.
+     */
+    describeKey(key) {
+        if (Object.prototype.hasOwnProperty.call(LocalStorageManager.KEY_LABELS, key)) {
+            return {
+                title: LocalStorageManager.KEY_LABELS[key],
+                detail: LocalStorageManager.LEGACY_KEYS.includes(key) ? "No longer used" : "Refreshed each visit",
+            };
+        }
+        if (key.endsWith("_watchlist")) {
+            return { title: "Your watchlist", detail: "" };
+        }
+        const withoutPrefix = key.replace(/^ON[TS]ids_/, "");
+        const parts = withoutPrefix.split("_");
+        let centuries = "";
+        if (parts.length > 1 && /^[\d-]*$/.test(parts[parts.length - 1])) {
+            centuries = parts.pop();
+        }
+        const surname = parts.shift() || "";
+        let location = "";
+        try {
+            location = decodeURIComponent(parts.join(" ")).replace(/_/g, " ").trim();
+        } catch (error) {
+            location = parts.join(" ").replace(/_/g, " ").trim();
+        }
+
+        const centuryList = centuries ? centuries.split("-").filter(Boolean) : [];
+        const detail = [
+            location ? `in ${location}` : "",
+            centuryList.length
+                ? `${centuryList.map((century) => this.ordinal(century)).join(", ")} ` +
+                  `${centuryList.length > 1 ? "centuries" : "century"}`
+                : "",
+        ]
+            .filter(Boolean)
+            .join("; ");
+
+        return {
+            title: surname ? surname.charAt(0).toUpperCase() + surname.slice(1) : key,
+            detail: detail || "All locations and centuries",
+        };
+    }
+
+    formatSize(bytes) {
+        if (bytes >= 1024 * 1024) {
+            return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+        }
+        if (bytes >= 1024) {
+            return `${Math.round(bytes / 1024)} KB`;
+        }
+        return `${bytes} bytes`;
+    }
+
+    /**
+     * Every One Name Trees item currently in localStorage, least recently used first, so that the
+     * things we'd suggest deleting come at the top of the list.
+     */
+    getStoredItems() {
+        const items = Object.keys(localStorage)
+            .filter((key) => this.isOneNameTreesDataKey(key))
+            .map((key) => {
+                const description = this.describeKey(key);
+                return {
+                    key: key,
+                    size: (localStorage.getItem(key) || "").length,
+                    dataDate: this.getDataDate(key),
+                    title: description.title,
+                    detail: description.detail,
+                    order: this.accessOrder.indexOf(key),
+                };
+            });
+
+        // Anything missing from accessOrder is of unknown age, so treat it as the oldest.
+        items.sort((a, b) => a.order - b.order);
+        return items;
     }
 
     removeItems(criteria) {
@@ -5301,10 +5556,146 @@ class LocalStorageManager {
             try {
                 localStorage.setItem(key, value);
                 this.updateAccessOrder(key);
+                return true;
             } catch (error) {
-                console.error("Error saving to localStorage:", error);
+                this.handleStorageError(error, newItemSize, () => this.saveWithLRUStrategy(key, value));
+                return false;
             }
         }
+        this.handleStorageError({ name: "QuotaExceededError" }, newItemSize, () =>
+            this.saveWithLRUStrategy(key, value)
+        );
+        return false;
+    }
+
+    isQuotaError(error) {
+        return error && (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED");
+    }
+
+    handleStorageError(error, neededBytes, retry) {
+        if (!this.isQuotaError(error)) {
+            console.error("Error saving to localStorage:", error);
+            return;
+        }
+        // There's no room left and we've already dropped what we could safely drop on our own,
+        // so let the user decide what goes.
+        this.showStorageDialog({ neededBytes: neededBytes, onDone: retry });
+    }
+
+    /**
+     * Show the user what One Name Trees is keeping in their browser storage and let them choose
+     * what to delete. When we've run out of room, the items we'd have discarded anyway are
+     * ticked in advance, but nothing is deleted without the user saying so.
+     */
+    showStorageDialog(options = {}) {
+        const neededBytes = options.neededBytes || 0;
+        const onDone = options.onDone;
+        const items = this.getStoredItems();
+
+        $("#oneNameTreesStorage").remove();
+
+        const popup = $(`<div id="oneNameTreesStorage" class="popup">
+            <x>x</x>
+            <h2>Stored One Name Trees data</h2>
+            <div id="storageContent"></div>
+        </div>`);
+        const content = popup.find("#storageContent");
+
+        if (items.length === 0) {
+            const emptyMessage = neededBytes
+                ? "Your browser's storage for this site is full, but none of it belongs to One Name Trees, " +
+                  "so there is nothing here to delete. The search will still work; it just won't be saved " +
+                  "for next time."
+                : "There is no One Name Trees data stored.";
+            content.append($("<p class='storageIntro'></p>").text(emptyMessage));
+        } else {
+            const totalSize = items.reduce((total, item) => total + item.size, 0);
+            const intro = neededBytes
+                ? `Your browser's storage for this site is full, so the latest search couldn't be saved. ` +
+                  `One Name Trees is using ${this.formatSize(totalSize)}. ` +
+                  `Tick the items you're happy to delete (the oldest are ticked for you) and we'll try again.`
+                : `One Name Trees is using ${this.formatSize(totalSize)} of your browser's storage. ` +
+                  `Tick anything you'd like to delete. Deleted searches will simply be fetched again next time.`;
+            content.append($("<p class='storageIntro'></p>").text(intro));
+
+            // Pre-tick from the oldest down until we've freed enough for the item that wouldn't fit.
+            let freed = 0;
+            const list = $("<ul id='storageList'></ul>");
+            items.forEach((item) => {
+                const preselect = neededBytes > 0 && freed < neededBytes;
+                if (preselect) {
+                    freed += item.size;
+                }
+                const li = $("<li></li>");
+                const label = $("<label></label>");
+                const checkbox = $("<input type='checkbox' class='storageItem'>")
+                    .attr("data-key", item.key)
+                    .prop("checked", preselect);
+                label.append(checkbox);
+                label.append($("<span class='storageTitle'></span>").text(item.title));
+                if (item.detail) {
+                    label.append($("<span class='storageDetail'></span>").text(item.detail));
+                }
+                label.append(
+                    $("<span class='storageSize'></span>").text(
+                        this.formatSize(item.size) + (item.dataDate ? ` · ${item.dataDate}` : "")
+                    )
+                );
+                label.attr("title", item.key);
+                li.append(label);
+                list.append(li);
+            });
+            content.append(list);
+
+            const buttons = $("<div id='storageButtons'></div>");
+            buttons.append(
+                `<button id="storageSelectAll" class="btn btn-secondary btn-sm">Select all</button>`,
+                `<button id="storageSelectNone" class="btn btn-secondary btn-sm">Select none</button>`,
+                `<button id="storageDelete" class="btn btn-primary btn-sm">Delete selected</button>`
+            );
+            content.append(buttons);
+        }
+
+        popup.appendTo($("body"));
+
+        popup.find("x").on("click.oneNameTreesStorage", function () {
+            popup.remove();
+        });
+        popup.find("#storageSelectAll").on("click.oneNameTreesStorage", function () {
+            popup.find(".storageItem").prop("checked", true);
+        });
+        popup.find("#storageSelectNone").on("click.oneNameTreesStorage", function () {
+            popup.find(".storageItem").prop("checked", false);
+        });
+        popup.find("#storageDelete").on("click.oneNameTreesStorage", () => {
+            const keys = popup
+                .find(".storageItem:checked")
+                .map(function () {
+                    return $(this).attr("data-key");
+                })
+                .get();
+            if (keys.length === 0) {
+                return;
+            }
+            keys.forEach((key) => this.removeItem(key));
+            popup.remove();
+            this.showTempMessage(`Deleted ${keys.length} stored item${keys.length === 1 ? "" : "s"}.`);
+            if (onDone) {
+                onDone();
+            }
+        });
+
+        if ($.fn.draggable) {
+            popup.draggable({ handle: "h2" });
+        }
+        const winWidth = $(window).width();
+        const winHeight = $(window).height();
+        popup.css({
+            left: `${Math.max(0, (winWidth - popup.outerWidth()) / 2)}px`,
+            top: `${Math.max(0, (winHeight - popup.outerHeight()) / 2)}px`,
+        });
+
+        return popup;
     }
 
     checkStorageUsage() {

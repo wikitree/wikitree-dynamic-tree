@@ -1,5 +1,5 @@
 import { Settings } from "./Settings.js";
-import { PRIVACY_LEVELS } from "./PeopleTable.js";
+import { PRIVACY_LEVELS, RESEARCH_STATUS } from "./PeopleTable.js";
 import { CC7Utils } from "./CC7Utils.js";
 import { CC7Notes } from "./CC7Notes.js";
 
@@ -10,6 +10,7 @@ export class MissingLinksView {
             <thead>
                 <tr>
                     <th scope="column">Privacy</th>
+                    <th scope="column" title="Research Status">RS</th>
                     <th scope="column">Degree</th>
                     <th scope="column">First</th>
                     <th scope="column">Last</th>
@@ -40,6 +41,10 @@ export class MissingLinksView {
 
         for (let person of sortedMap.values()) {
             const privacy = person.Privacy || "?";
+            const rsDetail = RESEARCH_STATUS.get(person.ResearchStatus) || {
+                title: person.ResearchStatus,
+                class: "",
+            };
             const degree = person.Meta.Degrees;
             const first = person.RealName;
             const last = person.LastNameAtBirth;
@@ -54,15 +59,19 @@ export class MissingLinksView {
                 const hasNote = idsWithNotes.has(person.Id);
                 let status = hasNote ? idsWithNotes.get(person.Id) : "";
                 if (status != "") status = " " + status;
-                const degreeCell = `<td class="degree${
-                    hasNote ? " hasNote" : ""
-                }${status}" title="Degree. Click to add/edit Notes.">${degree}°</td>`;
+                const titleStatus = status == "" ? ". " : `, Note status:${status}. `;
+                const researchCell = `<td class="research${hasNote ? " hasNote" : ""}${status}" title="Research Status: ${
+                    rsDetail.title
+                }${titleStatus} Click to add/edit Notes."><span class="${rsDetail.class} icon--inline"></span></td>`;
+
+                const degreeCell = `<td class="degree" title="Degree">${degree}°</td>`;
 
                 const newRow = $(`
                 <tr class="${person.Gender}" data-id="${person.Id}">
                     <td><img id="ml-privacy-lock" src="${PRIVACY_LEVELS.get(privacy).img}" title="${
-                    PRIVACY_LEVELS.get(privacy).title
-                }" /></td>
+                        PRIVACY_LEVELS.get(privacy).title
+                    }" /></td>
+                    ${researchCell}
                     ${degreeCell}
                     <td>${first}</td>
                     <td><a href="https://www.wikitree.com/genealogy/${last}" target="_blank">${last}</a></td>
@@ -74,15 +83,15 @@ export class MissingLinksView {
                         spouses < 1 && person.DataStatus?.Spouse != "blank"
                             ? "is-lead"
                             : spouses > 0 && person.DataStatus?.Spouse != "blank"
-                            ? "possible-lead"
-                            : ""
+                              ? "possible-lead"
+                              : ""
                     }">${spouses}</td>
                     <td class="${
                         children < 1 && person.NoChildren != 1
                             ? "is-lead"
                             : children > 0 && person.NoChildren != 1
-                            ? "possible-lead"
-                            : ""
+                              ? "possible-lead"
+                              : ""
                     }">${children}</td>
                     <td><a href="https://www.wikitree.com/index.php?title=Special:FindMatches&action=find&u=${
                         person.Id

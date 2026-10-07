@@ -252,7 +252,7 @@ WikiTreeAPI.Person = class Person {
  *
  * @param {*} appId An application id (any string). 'TA-' will be prepended to denotes it as a "Tree App"
  * @param {*} id The WikiTree ID of the person to retrieve
- * @param {*} fields An array of field names to retrieve for the given person
+ * @param {*} fields An array or comma delimited string of field names to retrieve for the given person
  * @returns a Person object
  */
 WikiTreeAPI.getPerson = async function (appId, id, fields) {
@@ -261,7 +261,7 @@ WikiTreeAPI.getPerson = async function (appId, id, fields) {
         appId: appId,
         action: "getPerson",
         key: id,
-        fields: fields.join(","),
+        fields: typeof fields == "string" ? fields : fields.join(","),
         resolveRedirect: 1,
     });
     return new WikiTreeAPI.Person(result[0].person);
@@ -295,7 +295,7 @@ WikiTreeAPI.getAncestors = async function (appId, id, depth, fields) {
         action: "getAncestors",
         key: id,
         depth: depth,
-        fields: fields.join(","),
+        fields: typeof fields == "string" ? fields : fields.join(","),
         resolveRedirect: 1,
     });
     return result[0].ancestors;
@@ -329,7 +329,7 @@ WikiTreeAPI.getAncestors = async function (appId, id, depth, fields) {
  *
  * @param {*} appId An application id (any string). 'TA-' will be prepended to denotes it as a "Tree App"
  * @param {*} IDs can be a single string, with a single ID or a set of comma separated IDs. OR it can be an array of IDs
- * @param {*} fields an array of fields to return for each profile (same as for getPerson or getProfile)
+ * @param {*} fields an array or comma delimited string of fields to return for each profile (same as for getPerson or getProfile)
  * @param {*} options an option object which can contain these key-value pairs
  *                    - bioFormat	Optional: "wiki", "html", or "both"
  *                    - getParents	If true, the parents are returned
@@ -343,7 +343,7 @@ WikiTreeAPI.getRelatives = async function (appId, IDs, fields, options = {}) {
         appId: appId,
         action: "getRelatives",
         keys: IDs.join(","),
-        fields: fields.join(","),
+        fields: typeof fields == "string" ? fields : fields.join(","),
         resolveRedirect: 1,
     };
 
@@ -395,7 +395,7 @@ WikiTreeAPI.getRelatives = async function (appId, IDs, fields, options = {}) {
  *
  * @param {*} appId An application id (any string). 'TA-' will be prepended to denotes it as a "Tree App"
  * @param {*} IDs can be a single string, with a single ID or a set of comma separated IDs. OR it can be an array of IDs
- * @param {*} fields an array of fields to return for each profile (almost the same as for getPerson or getProfile)
+ * @param {*} fields an array or comma delimited string of fields to return for each profile (almost the same as for getPerson or getProfile)
  *       - Can include Mother, Father, Spouses (which will include marriage data), but ignores fields Children,Parents, Siblings --> use options to get those people included
  * @param {*} options an option object which can contain these key-value pairs
  *                    - bioFormat	Optional: "wiki", "html", or "both"
@@ -419,7 +419,7 @@ WikiTreeAPI.getPeople = async function (appId, IDs, fields, options = {}) {
         appId: appId,
         action: "getPeople",
         keys: theKeys,
-        fields: fields.join(","),
+        fields: typeof fields == "string" ? fields : fields.join(","),
     };
 
     // go through the options object, and add any of those options to the getPeopleParameters
@@ -447,11 +447,11 @@ WikiTreeAPI.getPeople = async function (appId, IDs, fields, options = {}) {
  *    // where "result" is the JSON that was returned from the API call.
  * });
  *
- * @param {*} appId An application id (any string). 'TA-' will be prepended to denotes it as a "Tree App"
- * @param {*} limit
- * @param {*} getPerson
- * @param {*} getSpace
- * @param {*} fields
+ * @param {*} appId - An application id (any string). 'TA-' will be prepended to denotes it as a "Tree App"
+ * @param {*} limit - Integer value = how many Watchlist items to return. Default = 100
+ * @param {*} getPerson - Default = 1. If 1, the person profiles on the watchlist are returned
+ * @param {*} getSpace - Default = 1. If 1, the space profiles are returned, otherwise not
+ * @param {*} fields - An array or comma delimited string of fields to return for each profile
  * @returns
  */
 WikiTreeAPI.getWatchlist = async function (appId, limit, getPerson, getSpace, fields) {
@@ -461,7 +461,7 @@ WikiTreeAPI.getWatchlist = async function (appId, limit, getPerson, getSpace, fi
         limit: limit,
         getPerson: getPerson,
         getSpace: getSpace,
-        fields: fields.join(","),
+        fields: typeof fields == "string" ? fields : fields.join(","),
         resolveRedirect: 1,
     });
     return result[0].watchlist;

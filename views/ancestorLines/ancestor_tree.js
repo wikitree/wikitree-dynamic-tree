@@ -3,6 +3,7 @@
  */
 
 import { API } from "./api.js";
+import { D3Node } from "./D3Node.js";
 import { Person, LinkToPerson } from "./person.js";
 
 export class AncestorTree {
@@ -12,7 +13,8 @@ export class AncestorTree {
     static maxGeneration;
     static duplicates = new Map();
     static genCounts = [];
-    static profileCount = 0;
+    static uniqueProfileCount = 0;
+    static profiledPositionCount = 0;
     static requestedGen = 0;
     static minBirthYear = 0;
 
@@ -20,7 +22,8 @@ export class AncestorTree {
         AncestorTree.#people = new Map();
         AncestorTree.#peopleByWtId.clear();
         AncestorTree.duplicates.clear();
-        AncestorTree.profileCount = 0;
+        AncestorTree.uniqueProfileCount = 0;
+        AncestorTree.profiledPositionCount = 0;
         AncestorTree.requestedGen = 0;
     }
 
@@ -31,7 +34,8 @@ export class AncestorTree {
         AncestorTree.root = undefined;
         AncestorTree.maxGeneration = 0;
         AncestorTree.genCounts = [];
-        AncestorTree.profileCount = 0;
+        AncestorTree.uniqueProfileCount = 0;
+        AncestorTree.profiledPositionCount = 0;
         AncestorTree.requestedGen = 0;
     }
 
@@ -40,8 +44,8 @@ export class AncestorTree {
         for (const [key, val] of treeArray) {
             AncestorTree.#people.set(key, new Person(val._data, true));
         }
-        AncestorTree.root = AncestorTree.#people.get(treeArray[0][0]);
-        AncestorTree.validateAndSetGenerations(AncestorTree.root.getId());
+        AncestorTree.root = new D3Node("R", AncestorTree.#people.get(treeArray[0][0]));
+        AncestorTree.validateAndSetGenerations(AncestorTree.root.getNumId());
     }
 
     static async buildTreeWithGetPeople(wtId, depth, withBios) {
@@ -154,7 +158,7 @@ export class AncestorTree {
 
                     // Keep track of parent ids for which that parent is not in the tree
                     notLoaded.delete(id);
-                    for (const parentId of person.getParentIds()) {
+                    for (const parentId of [...person.getParentIds(), ...person.getBioParentIds()]) {
                         if (parentId && !AncestorTree.#people.has(+parentId)) {
                             notLoaded.add(+parentId);
                         }
@@ -164,7 +168,6 @@ export class AncestorTree {
             console.log(`Added ${nrAdded} people to the tree`);
 
             // Check if we're done
-            // if (profiles.length < API.GET_PERSON_LIMIT) break;
             if (!getMore) break;
 
             // We have more paged profiles to fetch
@@ -185,7 +188,7 @@ export class AncestorTree {
     // Validate that the tree is acyclic while filling in the generation data for each person in the tree.
     // Returns the max generation
     static validateAndSetGenerations(rootId) {
-        AncestorTree.root = AncestorTree.#people.get(rootId);
+        AncestorTree.root = new D3Node("R", AncestorTree.#people.get(rootId));
         AncestorTree.#peopleByWtId.clear();
         AncestorTree.genCounts = [0];
         AncestorTree.minBirthYear = 5000;
@@ -197,20 +200,27 @@ export class AncestorTree {
         const m = AncestorTree.#validate_and_set_generations(rootId, 1, new Set(), 0);
         AncestorTree.maxGeneration = m;
         AncestorTree.duplicates.clear();
-        AncestorTree.profileCount = 0;
+        AncestorTree.uniqueProfileCount = 0;
+        AncestorTree.profiledPositionCount = 0;
         let n = 0;
         for (const p of AncestorTree.#people.values()) {
-            const id = p.getId();
+            const id = p.getNumId();
             if (p.isDuplicate() && !AncestorTree.duplicates.has(id)) {
                 AncestorTree.duplicates.set(id, ++n);
             }
-            AncestorTree.profileCount += p.getNrCopies(AncestorTree.requestedGen);
+            const nrCopies = p.getNrCopies(AncestorTree.requestedGen);
+            if (nrCopies > 0) {
+                AncestorTree.uniqueProfileCount += 1;
+            }
+            AncestorTree.profiledPositionCount += nrCopies;
             const bYear = +p.getBirthYear();
             if (bYear > 0 && bYear < AncestorTree.minBirthYear) {
                 AncestorTree.minBirthYear = bYear;
             }
         }
-        console.log(`nr profiles=${AncestorTree.profileCount}, nr duplicates=${AncestorTree.duplicates.size}`);
+        console.log(
+            `Tree size = ${AncestorTree.#people.size}, ancestors with profiles=${AncestorTree.profiledPositionCount}, nr duplicates=${AncestorTree.duplicates.size}`
+        );
         console.log(`generation counts: ${AncestorTree.genCounts}`, AncestorTree.genCounts);
     }
 
@@ -244,7 +254,9 @@ export class AncestorTree {
         descendants = new Set(descendants).add(id);
         const m1 = AncestorTree.#validate_and_set_generations(pers.getFatherId(), generation + 1, descendants, maxG);
         const m2 = AncestorTree.#validate_and_set_generations(pers.getMotherId(), generation + 1, descendants, maxG);
-        maxG = Math.max(m1, m2);
+        const m3 = AncestorTree.#validate_and_set_generations(pers.getBioFatherId(), generation + 1, descendants, maxG);
+        const m4 = AncestorTree.#validate_and_set_generations(pers.getBioMotherId(), generation + 1, descendants, maxG);
+        maxG = Math.max(m1, m2, m3, m4);
         pers.setNrOlderGenerations(maxG - generation);
         return maxG;
     }
@@ -254,7 +266,7 @@ export class AncestorTree {
     }
 
     static rootId() {
-        return AncestorTree.root.getId();
+        return AncestorTree.root.getNumId();
     }
 
     static getPeople() {
@@ -315,7 +327,7 @@ export class AncestorTree {
                 continue;
             }
             const path = [];
-            path.push(srcNode.getId());
+            path.push(srcNode.getNumId());
 
             // Use depth first search (with backtracking) to find all the paths in the graph
             DFS(srcNode, dstWtId, path, allPaths);
@@ -328,7 +340,7 @@ export class AncestorTree {
                 allPaths.push([...path]);
             } else {
                 for (const adjnode of AncestorTree.getD3Children(srcNode)) {
-                    path.push(adjnode.getId());
+                    path.push(adjnode.getNumId());
                     DFS(adjnode, dstWtId, path, allPaths);
                     path.pop();
                 }
@@ -375,15 +387,18 @@ export class AncestorTree {
         };
     }
 
-    static nrDuplicatesUpToGen(gen) {
-        let cnt = 0;
+    static nrDuplicatesUpToGen(upToGen) {
+        let nrDuplicates = 0;
+        let nrPosOccupiedByDupes = 0;
         for (const dId of AncestorTree.duplicates.keys()) {
             const dPerson = AncestorTree.#people.get(+dId);
-            if (dPerson.getNrCopies(gen) > 1) {
-                ++cnt;
+            const nrCopies = dPerson.getNrCopies(upToGen);
+            if (nrCopies > 1) {
+                ++nrDuplicates;
+                nrPosOccupiedByDupes += nrCopies;
             }
         }
-        return cnt;
+        return [nrDuplicates, nrPosOccupiedByDupes];
     }
 
     static toArray() {
@@ -392,7 +407,7 @@ export class AncestorTree {
         // A node is added as a tuple [id, person] for backward compatibility with
         // the Array.from() that was used previously
         let i = 0;
-        const a = [[AncestorTree.root.getId(), AncestorTree.root]];
+        const a = [[AncestorTree.root.getNumId(), AncestorTree.root]];
         while (i < a.length) {
             const n = a[i++];
             for (const pId of n[1].getParentIds()) {
@@ -420,7 +435,7 @@ export class AncestorTree {
 
         function toSmall(p) {
             return {
-                id: p.getId(),
+                id: p.getNumId(),
                 wtId: p.getWtId(),
                 name: p.getDisplayName(),
                 birthdate: p.getBirthDate(),
@@ -430,25 +445,22 @@ export class AncestorTree {
         }
     }
 
-    static getD3Children(person, alreadyInTree) {
-        const parents = [];
-        if (!(person instanceof LinkToPerson)) {
-            addParent(+person.getFatherId());
-            addParent(+person.getMotherId());
-        }
-        return parents;
-
-        function addParent(id) {
-            if (id && AncestorTree.#people.has(id)) {
+    static getD3Children(d3Node, alreadyInTree) {
+        if (d3Node.person instanceof LinkToPerson) return [];
+        const ids = d3Node.getD3ChildrenIds();
+        const objs = ids.map(([id, type, adoptiveSubtreeId]) => {
+            if (AncestorTree.#people.has(id)) {
                 const person = AncestorTree.#people.get(id);
                 if (alreadyInTree && alreadyInTree.has(id)) {
-                    parents.push(new LinkToPerson(person));
+                    return new D3Node(`${d3Node.idPrefix}_${type}`, new LinkToPerson(person), type, adoptiveSubtreeId);
                 } else {
                     if (alreadyInTree) alreadyInTree.add(id);
-                    parents.push(person);
+                    return new D3Node(`${d3Node.idPrefix}_${type}`, person, type, adoptiveSubtreeId);
                 }
             }
-        }
+        });
+        const fobs = objs.filter(Boolean);
+        return fobs;
     }
 
     // Convert tree into a graph, with the latter being represented as 2 arrays: nodes and edges.
@@ -466,7 +478,7 @@ export class AncestorTree {
 
         while (q.length > 0) {
             const src = q.shift();
-            for (const p of AncestorTree.getD3Children(AncestorTree.#peopleByWtId.get(src.id))) {
+            for (const p of AncestorTree.getD3Children(new D3Node("", AncestorTree.#peopleByWtId.get(src.id)))) {
                 const id = p.getWtId();
                 if (!nodes.has(id)) {
                     const dst = {

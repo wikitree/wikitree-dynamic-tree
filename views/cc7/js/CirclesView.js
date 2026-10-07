@@ -59,6 +59,12 @@ export class CirclesView {
             document.getElementById("PDFgenButton").removeAttribute("disabled");
             document.getElementById("PDFgenButton").style.display = "revert";
             PDFgenPopupDIV.style.display = "block";
+
+            if (!rootPerson.LongName) {
+                if (rootPerson.LongNamePrivate) {
+                    rootPerson.LongName = rootPerson.LongNamePrivate;
+                }
+            }
             // PDFgenPopupDIV.style.zIndex = Utils.getNextZLevel();
             document.getElementById("PDFtitleText").value =
                 "CC" + cc7Degree + " Circles Chart for " + rootPerson.LongName;
@@ -410,17 +416,23 @@ export class CirclesView {
                 const thisRow = dt.rows[r];
                 if (thisRow) {
                     for (let c = 0; c < numCols; c++) {
-                        const thisEntry = thisRow.cells[c + 1].innerText;
-
-                        PDFs.thisPDFtextArray.push([
-                            thisEntry,
-                            125 + c * 40 + PDFs.thisPDFminX, //+ 140,
-                            5 + r * 20 + whereY,
-                            "helvetica",
-                            "normal",
-                            14,
-                            { align: "right", maxWidth: 40, fill: "black", strokeColor: "black" },
-                        ]);
+                        const thisCell = thisRow.cells[c + 1];
+                        if (thisCell && thisCell.innerText) {
+                            const thisEntry = thisRow.cells[c + 1].innerText;
+                            if (thisEntry.indexOf("True CC7 size ") > -1) {
+                                // do NOT add the message about "True CC7 size may not be accurate"
+                            } else {
+                                PDFs.thisPDFtextArray.push([
+                                    thisEntry,
+                                    125 + c * 40 + PDFs.thisPDFminX, //+ 140,
+                                    5 + r * 20 + whereY,
+                                    "helvetica",
+                                    "normal",
+                                    14,
+                                    { align: "right", maxWidth: 40, fill: "black", strokeColor: "black" },
+                                ]);
+                            }
+                        }
                     }
                 }
             }
@@ -652,7 +664,7 @@ export class CirclesView {
 
         let showGenPDFpopupFunctionCode = `if (document.getElementById("PDFgenPopupDIV").style.display == "none") {
                 document.getElementById("PDFgenPopupDIV").style.display = "block";
-                console.log("showGenPDFpopupFunctionCode");
+                condLog("showGenPDFpopupFunctionCode");
                 CC7View.setupPDFgenerator();            
             }`;
 
@@ -710,6 +722,18 @@ export class CirclesView {
         condLog("window.people.size", window.people.size);
         condLog("window.people", window.people);
         let rootPeep = window.people.get(1.0 * currentRootID);
+        if (!rootPeep) {
+            if (window.rootPerson.Id == window.rootId && window.rootId == currentRootID) {
+                window.rootPerson.Meta = { Degrees: 0 };
+                window.rootPerson.Child = [];
+                window.rootPerson.Spouse = [];
+                window.rootPerson.Sibling = [];
+                window.people.set(window.rootId, window.rootPerson);
+                rootPeep = window.rootPerson;
+                // window.people[window.rootId] = window.rootPerson;
+            }
+            // rootPeep = window.people.get("" + currentRootID);
+        }
         condLog({ rootPeep });
         if (rootPeep) {
             CirclesView.updateFieldsInPersonCodesObject(currentRootID, "A0", "A0-" + currentRootID);
@@ -718,7 +742,7 @@ export class CirclesView {
     }
 
     static updateFieldsInPersonCodesObject(currentID, code, codeLong) {
-        condLog("updateFieldsInPersonCodesObject:", currentID, code, codeLong);
+        // console.log("updateFieldsInPersonCodesObject:", currentID, code, codeLong);
         let Peep = window.people.get(currentID);
         let currentIDstr = "" + currentID;
         if (Peep) {
@@ -801,6 +825,7 @@ export class CirclesView {
     }
 
     static addConnectionsToThisPerson(thisID, code, fromWhere = "root", p1 = 0, p2 = 0) {
+        // console.log("addConnectionsToThisPerson", { thisID }, { code }, { fromWhere }, { p1 }, { p2 });
         // thisID = WikiTree ID # for person who we are adding connections for
         // fromWhere = the type of connection that prompted this call to expand the network
         /*
@@ -969,10 +994,10 @@ export class CirclesView {
     }
 
     static updateView() {
-        console.log("CIRCLES VIEW - updateView");
+        condLog("CIRCLES VIEW - updateView");
         // sort the people by degree
         // TODO also sort by birthdate
-        // console.log("window.rootId:", window.rootId);
+        condLog("window.rootId:", window.rootId);
         CirclesView.connectAllToPrimaryPerson(window.rootId);
         const mapArray = Array.from(window.people);
         mapArray.sort((a, b) => a[1]["Meta"]["Degrees"] - b[1]["Meta"]["Degrees"]);
@@ -1064,8 +1089,9 @@ export class CirclesView {
         ];
 
         // const blobColoursD1 = ["gray", "lawngreen", "red", "blue"];
-
+        condLog("BOO !!");
         const privacy = person.Privacy;
+        condLog("CirclesView.doCircle - person:", person);
         const degree = person.Meta.Degrees;
         const first = person.RealName;
         const last = person.LastNameAtBirth;
@@ -1365,7 +1391,7 @@ export class CirclesView {
     }
 
     static changeDisplayType() {
-        console.log("CIRCLES VIEW - changeDisplayType");
+        condLog("CIRCLES VIEW - changeDisplayType");
         let SVGcode =
             "<svg id=CirclesBkgd><rect id=CirclesBkgdRect width=5000 height=5000 style='fill:aliceblue;stroke:aliceblue;stroke-width:1;opacity:1' /></svg>";
         let degreeCount = CirclesView.degreeCount;
@@ -1430,7 +1456,7 @@ export class CirclesView {
         let extraRadiusForCentralPerson = 0;
 
         condLog("BEFORE PLACEMENT: dotRadius = " + CirclesView.dotRadius, { radiusMultipler });
-
+        condLog(CirclesView.theLeafCollection, Object.keys(CirclesView.theLeafCollection).length);
         let theCentralPersonObject = CirclesView.PersonCodesObject[CirclesView.theLeafCollection["A0"].Id];
         let showPhotoChkBox = document.getElementById("displayType_CentralPhoto");
         if (
@@ -1462,21 +1488,29 @@ export class CirclesView {
             SVGcode += CirclesView.doCircle(rootPerson, 0, 0, centralPersonDotDY); // degree = 0, x = 0, y = centralPersonDotDY (0 or a bit down underneath photo)
         }
 
+        condLog({ extraRadiusForCentralPerson });
+
         for (let person of CirclesView.currentSortedMap.values()) {
             const degree = person.Meta.Degrees;
             if (degree == 0) {
                 currentRadiusMultipler = 0;
             }
-            // console.log("degree", degree, "currentDegree", currentDegree);
+            // condLog("degree", degree, "currentDegree", currentDegree);
             if (degree > currentDegree) {
                 currentRadiusMultipler += radiusMultipler;
                 if (degree == 1) {
                     currentRadiusMultipler = Math.max(currentRadiusMultipler, extraRadiusForCentralPerson);
+                    condLog("CC1 currentRadiusMultipler:", currentRadiusMultipler);
                 }
-                // console.log("currentRadiusMultipler", currentRadiusMultipler);
+                if (degree == 2 && degreeCount[1] == 0) {
+                    currentRadiusMultipler = Math.max(currentRadiusMultipler, extraRadiusForCentralPerson);
+                    condLog("CC2 may have some  people, but CC1 had NO BODY !!!!  YIKES !!!!");
+                }
+                // condLog("currentRadiusMultipler", currentRadiusMultipler);
                 currentDegree = degree;
                 let regPolyRadius =
                     (fNameMultiplierFactor * 2 * CirclesView.dotRadius) / (2 * Math.sin(Math.PI / degreeCount[degree]));
+                condLog({ degree }, { regPolyRadius });
                 if (regPolyRadius > currentRadiusMultipler) {
                     // this means that at this radius, the circles are going to be overcrowded, on top of each other
                     if (regPolyRadius - currentRadiusMultipler < CirclesView.dotRadius) {
@@ -1686,6 +1720,8 @@ export class CirclesView {
                 window.personPopup.popupHTML(person, {
                     type: "CC",
                     person: { _data: CirclesView.PersonCodesObject[person.Id] },
+                    personID: person.Id,
+                    personName: person.Name,
                     leafCollection: CirclesView.theLeafCollection,
                     peopleList: CirclesView.PersonCodesObject,
                     appID: "cc7",
@@ -1693,15 +1729,15 @@ export class CirclesView {
                     extra: { degree: numDegreesForPopup },
                 });
 
-                console.log(CirclesView.PersonCodesObject);
-                console.log(CirclesView.theLeafCollection["A0"]);
-                console.log(CirclesView.PersonCodesObject[CirclesView.theLeafCollection["A0"].Id]);
+                condLog(CirclesView.PersonCodesObject);
+                condLog(CirclesView.theLeafCollection["A0"]);
+                condLog(CirclesView.PersonCodesObject[CirclesView.theLeafCollection["A0"].Id]);
             });
         });
     }
 
     static checkForDegree1CirclesToRevise() {
-        console.log("firstDegreeCirclesToRevise", this.firstDegreeCirclesToRevise);
+        condLog("firstDegreeCirclesToRevise", this.firstDegreeCirclesToRevise);
         if (this.firstDegreeCirclesToRevise.length > 0) {
             // REVISIT the degree 1 circles
             for (let f = 0; f < this.firstDegreeCirclesToRevise.length; f++) {

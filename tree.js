@@ -343,7 +343,7 @@ window.ViewRegistry = class ViewRegistry {
 
     clearStatus() {
         const wtStatus = document.querySelector(this.WT_STATUS);
-        wtStatus.innerHTML = "";
+        wtStatus.textContent = "";
         wtStatus.classList.add("hidden");
         wtStatus.classList.remove("red");
         wtStatus.classList.remove("green");
@@ -351,20 +351,20 @@ window.ViewRegistry = class ViewRegistry {
     showError(msg) {
         const wtStatus = document.querySelector(this.WT_STATUS);
         this.clearStatus();
-        wtStatus.innerHTML = msg;
+        wtStatus.textContent = msg;
         wtStatus.classList.add("red");
         wtStatus.classList.remove("hidden");
     }
     showWarning(msg) {
         const wtStatus = document.querySelector(this.WT_STATUS);
         this.clearStatus();
-        wtStatus.innerHTML = msg;
+        wtStatus.textContent = msg;
         wtStatus.classList.remove("hidden");
     }
     showNotice(msg) {
         const wtStatus = document.querySelector(this.WT_STATUS);
         this.clearStatus();
-        wtStatus.innerHTML = msg;
+        wtStatus.textContent = msg;
         wtStatus.classList.add("green");
         wtStatus.classList.remove("hidden");
     }
@@ -474,7 +474,10 @@ window.SessionManager = class SessionManager {
 
     loadUrlHash(viewIDs, urlHash) {
         const fields = this.getHashParams(urlHash);
-        this.personName = fields.get("name") || this.personName;
+        const nameFromHash = fields.get("name");
+        if (nameFromHash != null && this.isValidWikiTreeIdFormat(nameFromHash)) {
+            this.personName = nameFromHash.trim();
+        }
 
         const viewID = fields.get("view");
 
@@ -495,6 +498,20 @@ window.SessionManager = class SessionManager {
         this.wtAPI.cookie(this.C_VIEW_ID, this.viewID, { path: "/" });
         this.wtAPI.cookie(this.C_PERSON_ID, this.personID, { path: "/" });
         this.wtAPI.cookie(this.C_PERSON_NAME, this.personName, { path: "/" });
+    }
+
+    isValidWikiTreeIdFormat(value) {
+        if (typeof value !== "string") return false;
+        let s = value.trim();
+        try {
+            s = decodeURIComponent(s.replace(/\+/g, "_"));
+        } catch {
+            return false;
+        }
+        s = s.trim();
+        if (!s) return false;
+        // Name segment ends with -digits; allow any-script letters, marks, digits inside the name (e.g. 松下-1, Распутин-1, Le Brun-881).
+        return /^[\p{L}\p{M}][\p{L}\p{M}\p{N}'.\s_-]*-\d+$/u.test(s);
     }
 };
 

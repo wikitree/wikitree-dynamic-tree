@@ -5,13 +5,14 @@
 //
 import { AncestorTree } from "./ancestor_tree.js";
 import { AncestorLinesExplorer } from "./ancestor_lines_explorer.js";
+import { D3Node } from "./D3Node.js";
 
 export function showTree(
     theTree,
-    loiNodes,
-    loiLinks,
-    loiEndpoints,
-    genCountsInLOI,
+    loiNodes, // lines of interest nodes
+    loiLinks, // lines of interest links
+    loiEndpoints, // lines of inbterest endpoiints
+    genCountsInLOI, // heneration counts in lines of interest
     maxGenToShow,
     expandLOIs,
     showOnlyLOIs,
@@ -19,6 +20,15 @@ export function showTree(
     hideTreeHeader,
     labelsLeftOnly
 ) {
+    const NODE_RADIUS = 5;
+    const PARENT_ICON = {
+        width: 20,
+        height: 10,
+        stackedHeight: 16,
+    };
+    const DUP_MARK_HEIGHT = NODE_RADIUS * 2;
+    const LABEL_OFFSET = 13; // distance from node to label
+
     const theRoot = theTree.root;
     const duplicates = theTree.duplicates;
     const markedNodes = new Set(); // All the marked (highlighted duplicate) nodes in the tree, represented by their ids
@@ -30,9 +40,9 @@ export function showTree(
     const edgeFactor = +$("#edgeFactor").val() || 180;
     const heightFactor = +$("#tHFactor").val() || 34;
     const brickWallColour = $("#aleBrickWallColour").val() || "#ff0000";
-    var currentMaxShowDepth = initialMaxShowDepth();
+    var currentMaxShowGen = initialMaxShowGen();
 
-    function initialMaxShowDepth() {
+    function initialMaxShowGen() {
         return Math.max(Math.min(theTree.maxGeneration, maxGenToShow), expandLOIs ? genCountsInLOI.length : 0);
     }
 
@@ -42,7 +52,7 @@ export function showTree(
     }
 
     function calculateTreeWidth() {
-        const result = currentMaxShowDepth * edgeFactor + (labelsLeftOnly ? 0 : 2 * edgeFactor);
+        const result = currentMaxShowGen * edgeFactor + (labelsLeftOnly ? 0 : 2 * edgeFactor);
         // console.log(
         //     `treeWidth: currentMaxShowDepth:${currentMaxShowDepth} * eF:${edgeFactor} + ${
         //         labelsLeftOnly ? 0 : edgeFactor * 2
@@ -90,25 +100,6 @@ export function showTree(
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    if (!hideTreeHeader) {
-        const tbl = d3
-            .select("#theSvg")
-            .insert("table", ":first-child")
-            .attr("class", "treeHeader table-borderless")
-            .attr("width", edgeFactor * (currentMaxShowDepth - 1))
-            .style("margin-left", `${margin.left}px`);
-        const tr = tbl.append("tr");
-        for (let lvl = 2; lvl <= currentMaxShowDepth; ++lvl) {
-            tr.append("td").style("width", `${edgeFactor}px`).attr("align", "right").text(genHeader(lvl));
-        }
-        // console.log(
-        //     `tbl width = edgeFactor:${edgeFactor} * (currentMaxShowDepth:${currentMaxShowDepth}-1) = ${
-        //         edgeFactor * (currentMaxShowDepth - 1)
-        //     }`
-        // );
-    }
-
-    var idCounter = 0;
     const duration = 750;
 
     // declares a tree layout and assigns the size
@@ -116,43 +107,48 @@ export function showTree(
 
     const inTree = connectors ? new Set() : undefined;
     // Assigns parent, children, height, depth
-    const root = d3.hierarchy(theRoot, function (d) {
-        return AncestorTree.getD3Children(d, inTree);
+    let d3Root = d3.hierarchy(theRoot, function (d3node) {
+        return AncestorTree.getD3Children(d3node, inTree);
     });
-    root.x0 = treeHeight / 2;
-    root.y0 = 0;
-    // console.log("root", root);
+    d3Root.x0 = treeHeight / 2;
+    d3Root.y0 = 0;
+    // console.log("d3Root", d3Root);
+    update(d3Root);
 
-    // Collapse after the maxGen level
-    const q = [root];
-    while (q.length > 0) {
-        const n = q.shift();
-        const wtId = n.data.getWtId();
+    function drawHeader(maxShowGen) {
+        if (hideTreeHeader) return;
 
-        if (showOnlyLOIs) {
-            if (loiNodes.has(wtId) && !loiEndpoints.includes(wtId) && (expandLOIs || n.depth < maxGenToShow - 1)) {
-                if (n.children) {
-                    for (const c of n.children) {
-                        q.push(c);
-                    }
-                }
-            } else {
-                collapseSubtree(n);
-            }
-        } else {
-            if (n.depth < maxGenToShow - 1 || (expandLOIs && loiNodes.has(wtId) && !loiEndpoints.includes(wtId))) {
-                if (n.children) {
-                    for (const c of n.children) {
-                        q.push(c);
-                    }
-                }
-            } else {
-                collapseSubtree(n);
-            }
-        }
+        const generations = d3.range(2, maxShowGen + 1);
+
+        // Ensure the table exists
+        const tbl = d3
+            .select("#theSvg")
+            .selectAll("table.treeHeader")
+            .data([null])
+            .join(
+                (enter) => enter.insert("table", ":first-child").attr("class", "treeHeader table-borderless"),
+                (update) => update
+            )
+            .style("margin-left", `${margin.left}px`);
+
+        // Update width
+        tbl.attr("width", edgeFactor * (maxShowGen - 1));
+
+        // Ensure one row exists
+        const tr = tbl.selectAll("tr").data([null]).join("tr");
+
+        // Join columns
+        const cells = tr.selectAll("td").data(generations, (d) => d);
+
+        // Remove unused columns
+        cells.exit().remove();
+
+        // Add new columns
+        const cellsEnter = cells.enter().append("td").style("width", `${edgeFactor}px`).attr("align", "right");
+
+        // Update all columns
+        cellsEnter.merge(cells).text((d) => genHeader(d));
     }
-
-    update(root);
 
     function genHeader(level) {
         let relType = "";
@@ -189,6 +185,37 @@ export function showTree(
                 return `${n}rd`;
             default:
                 return `${n}th`;
+        }
+    }
+
+    // Collapse after the maxGen level
+    function collapseAfterMaxGen() {
+        const q = [d3Root];
+        while (q.length > 0) {
+            const n = q.shift();
+            const wtId = n.data.getWtId();
+
+            if (showOnlyLOIs) {
+                if (loiNodes.has(wtId) && !loiEndpoints.includes(wtId) && (expandLOIs || n.depth < maxGenToShow - 1)) {
+                    if (n.children) {
+                        for (const c of n.children) {
+                            q.push(c);
+                        }
+                    }
+                } else {
+                    collapseSubtree(n);
+                }
+            } else {
+                if (n.depth < maxGenToShow - 1 || (expandLOIs && loiNodes.has(wtId) && !loiEndpoints.includes(wtId))) {
+                    if (n.children) {
+                        for (const c of n.children) {
+                            q.push(c);
+                        }
+                    }
+                } else {
+                    collapseSubtree(n);
+                }
+            }
         }
     }
 
@@ -232,13 +259,87 @@ export function showTree(
         return counts;
     }
 
+    function collectCollapsed(node, set = new Set()) {
+        if (node._children) {
+            set.add(node.data.getId());
+        }
+        if (node.children) node.children.forEach((c) => collectCollapsed(c, set));
+        if (node._children) node._children.forEach((c) => collectCollapsed(c, set));
+        return set;
+    }
+    function restoreCollapsed(node, collapsed) {
+        if (node.children) {
+            node.children.forEach((c) => restoreCollapsed(c, collapsed));
+        }
+
+        if (collapsed.has(node.data.getId()) && node.children) {
+            node._children = node.children;
+            node.children = null;
+        }
+    }
+    function mapPositions(node, map = new Map()) {
+        map.set(node.data.getId(), { x: node.x, y: node.y });
+
+        if (node.children) node.children.forEach((c) => mapPositions(c, map));
+        if (node._children) node._children.forEach((c) => mapPositions(c, map));
+
+        return map;
+    }
+    function restorePositions(node, posMap) {
+        const pos = posMap.get(node.data.getId());
+        if (pos) {
+            node.x0 = pos.x;
+            node.y0 = pos.y;
+        }
+
+        if (node.children) node.children.forEach((c) => restorePositions(c, posMap));
+    }
+    function seedNewPositions(node) {
+        if (node.parent) {
+            if (node.x0 === undefined) node.x0 = node.parent.x0;
+            if (node.y0 === undefined) node.y0 = node.parent.y0;
+        }
+
+        if (node.children) node.children.forEach(seedNewPositions);
+        if (node._children) node._children.forEach(seedNewPositions);
+    }
+    function capturePositions(node) {
+        node.x0 = node.x;
+        node.y0 = node.y;
+
+        if (node.children) node.children.forEach(capturePositions);
+        if (node._children) node._children.forEach(capturePositions);
+    }
+
     function update(srcNode) {
+        drawHeader(currentMaxShowGen);
+        if (d3Root) {
+            capturePositions(d3Root);
+        }
+        const collapsed = d3Root ? collectCollapsed(d3Root) : new Set();
+        const positions = d3Root ? mapPositions(d3Root) : new Map();
+
+        // Rebuild hierarchy so getD3Children() runs again
+        const inTree = connectors ? new Set() : undefined;
+        d3Root = d3.hierarchy(theRoot, (d3node) => AncestorTree.getD3Children(d3node, inTree));
+        collapseAfterMaxGen();
+
+        const nodeIndex = new Map();
+        d3Root.descendants().forEach((n) => nodeIndex.set(n.data.getId(), n));
+        srcNode = nodeIndex.get(srcNode.data.getId()) || d3Root;
+
+        restoreCollapsed(d3Root, collapsed);
+        restorePositions(d3Root, positions);
+
+        // ensure newly created nodes start at their parent position
+        seedNewPositions(d3Root);
+
         // console.log("update: markedNodes", markedNodes);
         // console.log("update: markedLinks", markedPaths);
 
         //TODO: we can opimise this by only recalculating it when required, but for now we're lazy
-        // and calculate it every time - seems to be fast enough and less error=prone
-        const displayGenCounts = getDisplayableGenerationCounts(root, []);
+        // and calculate it every time - seems to be fast enough and less error-prone
+        const displayGenCounts = getDisplayableGenerationCounts(d3Root, []);
         const treeHeight = calculateTreeHeight(displayGenCounts);
         const [treeWidth, svgWidth] = calculateWidths();
         // console.log(`Update: treeHeight=${treeHeight}, treeWidth = ${treeWidth}, svgWidth = ${svgWidth}`);
@@ -248,7 +349,7 @@ export function showTree(
 
         // Assigns the x and y position for the nodes
         treemap = treemap.size([treeHeight, treeWidth]);
-        const treeData = treemap(root);
+        const treeData = treemap(d3Root);
         //console.log("treeData", treeData);
 
         // Compute the new tree layout.
@@ -256,7 +357,7 @@ export function showTree(
         const links = treeData.descendants().slice(1);
 
         // Calculate y position of each node.
-        const tWidth = edgeFactor * (currentMaxShowDepth - 1);
+        const tWidth = edgeFactor * (currentMaxShowGen - 1);
         const maxYear = +AncestorTree.root.getBirthYear() || +new Date().getFullYear();
         const ageSpan = maxYear - AncestorTree.minBirthYear;
         const birthScale = document.getElementById("birthScale").checked;
@@ -278,17 +379,17 @@ export function showTree(
         // ****************** Nodes section ***************************
 
         // Update the nodes...
-        const node = svg.selectAll("g.node").data(nodes, function (d) {
-            return d.id || (d.id = ++idCounter);
-        });
+        const gnodes = svg.selectAll("g.node").data(nodes, (d) => d.data.getId());
 
         // Enter any new nodes at the parent's previous position.
-        const nodeEnter = node
+        const nodeEnter = gnodes
             .enter()
             .append("g")
             .attr("class", "node")
-            .attr("transform", function (d) {
-                return "translate(" + srcNode.y0 + "," + srcNode.x0 + ")";
+            .attr("transform", (d) => {
+                // If srcNode exists, expand from it; otherwise, use the node's own previous position
+                const origin = srcNode || d.parent || d;
+                return `translate(${origin.y0 || 0},${origin.x0 || 0})`;
             });
 
         // Add Circle for the nodes
@@ -299,25 +400,21 @@ export function showTree(
                 return loiNodes.has(wtId) ? (loiEndpoints.includes(wtId) ? "node end" : "node ofinterest") : "node";
             })
             .attr("r", 1e-6)
-            .style("fill", function (d) {
-                return d._children ? "lightsteelblue" : "#fff";
-            })
+            .style("fill", (d) => (d._children ? "lightsteelblue" : "#fff"))
             .on("click", toggleAncestors)
             .append("title")
-            .text(function (d) {
-                return birthAndDeathData(d.data);
-            });
+            .text((d) => birthAndDeathData(d.data));
 
         // Flag duplicate nodes with coloured square
         nodeEnter
             .filter((d) => d.data.isDuplicate())
             .append("rect")
             .attr("class", function (d) {
-                return markedNodes.has(d.data.getId()) ? "dup marked" : "dup";
+                return markedNodes.has(d.data.getNumId()) ? "dup marked" : "dup";
             })
             .attr("width", 0)
             .attr("height", 0)
-            .attr("wtId", (d) => d.data.getId())
+            .attr("wtId", (d) => d.data.getNumId())
             .on("click", toggleDuplicate)
             .append("title")
             .text(function (d) {
@@ -325,7 +422,7 @@ export function showTree(
             });
 
         // Add labels for the nodes
-        nodeEnter
+        const hrefs = nodeEnter
             .append("a")
             .attr("xlink:href", function (d) {
                 const wtId = d.data.getWtId();
@@ -333,35 +430,30 @@ export function showTree(
                     ? "https://www.wikitree.com/wiki/Help:Privacy"
                     : `https://www.wikitree.com/wiki/${wtId}`;
             })
-            .attr("target", "_blank")
-            .append("text")
-            .attr("dy", ".35em")
-            .attr("x", function (d) {
-                return labelsLeftOnly || d.children || d._children ? -13 : 13;
-            })
-            .attr("text-anchor", function (d) {
-                return labelsLeftOnly || d.children || d._children ? "end" : "start";
-            })
-            .attr("wtId", (d) => d.data.getId())
-            .text(function (d) {
-                const p = d.data;
-                if (anonLiving && p.isLiving()) {
-                    return "Living";
-                }
-                if (privatise) {
-                    if (p.isUnlisted()) return "Private";
-                    if (p.isPrivate()) return p._data.BirthNamePrivate || "Private";
-                }
-                return p.getDisplayName() || "Private";
-            })
-            .style("fill", (d) => {
-                return d.data.isBrickWall() ? brickWallColour : "inherit";
-            })
-            .append("title")
-            .text(function (d) {
-                return birthAndDeathData(d.data);
-            });
+            .attr("target", "_blank");
 
+        // Create a group for the label
+        const labelGroup = hrefs.append("g").attr("class", "label");
+        labelGroup
+            .append("text")
+            .attr("wtId", (d) => d.data.getNumId())
+            .style("fill", (d) => (d.data.isBrickWall() ? brickWallColour : "inherit"));
+        labelGroup.append("title").text((d) => birthAndDeathData(d.data));
+
+        function formLabel(p, name) {
+            const lbl = p.isBioParent() ? "[bio] " : "";
+            return lbl + name;
+        }
+        function getPersonName(p) {
+            if (anonLiving && p.isLiving()) {
+                return "Living";
+            }
+            if (privatise) {
+                if (p.isUnlisted()) return "Private";
+                if (p.isPrivate()) return p._data.BirthNamePrivate || "Private";
+            }
+            return p?.getDisplayName() || "Private";
+        }
         function birthAndDeathData(person) {
             if ((anonLiving && person.isLiving()) || (privatise && person.isUnlisted())) {
                 return "This information is private.";
@@ -371,41 +463,327 @@ export function showTree(
             }
             return `${birthString(person)}\n${deathString(person)}`;
         }
+        function isTextOnLeft(d) {
+            return labelsLeftOnly || d.children || d._children;
+        }
+        const nameParts = [
+            ["FirstName", "MiddleInitials", "LastNameAtBirth"],
+            ["FirstInitial", "MiddleInitials", "LastNameAtBirth"],
+            ["FirstInitial", "LastNameAtBirth"],
+        ];
+        const gridDelta = 16; // tolerance for treating nodes as in the same row and/or column for labelling purposes
+        function computeRightEdges(nodes) {
+            const map = new Map();
+
+            function addRightEdge(row, col, rightEdge, d, lbl = "") {
+                const arr = map.get(row) || [];
+                arr.push([col, rightEdge, `${d.data.getDisplayName()}${lbl} @ (${d.x}, ${d.y})`]);
+                map.set(row, arr);
+            }
+
+            for (const d of nodes) {
+                const row = Math.round(d.x / gridDelta);
+                const col = Math.round(d.y / gridDelta);
+                const rightEdge = d.y + PARENT_ICON.width;
+
+                // the node's own row
+                addRightEdge(row, col, rightEdge, d);
+
+                // father icon rows
+                if (d.data.getBioFatherId()) {
+                    addRightEdge(row - 1, col, rightEdge, d, "-tl");
+                    if (d.data.getParentMode(D3Node.Side.FATHER) === D3Node.ParentMode.ALL) {
+                        addRightEdge(row - 2, col, rightEdge, d, "-tdl");
+                    }
+                }
+                // mother icon rows
+                if (d.data.getBioMotherId()) {
+                    (addRightEdge(row + 1, col, rightEdge, d), "-tl");
+                    if (d.data.getParentMode(D3Node.Side.MOTHER) === D3Node.ParentMode.ALL) {
+                        addRightEdge(row + 2, col, rightEdge, d, "-bdl");
+                    }
+                }
+            }
+
+            return map;
+        }
+        function getPreviousEdge(row, col, rightEdges) {
+            const edges = rightEdges.get(row);
+            if (!edges) return -Infinity;
+
+            let prevEdge = -Infinity;
+            for (let i = edges.length - 1; i >= 0; --i) {
+                if (edges[i][0] < col) {
+                    prevEdge = edges[i][1];
+                    break;
+                }
+            }
+            return prevEdge;
+        }
+        function renderLabels(nodeSelection) {
+            nodeSelection.select("g.label").attr("transform", (d) => {
+                const dx = isTextOnLeft(d) ? -LABEL_OFFSET : LABEL_OFFSET;
+                return `translate(${dx},0)`;
+            });
+
+            nodeSelection
+                .select("g.label text")
+                .attr("text-anchor", (d) => (isTextOnLeft(d) ? "end" : "start"))
+                .attr("dominant-baseline", "middle")
+                .text((d) => {
+                    const p = d.data;
+                    return formLabel(p, getPersonName(p));
+                });
+            nodeSelection.select("g.label title").text((d) => birthAndDeathData(d.data));
+        }
+        // Collect the widths of all labels and store it on the node for when we want to adjust he lengths
+        function measureLabels(nodeSelection) {
+            nodeSelection.select("g.label text").each(function (d) {
+                d.labelWidth = this.getBBox().width;
+            });
+        }
+        // Ensure labels do not overlap earlier nodes and labels
+        function adjustLabels(nodeSelection, rightEdges) {
+            nodeSelection.select("g.label text").each(function (d) {
+                //
+                const width = d.labelWidth || 0;
+                const row = Math.round(d.x / gridDelta);
+                const col = Math.round(d.y / gridDelta);
+
+                const prevEdge = getPreviousEdge(row, col, rightEdges);
+                let labelLeft = isTextOnLeft(d) ? d.y - LABEL_OFFSET - width : d.y + LABEL_OFFSET;
+                if (labelLeft >= prevEdge) return;
+
+                const p = d.data;
+                if (!p) return;
+
+                // shorten the label
+                const isLink = p.IsLink || false;
+                const display = getPersonName(p);
+                if (display != "Private" && display != "Living") {
+                    const pName = new window.PersonName(p._data);
+                    for (const wantedParts of nameParts) {
+                        const shorter = (isLink ? "See " : "") + pName.withParts(wantedParts);
+                        this.textContent = formLabel(p, shorter);
+
+                        // Check if name is now short enough
+                        const width = this.getBBox().width;
+                        const labelLeft = d.y - LABEL_OFFSET - width;
+                        if (labelLeft >= prevEdge) return;
+                    }
+                }
+            });
+        }
 
         // UPDATE
-        const nodeUpdate = nodeEnter.merge(node);
+        const nodeUpdate = nodeEnter.merge(gnodes);
 
         // Transition to the proper position for the node
         nodeUpdate
             .transition()
             .duration(duration)
-            .attr("transform", function (d) {
-                return "translate(" + d.y + "," + d.x + ")";
+            .ease(d3.easeCubicInOut)
+            .attr("transform", (d) => `translate(${d.y},${d.x})`)
+            .end()
+            .then(() => {
+                renderLabels(nodeUpdate);
+                measureLabels(nodeUpdate);
+                const rightEdges = computeRightEdges(nodes);
+                // console.log("Before layoutLabels", rightEdges);
+                adjustLabels(nodeUpdate, rightEdges);
             });
 
         // Update the node attributes and style
         nodeUpdate
             .select("circle.node")
-            .attr("r", 5)
-            .style("fill", function (d) {
-                return d._children ? "lightsteelblue" : "#fff";
-            })
+            .attr("r", NODE_RADIUS)
+            .style("fill", (d) => (d._children ? "lightsteelblue" : "#fff"))
             .attr("cursor", "pointer");
 
         nodeUpdate
             .select("rect.dup")
-            .attr("width", 10)
-            .attr("height", 10)
+            .attr("width", DUP_MARK_HEIGHT)
+            .attr("height", DUP_MARK_HEIGHT)
             .style("fill", function (d) {
-                return aColour(duplicates.get(d.data.getId()));
+                return aDupNodeColour(duplicates.get(d.data.getNumId()));
             })
             .attr("cursor", "pointer");
 
+        // We want to draw alternate parents buttons for nodes with biological parents different from their main parents,
+        // so first we add anchor points for the buttons as g elements (if they don't exist yet), then we update their content
+        // and position based on the current parent mode of the node
+        const anchors = nodeEnter.append("g").attr("class", "icon-anchors");
+        anchors.append("g").attr("class", "anchor-father");
+        anchors.append("g").attr("class", "anchor-mother");
+        nodeUpdate.select(".anchor-father").attr("transform", (d) => {
+            const iconHeight = getIconHeight(d.data.getParentMode(D3Node.Side.FATHER));
+            return `translate(0, ${-NODE_RADIUS - 2 - iconHeight / 2})`;
+        });
+        nodeUpdate.select(".anchor-mother").attr("transform", (d) => {
+            const dupClearance = d.data.isDuplicate() ? DUP_MARK_HEIGHT / 2 : 0;
+            const iconHeight = getIconHeight(d.data.getParentMode(D3Node.Side.MOTHER));
+            return `translate(0, ${NODE_RADIUS + 2 + iconHeight / 2 + dupClearance})`;
+        });
+
+        // Draw alternate parents buttons for nodes with biological parents different from their main parents
+        const icons = nodeUpdate
+            .selectAll(".icon-anchors")
+            .selectAll("g.alt-parent-icon")
+            .data(
+                (d) => getAltParentIcons(d.data),
+                (d) => d.side
+            );
+        function getAltParentIcons(node) {
+            const result = [];
+            if (node.getBioFatherId()) {
+                result.push({ side: D3Node.Side.FATHER });
+            }
+            if (node.getBioMotherId()) {
+                result.push({ side: D3Node.Side.MOTHER });
+            }
+            return result;
+        }
+
+        const iconsEnter = icons
+            .enter()
+            .append("g")
+            .attr("class", "alt-parent-icon")
+            .style("cursor", "pointer")
+            .on("click", function (event, icon) {
+                event.stopPropagation();
+                const node = d3.select(this.parentNode.parentNode).datum();
+                node.data.toggleParentMode(icon.side);
+                [, loiNodes, loiLinks, loiEndpoints, genCountsInLOI] = AncestorTree.findPaths(
+                    AncestorLinesExplorer.getIdsOfInterest()
+                );
+                update(node);
+            });
+
+        drawIconGraphics(iconsEnter);
+        function drawIconGraphics(sel) {
+            const width = PARENT_ICON.width;
+            const height = PARENT_ICON.height;
+
+            // Reference point is bottom left.
+            sel.append("rect")
+                .attr("x", 0)
+                .attr("y", -height)
+                .attr("width", width)
+                .attr("height", height)
+                .attr("rx", 1.2)
+                .attr("fill", "none")
+                .attr("stroke", "#25422D");
+
+            sel.append("g").attr("class", "labels");
+
+            sel.append("line")
+                .attr("class", "strike")
+                .attr("x1", 1)
+                .attr("y1", -1)
+                .attr("x2", width - 1)
+                .attr("y2", -height + 1)
+                .attr("stroke", "#25422D")
+                .attr("stroke-width", 1)
+                .style("display", "none");
+
+            sel.append("title");
+        }
+
+        // Move the icons into the correct anchor.
+        icons.merge(iconsEnter).each(function (icon) {
+            const nodeGroup = d3.select(this.parentNode.parentNode);
+            const anchor = nodeGroup.select(icon.side === D3Node.Side.FATHER ? ".anchor-father" : ".anchor-mother");
+            anchor.node().appendChild(this);
+        });
+
+        // Render the icon layout
+        icons.merge(iconsEnter).each(function (icon) {
+            const g = d3.select(this);
+            const nodeGroup = d3.select(this.parentNode.parentNode);
+            const node = nodeGroup.datum();
+            const mode = node.data.getParentMode(icon.side);
+            const layout = getIconLayout(mode, icon.side);
+            const height = getIconHeight(mode);
+
+            const anchor = nodeGroup.select(icon.side === D3Node.Side.FATHER ? ".anchor-father" : ".anchor-mother");
+            anchor.node().appendChild(this);
+
+            // resize rectangle
+            g.select("rect")
+                .attr("y", -height / 2)
+                .attr("height", height);
+
+            // labels
+            const labels = g
+                .select(".labels")
+                .selectAll("text")
+                .data(layout, (d, i) => d.label + ":" + i);
+
+            labels
+                .enter()
+                .append("text")
+                .attr("text-anchor", "middle")
+                .attr("dominant-baseline", "middle")
+                .attr("dy", "0.1em") // lower the text a bit for visual centering
+                .attr("fill", "#25422D")
+                .merge(labels)
+                .attr("x", PARENT_ICON.width / 2)
+                .attr("y", (d) => d.y)
+                .text((d) => d.label);
+
+            labels.exit().remove();
+
+            // strike through DNA
+            const strikeRow = layout.find((d) => d.strike);
+            const strike = g.select(".strike");
+            if (strikeRow) {
+                strike
+                    .attr("y1", strikeRow.y + 2)
+                    .attr("y2", strikeRow.y - 2)
+                    .attr("stroke-linecap", "round")
+                    .style("display", null);
+            } else {
+                strike.style("display", "none");
+            }
+
+            // Tooltip
+            let nextType;
+            if (mode === D3Node.ParentMode.NORMAL) nextType = "the biological";
+            else if (mode === D3Node.ParentMode.BIO) nextType = "all the";
+            else nextType = "the adoptive";
+
+            g.select("title").text(`Show ${nextType} parent(s) of ${node.data.getDisplayName()}`);
+        });
+
+        icons.exit().remove();
+
+        function getIconHeight(mode) {
+            return mode === D3Node.ParentMode.ALL ? PARENT_ICON.stackedHeight : PARENT_ICON.height;
+        }
+        function getIconLayout(mode, side) {
+            if (mode === D3Node.ParentMode.NORMAL) return [{ label: "DNA", y: 0, strike: true }];
+            if (mode === D3Node.ParentMode.BIO) return [{ label: "BIO", y: 0 }];
+
+            // ALL parents mode
+            const offset = 3.5;
+            if (side === D3Node.Side.FATHER) {
+                return [
+                    { label: "DNA", y: -offset, strike: true },
+                    { label: "BIO", y: offset },
+                ];
+            }
+            return [
+                { label: "BIO", y: -offset },
+                { label: "DNA", y: offset, strike: true },
+            ];
+        }
+
         // Remove any exiting nodes
-        const nodeExit = node
+        const nodeExit = gnodes
             .exit()
             .transition()
             .duration(duration)
+            .ease(d3.easeCubicInOut)
             .attr("transform", function (d) {
                 return "translate(" + srcNode.y + "," + srcNode.x + ")";
             })
@@ -420,24 +798,14 @@ export function showTree(
         // ****************** links section ***************************
 
         // Update the links...
-        const link = svg.selectAll("path.link").data(links, function (d) {
-            return d.id;
-        });
+        const link = svg.selectAll("path.link").data(links, (d) => d.id);
 
         // Enter any new links at the parent's previous position.
         const linkEnter = link
             .enter()
             .insert("path", "g")
-            .attr("class", function (d) {
-                const lnkId = `${d.parent.data.getWtId()}:${d.data.getWtId()}`;
-                let klass = loiLinks.has(lnkId) ? "link ofinterest" : "link";
-                for (const m of markedPaths.values()) {
-                    if (m.has(lnkId)) return `${klass} marked`;
-                }
-                return klass;
-            })
             .attr("d", function (d) {
-                const o = { x: srcNode.x0, y: srcNode.y0 };
+                const o = srcNode || d.parent || d;
                 return diagonal(o, o);
             })
             .attr("lnk", function (d) {
@@ -449,27 +817,36 @@ export function showTree(
 
         // Transition back to the parent element position
         linkUpdate
+            .attr("class", function (d) {
+                const lnkId = `${d.parent.data.getWtId()}:${d.data.getWtId()}`;
+                let klass = "link";
+                if (loiLinks.has(lnkId)) klass += " ofinterest";
+                if (d.data.isOnAdoptiveLine()) klass += " dotted";
+                for (const m of markedPaths.values()) {
+                    if (m.has(lnkId)) return `${klass} marked`;
+                }
+                return klass;
+            })
+            .style("stroke", (d) => {
+                const id = d.data.adoptiveSubtreeId;
+                if (!id) return "#ccc";
+                return subtreeColour(id);
+            })
             .transition()
             .duration(duration)
-            .attr("d", function (d) {
-                return diagonal(d, d.parent);
-            });
+            .ease(d3.easeCubicInOut)
+            .attr("d", (d) => diagonal(d, d.parent));
 
         // Remove any exiting links
         link.exit()
             .transition()
             .duration(duration)
+            .ease(d3.easeCubicInOut)
             .attr("d", function (d) {
                 const o = { x: srcNode.x, y: srcNode.y };
                 return diagonal(o, o);
             })
             .remove();
-
-        // Store the old positions for transition.
-        nodes.forEach(function (d) {
-            d.x0 = d.x;
-            d.y0 = d.y;
-        });
 
         // Creates a curved diagonal path from parent to the child nodes
         function diagonal(s, d) {
@@ -483,7 +860,7 @@ export function showTree(
         function toggleAncestors(event, d) {
             if (event.ctrlKey || event.metaKey) {
                 event.preventDefault();
-                console.log(d.data.toString(), d);
+                console.log(d.data.toString(), d, AncestorTree.getPeople());
                 return;
             }
             if (event.altKey) {
@@ -493,7 +870,8 @@ export function showTree(
             if (event.shiftKey) {
                 expandSubtree(d);
                 const newDepth = d.depth + d.data.getNrOlderGenerations();
-                currentMaxShowDepth = Math.max(currentMaxShowDepth, newDepth);
+                currentMaxShowGen = Math.max(currentMaxShowGen, newDepth + 1);
+                maxGenToShow = currentMaxShowGen;
             } else if (d.children) {
                 // contract
                 d._children = d.children;
@@ -503,14 +881,17 @@ export function showTree(
                 d.children = d._children;
                 d._children = null;
                 const newDepth = d.depth + d.data.getNrOlderGenerations();
-                currentMaxShowDepth = Math.max(currentMaxShowDepth, newDepth);
+                currentMaxShowGen = Math.max(currentMaxShowGen, newDepth + 1);
+                maxGenToShow = currentMaxShowGen;
+            } else {
+                return;
             }
             update(d);
         }
 
         // Toggle duplicate highlight on click.
         function toggleDuplicate(event, d) {
-            const id = d.data.getId();
+            const id = d.data.getNumId();
             // find all the paths to this person
             const setMarked = d.data.toggleMarked();
             let linksToMark;
@@ -549,7 +930,7 @@ export function showTree(
 
             function stillMarked(lnk) {
                 for (const markedPath of markedPaths.values()) {
-                    return markedPath.has(lnk);
+                    if (markedPath.has(lnk)) return true;
                 }
                 return false;
             }
@@ -642,10 +1023,7 @@ export function showTree(
     }
 }
 
-function aColour(n) {
-    return ColourArray[n % ColourArray.length];
-}
-export const ColourArray = [
+const DupNodeColours = [
     "Gold",
     "HotPink",
     "LightCyan",
@@ -691,6 +1069,31 @@ export const ColourArray = [
     "MediumSpringGreen",
     "Orange",
 ];
+const aDupNodeColour = d3.scaleOrdinal(DupNodeColours);
+
+const SubtreeColours = [
+    "#1f77b4",
+    "#ff7f0e",
+    "#2ca02c",
+    "#d62728",
+    "#9467bd",
+    "#8c564b",
+    "#e377c2",
+    "#7f7f7f",
+    "#bcbd22",
+    "#17becf",
+    "#4e79a7",
+    "#f28e2b",
+    "#59a14f",
+    "#e15759",
+    "#b07aa1",
+    "#9c755f",
+    "#edc948",
+    "#76b7b2",
+    "#a0cbe8",
+    "#ff9da7",
+];
+const subtreeColour = d3.scaleOrdinal(SubtreeColours);
 
 /**
  * Generate text that display when and where the person was born

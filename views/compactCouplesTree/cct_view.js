@@ -6,6 +6,8 @@ window.CCTView = class CCTView extends View {
     static APP_ID = "CCT";
     static #DESCRIPTION = "";
     static WANTED_PRIMARY_FIELDS = [
+        "BioFather",
+        "BioMother",
         "BirthDate",
         "BirthDateDecade",
         "DeathDateDecade",

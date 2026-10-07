@@ -212,6 +212,11 @@
   cursor: pointer;
 }
 
+.oneNameTrees .akaLastNames {
+  color: #555;
+  font-style: italic;
+}
+
 .oneNameTrees div.error {
   color: red;
   font-weight: bold;
@@ -1103,6 +1108,83 @@
   margin-right: 1em;
 }
 
+/* The stored data popup */
+.oneNameTrees #oneNameTreesStorage {
+  position: fixed;
+  z-index: 100001;
+  background-color: #fff;
+  border: 2px solid forestgreen;
+  border-radius: 1em;
+  box-shadow: 0 0 10px #000;
+  padding: 1em;
+  max-height: 70vh;
+  max-width: 90vw;
+  width: 30em;
+  overflow-y: auto;
+}
+
+.oneNameTrees #oneNameTreesStorage .storageIntro {
+  margin: 0.5em 0;
+  font-size: 0.9em;
+}
+
+.oneNameTrees #storageList {
+  list-style: none;
+  margin: 0.5em 0;
+  padding: 0;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.oneNameTrees #storageList li {
+  border-bottom: 1px solid #eee;
+}
+
+.oneNameTrees #storageList label {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-gap: 0.5em;
+  align-items: baseline;
+  padding: 0.4em 0.2em;
+  cursor: pointer;
+  margin: 0;
+}
+
+.oneNameTrees #storageList label:hover {
+  background-color: #f7f6f0;
+}
+
+.oneNameTrees #storageList .storageTitle {
+  font-weight: bold;
+}
+
+.oneNameTrees #storageList .storageDetail {
+  grid-column: 2;
+  font-size: 0.85em;
+  color: #555;
+}
+
+.oneNameTrees #storageList .storageSize {
+  grid-column: 3;
+  grid-row: 1;
+  font-size: 0.85em;
+  color: #555;
+  white-space: nowrap;
+}
+
+.oneNameTrees #storageButtons {
+  display: flex;
+  flex-wrap: wrap;
+  grid-gap: 0.3em;
+  gap: 0.3em;
+  justify-content: flex-end;
+}
+
+.oneNameTrees #storageButtons button {
+  font-size: 1em;
+  padding: 0.2em 0.5em;
+}
+
 .oneNameTrees #personTooltip {
   position: absolute;
   display: none;
@@ -1187,7 +1269,9 @@
   border: 1px solid forestgreen;
   border-radius: 1em;
   width: 40em;
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  box-shadow:
+    0 4px 8px 0 rgba(0, 0, 0, 0.2),
+    0 6px 20px 0 rgba(0, 0, 0, 0.19);
   animation-name: zoom;
   animation-duration: 0.6s;
 }
@@ -1201,12 +1285,22 @@
   }
 }
 
+/* Sticky so that the close button stays put when the results are long enough to scroll.
+   It sits above the title, which sticks too, so the drag handle stays reachable as well. */
 .oneNameTrees #dnaTestModal .close-button,
 .oneNameTrees .dnaTestModal .close-button {
   color: #aaaaaa;
   float: right;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 0 0.2em;
   font-size: 28px;
+  line-height: 1.2;
   font-weight: bold;
+}
+.oneNameTrees .dnaTestModal .modal-content {
+  display: block;
 }
 
 .oneNameTrees #dnaTestModal .close-button:hover,
@@ -1243,6 +1337,9 @@
   cursor: move;
   font-size: 1.3em;
   background-color: #f7f6f0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 .oneNameTrees #dnaTestModal h3,
 .oneNameTrees .dnaTestModal h3 {
@@ -1278,7 +1375,8 @@
 
 .oneNameTrees #clearCache,
 .oneNameTrees #clearCacheAll,
-.oneNameTrees #clearCachedWatchlist {
+.oneNameTrees #clearCachedWatchlist,
+.oneNameTrees #manageStorage {
   font-size: 1em;
   margin: 0.2em;
   padding: 0.2em;
@@ -1311,7 +1409,7 @@
 }
 
 .oneNameTrees #controlWrapper {
-  position: relative
+  position: relative;
 }
 .oneNameTrees #toggleOptions {
   height: 0.7em;
@@ -1319,4 +1417,11 @@
   bottom: 0;
   right: 0;
   padding: 0.2em;
+}
+
+.oneNameTrees td.privacy,
+.oneNameTrees th.privacy {
+  border-radius: 0;
+  padding: 8px 10px !important;
+  display: table-cell;
 }

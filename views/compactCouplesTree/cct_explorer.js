@@ -649,11 +649,16 @@ export class CCTE {
     async expand(couple, direction) {
         const self = this;
         condLog(`expand couple (direction=${direction}) ${couple.toString()}`, couple);
-        const oldPerson = couple.getInFocus();
-        const oldSpouse = couple.getNotInFocus();
-        const wasNotExpanded = oldPerson && !oldPerson.isFullyEnriched();
-        // const isNowExpanded = oldPerson && oldPerson.isFullyEnriched();
-        if (wasNotExpanded) {
+        let oldPerson = couple.getInFocus();
+        let oldSpouse = couple.getNotInFocus();
+        let isNotExpanded = oldPerson && !oldPerson.isFullyEnriched();
+        if (!isNotExpanded && oldSpouse) {
+            isNotExpanded = !oldSpouse.isFullyEnriched();
+            const tmp = oldPerson;
+            oldPerson = oldSpouse;
+            oldSpouse = tmp;
+        }
+        if (isNotExpanded) {
             await self.richLoad(oldPerson.getId(), oldSpouse?.isNoSpouse ? null : oldSpouse?.getId(), direction);
             const treeInfo = this.validateAndSetGenerations();
             condLog(`expand done for ${couple.toString()}`, couple);
@@ -755,7 +760,15 @@ export class CCTE {
      */
 
     async getFullPerson(id) {
-        return await CCTE.peopleCache.getWithLoad(id, ["Parents", "Spouses", "Children"]);
+        const person = await CCTE.peopleCache.getWithLoad(id, ["Parents", "Spouses", "Children"]);
+        const bioIds = person.getBioParentIds();
+        if (bioIds.length > 0) {
+            const bioPromises = bioIds.map((bioId) =>
+                CCTE.peopleCache.getWithLoad(bioId, ["Parents", "Spouses", "Children"])
+            );
+            await Promise.all(bioPromises);
+        }
+        return person;
     }
 
     async getWithSpousesAndChildren(id) {
@@ -766,7 +779,7 @@ export class CCTE {
         return await CCTE.peopleCache.getWithLoad(id, ["Spouses"]);
     }
 
-    static getD3Children(couple, alreadyInTree) {
+    static getD3Children(couple, peopleAlreadyInTree) {
         // condLog(`getD3Children for ${couple.toString()}`, couple);
         const children = [];
         pushD3Child("a");
@@ -777,33 +790,27 @@ export class CCTE {
             if (couple[`${side}IsLinkToPerson`]) return;
             const person = couple.get(side);
             if (!person?.parentsCollapsed?.includes(couple.idPrefix) && person?.getLoadedParentIds()) {
-                const father = person.getFather();
-                const mother = person.getMother();
+                const parentMode = couple.getParentMode(side);
+                let father = person.getFather();
+                let mother = person.getMother();
+                if (parentMode === Couple.BIO) {
+                    if (person.getBioFather()) father = person.getBioFather();
+                    if (person.getBioMother()) mother = person.getBioMother();
+                }
                 if (father || mother) {
-                    // children.push(new Couple(couple.idPrefix + `_${side}`, { a: father, b: mother }));
                     const cpl = CCTE.createCouple(couple.idPrefix + `_${side}`, { a: father, b: mother });
-                    if (alreadyInTree) {
-                        if (alreadyInTree.has(father?.getId())) {
+                    if (peopleAlreadyInTree) {
+                        if (peopleAlreadyInTree.has(father?.getId())) {
                             cpl.aIsLinkToPerson = true;
                         } else if (father) {
-                            alreadyInTree.add(father.getId());
+                            peopleAlreadyInTree.add(father.getId());
                         }
-                        if (alreadyInTree.has(mother?.getId())) {
+                        if (peopleAlreadyInTree.has(mother?.getId())) {
                             cpl.bIsLinkToPerson = true;
                         } else if (mother) {
-                            alreadyInTree.add(mother.getId());
+                            peopleAlreadyInTree.add(mother.getId());
                         }
                     }
-                    // if (alreadyInTree && alreadyInTree.has(father?.getId())) {
-                    //     cpl.aIsLinkToPerson = true;
-                    // } else if (alreadyInTree && father) {
-                    //     alreadyInTree.add(father.getId());
-                    // }
-                    // if (alreadyInTree && alreadyInTree.has(mother?.getId())) {
-                    //     cpl.bIsLinkToPerson = true;
-                    // } else if (alreadyInTree && mother) {
-                    //     alreadyInTree.add(mother.getId());
-                    // }
                     children.push(cpl);
                 }
             }
@@ -875,11 +882,13 @@ export class CCTE {
                 tInfo.genCounts[generation] += 1;
             }
 
-            // make sure to create a new descendants object before passing it on in the 2 recursive calls
+            // make sure to create a new descendants object before passing it on in the recursive calls
             descendants = new Set(descendants).add(id);
             const m1 = validate_and_set_generations(pers.getFatherId(), generation + 1, descendants, maxG);
             const m2 = validate_and_set_generations(pers.getMotherId(), generation + 1, descendants, maxG);
-            maxG = Math.max(m1, m2);
+            const m3 = validate_and_set_generations(pers.getBioFatherId(), generation + 1, descendants, maxG);
+            const m4 = validate_and_set_generations(pers.getBioMotherId(), generation + 1, descendants, maxG);
+            maxG = Math.max(m1, m2, m3, m4);
             pers.setNrOlderGenerations(maxG - generation);
             return maxG;
         }

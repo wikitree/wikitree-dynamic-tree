@@ -10,7 +10,7 @@ window.DescendantsView = class DescendantsView extends View {
     close() {
         // Another view is about to be activated, retore the original overflow value of view-container
         $("#view-container").css("overflow", "");
-        $("body").removeClass("descendants");
+        $("body").removeClass("descendants report-mode");
 
         function removeEventListeners() {
             const container_selector = "#view-container";
@@ -42,9 +42,23 @@ window.DescendantsView = class DescendantsView extends View {
     }
 
     init(container_selector, person_id) {
+        const sharedFormatId = window.DateFormatOptions ? window.DateFormatOptions.getStoredFormatId() : null;
+        const sharedFormatValue = window.DateFormatOptions
+            ? window.DateFormatOptions.getFormatValue(sharedFormatId, "descendants")
+            : null;
+        const sharedStatusFormat = window.DateFormatOptions ? window.DateFormatOptions.getStoredStatusFormat() : null;
         window.descendantsSettings = {
-            dateFormat: localStorage.getItem("descendantsDateFormat") || "ISO",
-            dateDataStatusFormat: localStorage.getItem("descendantsDateDataStatusFormat") || "abbreviations",
+            dateFormat: sharedFormatValue || localStorage.getItem("descendantsDateFormat") || "ISO",
+            dateFormatId:
+                sharedFormatId ||
+                (window.DateFormatOptions
+                    ? window.DateFormatOptions.getFormatIdFromDescendants(
+                          localStorage.getItem("descendantsDateFormat") || "ISO"
+                      )
+                    : null) ||
+                "iso",
+            dateDataStatusFormat:
+                sharedStatusFormat || localStorage.getItem("descendantsDateDataStatusFormat") || "abbreviations",
             showWTID:
                 localStorage.getItem("descendantsShowWTID") !== null
                     ? JSON.parse(localStorage.getItem("descendantsShowWTID"))
@@ -73,9 +87,18 @@ window.DescendantsView = class DescendantsView extends View {
                 localStorage.getItem("descendantsShowBios") !== null
                     ? JSON.parse(localStorage.getItem("descendantsShowBios"))
                     : true,
+            showPhotos:
+                localStorage.getItem("descendantsShowPhotos") !== null
+                    ? JSON.parse(localStorage.getItem("descendantsShowPhotos"))
+                    : false,
         };
 
-        $("body").addClass("descendants");
+        if (window.DateFormatOptions) {
+            window.DateFormatOptions.setStoredFormatId(window.descendantsSettings.dateFormatId);
+            window.DateFormatOptions.setStoredStatusFormat(window.descendantsSettings.dateDataStatusFormat);
+        }
+
+        $("body").removeClass("report-mode").addClass("descendants");
         const help = $(
             `<div id='descendantsHelp'>
             <h2>Descendants</h2><button class="x small" id="closeHelp">x</button>
@@ -119,43 +142,74 @@ window.DescendantsView = class DescendantsView extends View {
 
         $descendantsHelp.draggable();
 
+        const dateFormatOptionsHtml = window.DateFormatOptions
+            ? window.DateFormatOptions.buildFormatOptionsHtml(window.descendantsSettings.dateFormatId)
+            : "";
+        const dateStatusOptionsHtml = window.DateFormatOptions
+            ? window.DateFormatOptions.buildStatusOptionsHtml(window.descendantsSettings.dateDataStatusFormat)
+            : "";
         $(`<div id='descendantsButtons'>
         <fieldset id="helpEtc">
+        <span id="viewSwitcher">
+            <button class='small active' id='viewTree' title="Switch to Tree View">Tree View</button>
+            <button class='small' id='viewReport' title="Switch to Report View">Report View</button>
+        </span>
         <button class='small download' id='downloadCSV' title="Download data as CSV">CSV</button>
         <button class='small download' id='excelOut' title="Download data as Excel">Excel</button>
+        <button class='small' id='printReport' title="Print the current view">Print</button>
         <button class='small' id='showHelp' title="Show help">?</button>
         </fieldset>
 
-        <button class='small' id='remove' style='display:none' title="Remove selected item"></button>
-        <button class='small dna off' id='xButton' title="Toggle people with a possible X chromosome from the primary person">X</button>
-        <button class='small dna off' id='yButton' title="Toggle people with a Y chromosome from the primary person">Y</button>
-        <button class='small dna off' id='mtButton' title="Click to show only descendants with mtDNA from the primary person">MT</button>
-        <select id="generationSelect" title="Select generation"></select>
-        <label title="Show spouses"><input type="checkbox" id="showSpouses">Spouses</label>
-        <label title="Show childless"><input type="checkbox" id="showChildless">Childless</label>
-        <fieldset id="showHide">
+        <fieldset id="treeViewControls">
+            <button class='small' id='remove' style='display:none' title="Remove selected item"></button>
+            <button class='small dna off' id='xButton' title="Toggle people with a possible X chromosome from the primary person">X</button>
+            <button class='small dna off' id='yButton' title="Toggle people with a Y chromosome from the primary person">Y</button>
+            <button class='small dna off' id='mtButton' title="Click to show only descendants with mtDNA from the primary person">MT</button>
+            <select id="generationSelect" title="Select generation"></select>
+            <label title="Show spouses"><input type="checkbox" id="showSpouses">Spouses</label>
+            <label title="Show childless"><input type="checkbox" id="showChildless">Childless</label>
             <label title="Show birth and death places"><input type="checkbox" id="showPlaces">Places</label>
-            <label title="Show WikiTree IDs"><input type="checkbox" id="showWTID">WT ID</label>
-            <label title="Show Aboville numbers"><input type="checkbox" id="showAboville">Aboville #</label>
+            <label title="Show WikiTree IDs"><input type="checkbox" id="showWTID">WikiTree ID</label>
+            <label title="Show biographies" id="showBiosLabel"><input type="checkbox" id="showBios"><span id="checkboxIndicator"></span>Biographies</label>
         </fieldset>
-        <fieldset id="dateFormat">
-        <label><input type="checkbox" id="showDates" title="Show dates">Dates:</label>
+        <fieldset id="sharedControls">
+            <label><input type="checkbox" id="showDates" title="Show dates">Show:</label>
             <select id="dateDataStatusSelect" title="Select date data status format">
-                <option value="abbreviations">bef., aft., abt.</option>
-                <option value="words">before, after, about</option>
+                ${dateStatusOptionsHtml}
             </select>
             <select id="dateFormatSelect" title="Select date format">
-                <option value="ISO">1859-11-24</option>
-                <option value="MDY">November 24, 1859</option>
-                <option value="sMDY">Nov 24, 1859</option>
-                <option value="DMY">24 November 1859</option>
-                <option value="DsMY">24 Nov 1859</option>
-                <option value="Y">1859</option>
+                ${dateFormatOptionsHtml}
             </select>
+            <label title="Show Aboville numbers"><input type="checkbox" id="showAboville">Aboville #</label>
+            <label title="Show images"><input type="checkbox" id="showPhotos">Images</label>
         </fieldset>
-        <label title="Show biographies" id="showBiosLabel"><input type="checkbox" id="showBios"><span id="checkboxIndicator"></span>Biographies</label>
+        <fieldset id="reportControls">
+            <select id="reportGenerationSelect" title="Max generations for report"></select>
+            <button class='small' id='buildReport' title="Generate a Family Tree Maker–style report">Build report</button>
+            <button class='small' id='cancelReport' disabled title="Cancel report generation">Cancel</button>
+            <label id="reportSpouseFilterLabel" title="Limit report to descendants with one spouse">Spouse filter:
+                <select id="reportSpouseFilter">
+                    <option value="all">All spouses</option>
+                </select>
+            </label>
+            <span id='reportStatusText'></span>
+        </fieldset>
 
         </div>`).appendTo($(container_selector));
+
+        const $reportWrapper = $("#descendantsReportWrapper");
+        if ($reportWrapper.length === 0) {
+            $(
+                `<div id='descendantsReportWrapper' class='hidden'><div id='descendantsReportStatus'></div><div id='descendantsReport'></div></div>`
+            ).insertAfter("#descendantsButtons");
+        } else {
+            $reportWrapper.insertAfter("#descendantsButtons");
+        }
+
+        // Sync report wrapper classes with current settings
+        $("#descendantsReportWrapper")
+            .toggleClass("aboville-mode", !!window.descendantsSettings.showAboville)
+            .toggleClass("show-photos", !!window.descendantsSettings.showPhotos);
 
         //Set up the checkboxes
         const settings = [
@@ -189,6 +243,12 @@ window.DescendantsView = class DescendantsView extends View {
                 selector: " .spouse",
                 variable: window.descendantsSettings.showSpouses,
             },
+            {
+                key: "Photos",
+                style: "hidePhotosStyle",
+                selector: " .tree-photo",
+                variable: window.descendantsSettings.showPhotos,
+            },
         ];
 
         settings.forEach(({ key, style, selector, variable }) => {
@@ -207,6 +267,12 @@ window.DescendantsView = class DescendantsView extends View {
                 localStorage.setItem(`descendantsShow${key}`, isChecked); // Store the value in local storage
                 if ($(this).prop("id") == "showDates") {
                     toggleDateVisibility();
+                }
+                if ($(this).prop("id") == "showAboville") {
+                    $("#descendantsReportWrapper").toggleClass("aboville-mode", isChecked);
+                }
+                if ($(this).prop("id") == "showPhotos") {
+                    $("#descendantsReportWrapper").toggleClass("show-photos", isChecked);
                 }
             });
         });
@@ -255,6 +321,26 @@ window.DescendantsView = class DescendantsView extends View {
         }
         toggleDateVisibility();
 
+        // View Switcher Handlers
+        $(container_selector).off("click", "#viewTree");
+        $(container_selector).on("click", "#viewTree", function (e) {
+            e.preventDefault();
+            setDescendantsDisplayMode(false);
+        });
+
+        $(container_selector).off("click", "#viewReport");
+        $(container_selector).on("click", "#viewReport", function (e) {
+            e.preventDefault();
+            setDescendantsDisplayMode(true);
+
+            // Build report if empty (first run)
+            // Use a check length to ensure we don't rebuild if satisfied.
+            if ($("#descendantsReport").children().length === 0) {
+                startReportBuild();
+            }
+            refreshReportSpouseFilterOptions();
+        });
+
         $(container_selector).off("click", "#showHelp,#closeHelp");
         $(container_selector).on("click", "#showHelp,#closeHelp", function (e) {
             $("#descendantsHelp").toggle();
@@ -269,9 +355,14 @@ window.DescendantsView = class DescendantsView extends View {
                 return;
             }
             const $arrow = $(this).children(".arrow");
+            const wasExpanded = $childrenUl.hasClass("expanded");
             $childrenUl.toggleClass("expanded");
             $arrow.toggleClass("rotated");
-            if ($(this).children(".load-more").length > 0) {
+            if (
+                !wasExpanded &&
+                $(this).attr("data-directchildrenloaded") !== "1" &&
+                $(this).children(".load-more").length > 0
+            ) {
                 $(this).children(".load-more").trigger("click");
             }
         });
@@ -296,6 +387,49 @@ window.DescendantsView = class DescendantsView extends View {
         $(container_selector).off("change click", "#generationSelect");
         $(container_selector).on("change click", "#generationSelect", function (e) {
             showUpToGeneration();
+        });
+
+        $(container_selector).off("click", "#reportModeToggle");
+        $(container_selector).on("click", "#reportModeToggle", function () {
+            const isOn = $(this).prop("checked");
+            setDescendantsDisplayMode(isOn);
+            $("#printReport").prop("disabled", !isOn);
+        });
+
+        $(container_selector).off("click", "#buildReport");
+        $(container_selector).on("click", "#buildReport", function (e) {
+            e.preventDefault();
+            startReportBuild();
+        });
+
+        $(container_selector).off("click", "#cancelReport");
+        $(container_selector).on("click", "#cancelReport", function (e) {
+            e.preventDefault();
+            cancelReportBuild();
+        });
+
+        $(container_selector).off("change", "#reportSpouseFilter");
+        $(container_selector).on("change", "#reportSpouseFilter", function () {
+            const restart = () => startReportBuild();
+            if (reportState.running) {
+                updateReportStatus("Restarting report with spouse filter...");
+                reportState.cancel = true;
+                const interval = setInterval(() => {
+                    if (!reportState.running) {
+                        clearInterval(interval);
+                        restart();
+                    }
+                }, 150);
+            } else {
+                restart();
+            }
+        });
+
+        $(container_selector).off("click", "#printReport");
+        $(container_selector).on("click", "#printReport", function (e) {
+            e.preventDefault();
+            refreshReportSpouseFilterOptions();
+            window.print();
         });
 
         $(container_selector).off("click", "#excelOut");
@@ -406,11 +540,8 @@ window.DescendantsView = class DescendantsView extends View {
             }
         });
 
-        $("#dateFormatSelect option[value='" + window.descendantsSettings.dateFormat + "']").prop("selected", true);
-        $("#dateDataStatusSelect option[value='" + window.descendantsSettings.dateDataStatusFormat + "']").prop(
-            "selected",
-            true
-        );
+        $("#dateFormatSelect").val(window.descendantsSettings.dateFormatId);
+        $("#dateDataStatusSelect").val(window.descendantsSettings.dateDataStatusFormat);
 
         // Variable to keep track of the initial state of ul.personList elements
         let initialPersonListState = {};
@@ -508,15 +639,69 @@ window.DescendantsView = class DescendantsView extends View {
         $(container_selector).off("change", "#dateFormatSelect,#dateDataStatusSelect");
         $(container_selector).on("change", "#dateFormatSelect,#dateDataStatusSelect", function (e) {
             e.stopImmediatePropagation();
-            localStorage.setItem("descendantsDateFormat", $("#dateFormatSelect").val());
-            localStorage.setItem("descendantsDateDataStatusFormat", $("#dateDataStatusSelect").val());
-            window.descendantsSettings.dateDataStatusFormat = $("#dateDataStatusSelect").val();
-            window.descendantsSettings.dateFormat = $("#dateFormatSelect").val();
+            const formatId = $("#dateFormatSelect").val();
+            const statusFormat = $("#dateDataStatusSelect").val();
+            const mappedFormat = window.DateFormatOptions
+                ? window.DateFormatOptions.getFormatValue(formatId, "descendants")
+                : {
+                      iso: "ISO",
+                      mdy: "MDY",
+                      smdy: "sMDY",
+                      dmy: "DMY",
+                      dsmy: "DsMY",
+                      y: "Y",
+                  }[formatId] || formatId;
+
+            if (window.DateFormatOptions) {
+                window.DateFormatOptions.setStoredFormatId(formatId);
+                window.DateFormatOptions.setStoredStatusFormat(statusFormat);
+            }
+
+            localStorage.setItem("descendantsDateFormat", mappedFormat);
+            localStorage.setItem("descendantsDateDataStatusFormat", statusFormat);
+            window.descendantsSettings.dateFormatId = formatId;
+            window.descendantsSettings.dateDataStatusFormat = statusFormat;
+            window.descendantsSettings.dateFormat = mappedFormat;
             changeDateFormat(window.descendantsSettings.dateFormat);
         });
 
         $("#view-container").css("overflow", "inherit");
     }
+};
+
+// Normalize WikiTree asset URLs (images are served from the main www host)
+const WIKITREE_BASE_URL = "https://www.wikitree.com";
+
+function buildWikiTreeUrl(path = "") {
+    if (!path) return "";
+    if (/^https?:\/\//i.test(path)) {
+        return path;
+    }
+    if (path.startsWith("//")) {
+        return `https:${path}`;
+    }
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    return `${WIKITREE_BASE_URL}${normalizedPath}`;
+}
+
+// Prefer API-provided photo URLs; if only a bare filename is present, skip to avoid bad paths
+function getPhotoUrl(primary, fallback) {
+    const candidate = primary || fallback || "";
+    if (!candidate) return "";
+    const trimmed = String(candidate).trim();
+
+    // Already absolute or protocol-relative
+    if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("//")) {
+        return buildWikiTreeUrl(trimmed);
+    }
+
+    // Relative paths that include at least one slash can be safely prefixed
+    if (trimmed.includes("/")) {
+        return buildWikiTreeUrl(trimmed);
+    }
+
+    // Bare filenames (e.g., Adams-12-3.jpg) cannot be resolved without hash path; return empty
+    return "";
 }
 
 function turnOffOtherButtons() {
@@ -548,6 +733,10 @@ function assignGenerationAndAboville() {
     visited = new Set();
     // Initial call on root li
     const rootLi = document.querySelector("li#primaryPerson");
+    if (!rootLi) {
+        console.warn("[Descendants] No #primaryPerson node found; skipping generation/Aboville assignment.");
+        return;
+    }
     processLi(rootLi, 0);
     const uls = $("ul.personList");
     uls.each(function () {
@@ -638,18 +827,42 @@ function loadMore(e) {
     if (target.is("img")) {
         target = $(target).parent();
     }
-    target.fadeOut();
-    // timeout and remove
-    setTimeout(function () {
-        target.remove();
-    }, 1000);
+    target.prop("disabled", true).addClass("loading");
     const theLI = target.closest("li");
-    if (theLI.children(".rotated").length == 0) {
-        target.closest("li").trigger("click");
+    const $childrenUl = theLI.children("ul.personList");
+    const $arrow = theLI.children(".arrow");
+    if (!$childrenUl.hasClass("expanded")) {
+        $childrenUl.addClass("expanded");
+        $arrow.addClass("rotated");
     }
+
+    // Show a loading gif so it's clear that more descendants are being fetched, but
+    // only when there's nothing to see yet: if the next generation is already
+    // displayed (the fetch is just completing/deepening in the background) we don't
+    // need the gif. We also delay it slightly so fast loads never flash it.
+    const nextGenerationAlreadyShown = $childrenUl.children("li").length > 0;
+    const $spinner = $(
+        "<img class='loadingDescendants' src='https://apps.wikitree.com/apps/beacall6/images/tree.gif' alt='Loading' title='Loading descendants…'>"
+    );
+    const spinnerTimer = nextGenerationAlreadyShown
+        ? null
+        : setTimeout(() => {
+              target.after($spinner);
+          }, 400);
+
     let person_id = target.parent().data("id");
     let generation = target.parent().children("ul.personList").data("generation");
-    fetchDescendants(person_id, generation);
+    fetchDescendants(person_id, generation)
+        .catch((error) => {
+            console.error(error);
+        })
+        .finally(() => {
+            clearTimeout(spinnerTimer);
+            $spinner.remove();
+            if (target[0]?.isConnected) {
+                target.prop("disabled", false).removeClass("loading");
+            }
+        });
 }
 
 function showUpToGeneration() {
@@ -690,11 +903,176 @@ const fields = [
     "Mother",
     "Name",
     "Nicknames",
+    "Photo",
+    "PhotoData",
     "Prefix",
     "RealName",
     "Suffix",
     "Spouses",
 ];
+
+const reportFields = [...fields, "Bio", "bioHTML", "PhotoData", "Photo", "BurialLocation", "Occupation"];
+const LOAD_MORE_BUTTON_HTML =
+    "<button class='load-more small'><img src='https://www.wikitree.com/images/icons/descendant-link.gif'></button>";
+
+function countDirectChildren(peopleById, personId) {
+    return Object.values(peopleById || {}).filter((child) => child.Father == personId || child.Mother == personId)
+        .length;
+}
+
+// The WikiTree descendants API returns any profile it treats as possibly-living
+// (including public profiles with an unknown death date) as an anonymised node
+// with a NEGATIVE Id and no Name. Those negative Ids are assigned per-response
+// during traversal, so the *same* real person comes back as e.g. -3 from one
+// query root and -46 from another. The old code re-keyed them as
+// `${fetchRoot}_${negativeId}`, which produced a DIFFERENT synthetic Id on every
+// fetch. Deduplication (which keys off the Id) then failed, so each overlapping
+// descendants call re-added the same private person as a brand-new child — the
+// cause of the same "Private" person appearing many times under one parent.
+//
+// Instead we build a STABLE synthetic Id from data the API returns consistently:
+// the person's lineage anchored at its nearest real (positive) ancestor, plus
+// gender and birth decade. The same private person therefore gets the same Id in
+// every response and deduplicates correctly. `rootId` is no longer needed for the
+// Id itself, but is kept in the signature for call-site compatibility.
+function normalizeNegativePersonIds(rootId, peopleById) {
+    if (!peopleById) {
+        return;
+    }
+
+    const negativeKeys = Object.keys(peopleById).filter((key) => Number(key) < 0);
+    if (negativeKeys.length === 0) {
+        return;
+    }
+
+    const stableIdByNeg = {}; // original negative id (as string) -> stable "PVT-…" id
+    const resolving = new Set(); // guard against malformed cyclic Father/Mother data
+
+    // A stable token for a Father/Mother reference: the real ancestor id when the
+    // parent is public, or the parent's own stable id when the parent is itself an
+    // anonymised (negative) node present in this response.
+    function refFor(parentId) {
+        if (parentId === undefined || parentId === null || parentId === 0 || parentId === "0") {
+            return "x";
+        }
+        const numeric = Number(parentId);
+        if (!Number.isNaN(numeric) && numeric < 0) {
+            return peopleById[parentId] ? stableFor(parentId) : "x";
+        }
+        return "R" + parentId; // real ancestor id, stable across responses
+    }
+
+    function stableFor(negId) {
+        const negKey = String(negId);
+        if (stableIdByNeg[negKey]) {
+            return stableIdByNeg[negKey];
+        }
+        if (resolving.has(negKey)) {
+            return "cyc"; // cyclic data: stop recursing
+        }
+        resolving.add(negKey);
+        const person = peopleById[negKey] || {};
+        const fatherRef = refFor(person.Father);
+        const motherRef = refFor(person.Mother);
+        const gender = (person.Gender || "").charAt(0);
+        const decade =
+            person.BirthDateDecade ||
+            (person.BirthDate && person.BirthDate !== "0000-00-00" ? String(person.BirthDate).slice(0, 4) : "") ||
+            "";
+        const signature = `PVT-${fatherRef}|${motherRef}|${gender}|${decade}`.replace(/[^A-Za-z0-9_-]+/g, "_");
+        resolving.delete(negKey);
+        stableIdByNeg[negKey] = signature;
+        return signature;
+    }
+
+    negativeKeys.forEach((key) => stableFor(key));
+
+    // Distinct private siblings can share an identical signature (same parents,
+    // gender and birth decade — e.g. two siblings both born in the 1990s). Append
+    // a deterministic ordinal so they don't collapse into a single node within a
+    // response, ordered by the (traversal-assigned) negative id for stability.
+    const bySignature = {};
+    negativeKeys.forEach((key) => {
+        const sig = stableIdByNeg[key];
+        (bySignature[sig] = bySignature[sig] || []).push(key);
+    });
+    Object.values(bySignature).forEach((keys) => {
+        if (keys.length > 1) {
+            keys.sort((a, b) => Number(b) - Number(a));
+            keys.forEach((key, index) => {
+                stableIdByNeg[key] = `${stableIdByNeg[key]}_${index}`;
+            });
+        }
+    });
+
+    // Re-key each anonymised person under its stable id. Two negatives that map to
+    // the same stable id are indistinguishable private profiles and merge here.
+    negativeKeys.forEach((key) => {
+        const stableId = stableIdByNeg[key];
+        const person = peopleById[key];
+        person.Id = stableId;
+        peopleById[stableId] = person;
+        delete peopleById[key];
+    });
+
+    // Rewrite every Father/Mother reference that pointed at an original negative id.
+    Object.values(peopleById).forEach((person) => {
+        if (person.Father !== undefined && stableIdByNeg[String(person.Father)] !== undefined) {
+            person.Father = stableIdByNeg[String(person.Father)];
+        }
+        if (person.Mother !== undefined && stableIdByNeg[String(person.Mother)] !== undefined) {
+            person.Mother = stableIdByNeg[String(person.Mother)];
+        }
+    });
+}
+
+function initializeDirectChildrenState(peopleById) {
+    Object.values(peopleById || {}).forEach((person) => {
+        if (person && typeof person.DirectChildrenLoaded === "undefined") {
+            person.DirectChildrenLoaded = false;
+        }
+    });
+}
+
+async function ensureCompleteDirectChildren(personId, peopleById) {
+    const person = peopleById?.[personId];
+    if (!person) {
+        return;
+    }
+
+    if (!person.HasChildren) {
+        person.DirectChildrenLoaded = true;
+        return;
+    }
+
+    const initialDirectChildCount = countDirectChildren(peopleById, personId);
+    const directChildren = await getPeopleWithRetry("test", personId, fields, {
+        descendants: 1,
+        resolveRedirect: 1,
+    });
+    const directChildrenById = directChildren?.[2] || {};
+
+    normalizeNegativePersonIds(personId, directChildrenById);
+    initializeDirectChildrenState(directChildrenById);
+
+    Object.entries(directChildrenById).forEach(([id, directPerson]) => {
+        const existingPerson = peopleById[id] || {};
+        const mergedPerson = { ...existingPerson, ...directPerson };
+        if (existingPerson.DirectChildrenLoaded === true) {
+            mergedPerson.DirectChildrenLoaded = true;
+        }
+        peopleById[id] = mergedPerson;
+    });
+
+    peopleById[personId].DirectChildrenLoaded = true;
+
+    const mergedDirectChildCount = countDirectChildren(peopleById, personId);
+    if (mergedDirectChildCount > initialDirectChildCount) {
+        console.info(
+            `[Descendants] Added ${mergedDirectChildCount - initialDirectChildCount} missing direct child records for ${personId}.`
+        );
+    }
+}
 
 // Parent template
 function createParentTemplate(parentData) {
@@ -877,7 +1255,7 @@ async function mergeSpouseDetails(people, fields) {
 
     if (spouseIds.length > 0) {
         $("#shakyTree").show();
-        const spouses = await WikiTreeAPI.getPeople("TA_Descendants", spouseIds.join(","), fields, {
+        const spouses = await getPeopleWithRetry("TA_Descendants", spouseIds.join(","), fields, {
             resolveRedirect: 1,
         });
         const obj2 = spouses;
@@ -900,39 +1278,72 @@ async function mergeSpouseDetails(people, fields) {
     return obj1; // Returning the merged object
 }
 
+// Wrapper around WikiTreeAPI.getPeople that retries transient network failures
+// (e.g. ERR_CONNECTION_RESET, which surfaces as a rejected "Failed to fetch").
+// The WikiTree API drops connections now and then; a short retry usually
+// recovers without the user noticing. Note that a resolved response carrying a
+// status string (e.g. "Limit exceeded.") is NOT a network error, so it is
+// returned as-is rather than retried.
+async function getPeopleWithRetry(appId, ids, fields, options = {}, attempts = 3) {
+    let lastError;
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+        try {
+            return await WikiTreeAPI.getPeople(appId, ids, fields, options);
+        } catch (error) {
+            lastError = error;
+            console.warn(
+                `[Descendants] getPeople attempt ${attempt} of ${attempts} failed: ${error}. ${
+                    attempt < attempts ? "Retrying…" : "Giving up."
+                }`
+            );
+            if (attempt < attempts) {
+                // Simple linear backoff: 600ms, 1200ms, …
+                await new Promise((resolve) => setTimeout(resolve, 600 * attempt));
+            }
+        }
+    }
+    throw lastError;
+}
+
+// Make sure the root person's own record is present in people[2]. The descendants
+// query can omit it when the profile cap is reached, so fetch it directly and add
+// it back if it's missing.
+async function ensureRootPerson(person_id, people) {
+    if (!people || typeof people[2] !== "object" || people[2] === null) {
+        return;
+    }
+    if (people[2][person_id]) {
+        return;
+    }
+
+    const rootResult = await getPeopleWithRetry("test", person_id, fields, {
+        resolveRedirect: 1,
+    });
+    const rootById = rootResult?.[2];
+    if (rootById && rootById[person_id]) {
+        people[2][person_id] = rootById[person_id];
+        console.info(
+            `[Descendants] Root profile ${person_id} was missing from the descendants results and was re-added.`
+        );
+    }
+}
+
 async function fetchDescendants(person_id, generation) {
-    const people = await WikiTreeAPI.getPeople("test", person_id, fields, {
-        descendants: 4,
+    const people = await getPeopleWithRetry("test", person_id, fields, {
+        descendants: 10,
         resolveRedirect: 1,
     });
 
-    /* If a person has a negative key, store their negative key temporarily.
-     Replace the key and Id with person_id+_${negativeId} so that the negative keys/Ids are unique.
-     Find any Father or Mother Ids that match the negative Ids and replace them with the new Ids.
-     */
-    const negativeKeys = [];
-    const negativeIds = [];
-    for (const key in people[2]) {
-        if (key < 0) {
-            negativeKeys.push(key);
-            negativeIds.push(people[2][key].Id);
-            people[2][person_id + "_" + key] = people[2][key];
-            people[2][person_id + "_" + key].Id = person_id + "_" + key;
-            delete people[2][key];
-        }
-    }
-    for (const key in people[2]) {
-        if (people[2][key].Father) {
-            if (negativeIds.includes(people[2][key].Father)) {
-                people[2][key].Father = person_id + "_" + people[2][key].Father;
-            }
-        }
-        if (people[2][key].Mother) {
-            if (negativeIds.includes(people[2][key].Mother)) {
-                people[2][key].Mother = person_id + "_" + people[2][key].Mother;
-            }
-        }
-    }
+    // For very large descendant trees the API caps the returned profiles (e.g. at
+    // 1025) and can drop the root person from people[2]. Without the root record
+    // breadthFirstDescent() never builds the #primaryPerson node, which then
+    // crashes assignGenerationAndAboville() with a null li. Fetch the root on its
+    // own and merge it back in when it's missing.
+    await ensureRootPerson(person_id, people);
+
+    normalizeNegativePersonIds(person_id, people[2]);
+    initializeDirectChildrenState(people[2]);
+    await ensureCompleteDirectChildren(person_id, people[2]);
 
     $("#shakyTree").hide();
     obj = await mergeSpouseDetails(people, fields);
@@ -979,10 +1390,10 @@ function setUpRemoveButton() {
             btn.text() == "Hide Females"
                 ? btn.text("Show Females")
                 : btn.text() == "Show Females"
-                ? btn.text("Hide Females")
-                : btn.text() == "Hide Males"
-                ? btn.text("Show Males")
-                : btn.text("Hide Males");
+                  ? btn.text("Hide Females")
+                  : btn.text() == "Hide Males"
+                    ? btn.text("Show Males")
+                    : btn.text("Hide Males");
         });
 
         // Expand the root person's children and rotate the arrow on page load
@@ -1026,7 +1437,13 @@ function displayPerson(id, people, generation) {
         $("#view-container").append("<ul id='descendants'></ul>");
     }
 
-    if ($(`li[data-id="${person.Id}"]`).length == 0) {
+    const directChildrenLoaded = person.DirectChildrenLoaded === true;
+    const hasUnloadedChildren = person.HasChildren && !directChildrenLoaded;
+    const $existingItems = $(`li[data-id="${person.Id}"]`);
+
+    syncExistingPersonChildrenState($existingItems, person, hasUnloadedChildren);
+
+    if ($existingItems.length == 0) {
         const personName = new PersonName(person);
         const fullName = personName.withParts(["FullName"]);
         let birthYear = "";
@@ -1044,13 +1461,7 @@ function displayPerson(id, people, generation) {
         const theGender = person.Gender;
         let nameLink = `<a class='profileLink' href="https://www.wikitree.com/wiki/${person.Name}" target='_blank'>${fullName}</a>`;
 
-        const numberOfChildren = Object.values(people).filter(
-            (child) => child.Father == id || child.Mother == id
-        ).length;
-        const hasUnloadedChildren = person.HasChildren && numberOfChildren === 0;
-        const loadMoreButton = hasUnloadedChildren
-            ? "<button class='load-more small'><img src='https://www.wikitree.com/images/icons/descendant-link.gif'></button>"
-            : "";
+        const loadMoreButton = hasUnloadedChildren ? LOAD_MORE_BUTTON_HTML : "";
         let moreDetailsEye =
             '<span data-name="' + person.Name + '" title="Show/hide biography" class="moreDetailsEye">📝</span>';
         // if person.Id is nan, it's a private profile
@@ -1089,6 +1500,8 @@ function displayPerson(id, people, generation) {
         const datesOnly = `<span class='datesOnly'>(<span class="birthDeathDate birthDate">${birthDate}</span> – <span class="birthDeathDate deathDate">${deathDate}</span>)</span>`;
         const highlightCheckbox = `<input type='checkbox' class='highlightCheckbox' data-id='${person.Id}' title='Highlight this person' />`;
         const abovilleSpan = `<span class='aboville'></span>`;
+        const photoUrl = getPhotoUrl(person.PhotoData?.url, person.Photo);
+        const treePhoto = photoUrl ? `<img class="tree-photo" src="${photoUrl}" alt="${fullName}">` : "";
         const birthPin = person.BirthLocation
             ? `<a href="https://maps.google.com/maps?q=${person.BirthLocation}" class="mapsLink" target="_map" title="Google Maps"><img src="https://www.wikitree.com/images/icons/map.gif" alt="map"></a>`
             : "";
@@ -1097,7 +1510,7 @@ function displayPerson(id, people, generation) {
             : "";
 
         // New item
-        const listItemContent = `<span class="nameAndBio">${nameLink} ${wtidSpan} 
+        const listItemContent = `${treePhoto}<span class="nameAndBio">${nameLink} ${wtidSpan} 
         ${datesOnly} ${moreDetailsEye} ${highlightCheckbox} ${abovilleSpan}</span><span class='birthDeathDetails'><span class='birthDeathDate birthDate'>${birthDate}</span><span class='birthDeathPlace birthPlace'>${
             person.BirthLocation || ""
         } ${birthPin}</span><span class='birthDeathDate deathDate'>${deathDate}</span><span class='birthDeathPlace deathPlace'>${
@@ -1115,11 +1528,17 @@ function displayPerson(id, people, generation) {
 
         const collapseButton = `<button title="Hide this person and their descendants" class='collapse small'></button>`;
         const newItem = $(
-            `<li data-id='${person.Id}' data-father="${person.Father}" data-mother="${person.Mother}" data-name="${person.Name}" 
+            `<li data-id='${person.Id}' data-father="${person.Father}" data-mother="${person.Mother}" data-name="${
+                person.Name
+            }" 
             data-birth-year="${birthYear}"  data-death-year="${deathYear}" data-birth-date="${person.BirthDate}" 
             data-birth-date-status="${person?.DataStatus?.BirthDate}" data-death-date="${person.DeathDate}" 
-            data-death-date-status="${person?.DataStatus?.DeathDate}" data-gender='${person.Gender}' 
-            data-x='0' data-ydna='0' data-mtdna='0' class='${theGender} person' data-haschildren="${person.HasChildren}">
+            data-death-date-status="${person?.DataStatus?.DeathDate}" data-birth-place="${
+                person.BirthLocation || ""
+            }" data-death-place="${person.DeathLocation || ""}" data-gender='${person.Gender}' 
+            data-x='0' data-ydna='0' data-mtdna='0' class='${theGender} person' data-haschildren="${
+                person.HasChildren
+            }" data-directchildrenloaded="${directChildrenLoaded ? 1 : 0}">
             ${childIndicator} ${listItemContent}<ul data-generation='${generation}' class='${ulState} personList'>
             </ul>${collapseButton}</li>`
         );
@@ -1234,6 +1653,45 @@ function displayPerson(id, people, generation) {
     fillUpToGenerationSelect();
 }
 
+function syncExistingPersonChildrenState($items, person, hasUnloadedChildren) {
+    if ($items.length === 0) {
+        return;
+    }
+
+    $items
+        .attr("data-haschildren", person.HasChildren ? 1 : 0)
+        .attr("data-directchildrenloaded", person.DirectChildrenLoaded ? 1 : 0);
+
+    $items.each(function () {
+        const $item = $(this);
+        const $childrenList = $item.children("ul.personList");
+        let $arrow = $item.children(".arrow");
+
+        if (person.HasChildren && $arrow.length === 0) {
+            $arrow = $('<span class="arrow">▶</span>');
+            if ($childrenList.hasClass("expanded")) {
+                $arrow.addClass("rotated");
+            }
+            $item.prepend($arrow);
+        } else if (!person.HasChildren) {
+            $arrow.remove();
+        }
+
+        if (hasUnloadedChildren) {
+            if ($item.children(".load-more").length === 0) {
+                const $details = $item.children(".birthDeathDetails");
+                if ($details.length > 0) {
+                    $details.after(LOAD_MORE_BUTTON_HTML);
+                } else {
+                    $item.append(LOAD_MORE_BUTTON_HTML);
+                }
+            }
+        } else {
+            $item.children(".load-more").remove();
+        }
+    });
+}
+
 function findHighestGeneration() {
     let highestGeneration = 0;
     $("#descendants ul.personList").each(function () {
@@ -1261,6 +1719,22 @@ function fillUpToGenerationSelect() {
             $(this).remove();
         }
     });
+
+    fillReportGenerationSelect(highestGeneration);
+}
+
+function fillReportGenerationSelect(highestGeneration) {
+    const reportSelect = $("#reportGenerationSelect");
+    if (reportSelect.length === 0) {
+        return;
+    }
+    reportSelect.empty();
+    const maxGen = Math.max(10, Math.max(1, highestGeneration || 1));
+    const defaultMax = Math.min(3, maxGen);
+    for (let i = 1; i <= maxGen; i++) {
+        reportSelect.append(`<option value='${i}'>Report up to Generation ${i}</option>`);
+    }
+    reportSelect.val(defaultMax);
 }
 
 async function getMoreDetails(wtid) {
@@ -1280,6 +1754,7 @@ async function getMoreDetails(wtid) {
                 format: "json",
                 fields: `${fields.join(",")},Bio,PhotoData,Photo`,
                 bioFormat: "html",
+                appId: "TA_Descendants",
             },
             success: function (data) {
                 // console.log(data);
@@ -1318,8 +1793,9 @@ async function addBio(id) {
         bioDiv.append($(person.bioHTML)).addClass("biography");
 
         let aPhoto = "";
-        if (person.PhotoData?.url) {
-            aPhoto = '<img class="profilePicture" src="https://www.wikitree.com' + person.PhotoData.url + '">';
+        const bioPhotoUrl = getPhotoUrl(person.PhotoData?.url, person.Photo);
+        if (bioPhotoUrl) {
+            aPhoto = '<img class="profilePicture" src="' + bioPhotoUrl + '">';
         }
         bioDiv.prepend(aPhoto);
 
@@ -1774,6 +2250,10 @@ function dataStatusWord(status, ISOdate) {
 
     const statusFormat = window.descendantsSettings.dateDataStatusFormat || "abbreviations";
 
+    if (window.DateFormatOptions) {
+        return window.DateFormatOptions.formatStatus(status, statusFormat);
+    }
+
     if (statusFormat === "abbreviations") {
         statusOut = statusOut.replace("before", "bef.").replace("after", "aft.").replace("about", "abt.");
     } else if (statusFormat === "symbols") {
@@ -1836,11 +2316,22 @@ function extractSpouseData(spouses) {
     if (spouses.length > 0) {
         let spouseText = ``;
         spouses?.forEach((spouse) => {
-            let name = spouse.querySelector("dd")?.dataset.fullname;
-            let wtid = spouse.querySelector("dd")?.dataset.name;
-            let dates = spouse.querySelector("dd")?.dataset.dates;
-            let marriageDate = spouse.querySelector("dt.marriageDate")?.textContent.trim() || "";
-            spouseText += `${name} (${wtid}) ${dates}` + (marriageDate ? `, (m. ${marriageDate})` : ``) + `; `;
+            const dt = spouse.querySelector("dt.marriageDate");
+            const dd = spouse.querySelector("dd");
+            if (!dd) return;
+
+            const name = dd.dataset.fullname;
+            const wtid = dd.dataset.name;
+            const dates = dd.dataset.dates;
+            const marriageDate = dt?.textContent.trim() || "";
+            const marriageLoc = dt?.dataset.marriageLocation || "";
+
+            spouseText += `${name} (${wtid}) ${dates}`;
+            if (marriageDate || marriageLoc) {
+                spouseText += `, m. ${marriageDate}`;
+                if (marriageLoc) spouseText += ` in ${marriageLoc}`;
+            }
+            spouseText += `; `;
         });
         return spouseText;
     } else {
@@ -2056,4 +2547,938 @@ function updateShowBiosState() {
     } else {
         $mainCheckbox.addClass("half-checked");
     }
+}
+
+// ---------------------
+// Report mode helpers
+// ---------------------
+
+const REPORT_LIMITS = {
+    batchSize: 100, // API allows up to ~100 with relatives; maximize per-call payload
+    batchDelayMs: 400,
+    perBioChars: 400000,
+    totalChars: 3000000,
+};
+
+const API_RETRY = {
+    retries: 3,
+    baseDelayMs: 800,
+};
+
+let reportState = {
+    running: false,
+    cancel: false,
+    total: 0,
+    done: 0,
+    skipped: 0,
+    errors: 0,
+    bytes: 0,
+};
+
+window.descendantsReportCache = window.descendantsReportCache || {};
+
+function resetReportState() {
+    // Keep descendantsReportCache so report rebuilds (e.g., spouse filter changes) can reuse fetched data
+    reportState = {
+        running: false,
+        cancel: false,
+        total: 0,
+        done: 0,
+        skipped: 0,
+        errors: 0,
+        bytes: 0,
+        lastReportNumber: 0,
+        reportNumberMap: new Map(),
+        currentGeneration: 0,
+    };
+}
+
+async function callWithRetry(fn) {
+    let attempt = 0;
+    while (true) {
+        try {
+            return await fn();
+        } catch (err) {
+            attempt++;
+            const status = err?.response?.status || err?.status;
+            const shouldRetry = status === 429 || status >= 500;
+            if (!shouldRetry || attempt > API_RETRY.retries) {
+                throw err;
+            }
+            const jitter = Math.random() * 200;
+            const delay = API_RETRY.baseDelayMs * attempt + jitter;
+            await new Promise((res) => setTimeout(res, delay));
+        }
+    }
+}
+
+function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function joinWithAnd(parts) {
+    if (!parts || parts.length === 0) return "";
+    if (parts.length === 1) return parts[0];
+    if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
+    return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+}
+
+function getPreferredName(person = {}, { uppercase = false } = {}) {
+    if (!person) return uppercase ? "UNKNOWN" : "Unknown";
+    const primary = person.FullName || person.RealName || person.LongName;
+
+    const rawBirthName = person.Derived?.BirthName || person.BirthName || person.BirthNamePrivate || "";
+    const parseLastToken = (str) => {
+        if (!str) return "";
+        const parts = str.trim().split(/\s+/);
+        return parts.length ? parts[parts.length - 1] : "";
+    };
+
+    const fn = person.FirstName || (rawBirthName || "").split(/\s+/)[0] || "";
+    const mn = person.MiddleName || "";
+    const lnBirth = person.LastNameAtBirth || parseLastToken(rawBirthName) || "";
+    const ln = lnBirth;
+
+    const fallbackName = person.Name || "";
+    const combined = [fn, mn, ln].filter(Boolean).join(" ") || primary || fallbackName;
+    const trimmed = (combined || "").trim();
+    if (!trimmed) return uppercase ? "UNKNOWN" : "Unknown";
+    return uppercase ? trimmed.toUpperCase() : trimmed;
+}
+
+function refreshReportSpouseFilterOptions() {
+    const $filter = $("#reportSpouseFilter");
+    if ($filter.length === 0) return;
+
+    const previous = $filter.val();
+    $filter.empty();
+    $filter.append('<option value="all">All spouses</option>');
+
+    const $root = $("#descendants > li.person").first();
+    const seen = new Set();
+    if ($root.length) {
+        $root
+            .children("dl.spouse")
+            .find("dd")
+            .each(function () {
+                const $dd = $(this);
+                const id = $dd.data("id");
+                const name = (
+                    $dd.data("fullname") ||
+                    $dd
+                        .find("a")
+                        .filter(function () {
+                            return !$(this).hasClass("switch");
+                        })
+                        .first()
+                        .text() ||
+                    ""
+                ).trim();
+                if (!id || seen.has(id)) return;
+                seen.add(id);
+                $filter.append(`<option value="${id}">${name || id}</option>`);
+            });
+    }
+
+    if (previous && $filter.find(`option[value='${previous}']`).length) {
+        $filter.val(previous);
+    }
+
+    let shouldShow = seen.size > 1;
+    if (seen.size === 1) {
+        const spouseId = String(Array.from(seen)[0]);
+        const rootId = String($root.data("id"));
+        const $children = $root.children("ul.personList").children("li.person");
+
+        if ($children.length === 0) {
+            shouldShow = false;
+        } else {
+            // Check if any child has a different parent
+            const hasOtherParentage = Array.from($children).some((child) => {
+                const $child = $(child);
+                const f = String($child.data("father"));
+                const m = String($child.data("mother"));
+                if (f === rootId) return m !== spouseId;
+                if (m === rootId) return f !== spouseId;
+                return true;
+            });
+            if (hasOtherParentage) {
+                shouldShow = true;
+            }
+        }
+    }
+
+    $("#reportSpouseFilterLabel").toggle(shouldShow);
+}
+
+function getRomanNumeral(num) {
+    if (num <= 0) return "";
+    const romanLookup = [
+        { v: 1000, r: "m" },
+        { v: 900, r: "cm" },
+        { v: 500, r: "d" },
+        { v: 400, r: "cd" },
+        { v: 100, r: "c" },
+        { v: 90, r: "xc" },
+        { v: 50, r: "l" },
+        { v: 40, r: "xl" },
+        { v: 10, r: "x" },
+        { v: 9, r: "ix" },
+        { v: 5, r: "v" },
+        { v: 4, r: "iv" },
+        { v: 1, r: "i" },
+    ];
+    let result = "";
+    for (const { v, r } of romanLookup) {
+        while (num >= v) {
+            result += r;
+            num -= v;
+        }
+    }
+    return result;
+}
+
+function setReportUiState({ busy }) {
+    $("#buildReport").prop("disabled", busy);
+    $("#cancelReport").prop("disabled", !busy);
+    $("#printReport").prop("disabled", busy);
+}
+
+function setDescendantsDisplayMode(isReportMode) {
+    $("body").toggleClass("report-mode", isReportMode);
+    $("#viewTree").toggleClass("active", !isReportMode);
+    $("#viewReport").toggleClass("active", isReportMode);
+    $("#descendantsReportWrapper").toggleClass("hidden", !isReportMode);
+    $("#descendants").toggleClass("hidden", isReportMode);
+}
+
+function startReportBuild() {
+    if (reportState.running) {
+        return;
+    }
+
+    refreshReportSpouseFilterOptions();
+    const spouseFilterId = $("#reportSpouseFilter").val() || "all";
+
+    const maxGeneration = parseInt($("#reportGenerationSelect").val() || 1);
+    const people = collectReportPeople(maxGeneration, spouseFilterId);
+    if (people.length === 0) {
+        updateReportStatus("No people are loaded for the selected generations.");
+        return;
+    }
+
+    $("#reportModeToggle").prop("checked", true);
+    $("#reportModeToggleLabel").show();
+    setDescendantsDisplayMode(true);
+    $("#descendantsReportWrapper").toggleClass("show-photos", $("#showPhotos").prop("checked"));
+    $("#printReport").prop("disabled", true);
+
+    resetReportState();
+    reportState.running = true;
+    reportState.total = people.length;
+    updateReportStatus(`Initializing report for ${people.length} profiles...`);
+    setReportUiState({ busy: true });
+
+    buildReportShell(people[0], spouseFilterId);
+    processReportQueue(people).catch((error) => {
+        console.error("Report build failed", error);
+        updateReportStatus("Report build failed. See console for details.");
+        finishReportBuild();
+    });
+}
+
+function cancelReportBuild() {
+    if (!reportState.running) {
+        return;
+    }
+    reportState.cancel = true;
+    updateReportStatus("Cancelling...");
+}
+
+function finishReportBuild() {
+    setReportUiState({ busy: false });
+    reportState.running = false;
+
+    const maxGeneration = parseInt($("#reportGenerationSelect").val() || 1, 10);
+    const generationLabel = Number.isNaN(maxGeneration)
+        ? ""
+        : ` (${maxGeneration} generation${maxGeneration === 1 ? "" : "s"})`;
+    let doneMsg = `Report ready: ${reportState.done}/${reportState.total} profiles${generationLabel}`;
+    if (reportState.cancel) doneMsg = `Report cancelled: ${reportState.done} profiles ready${generationLabel}`;
+
+    const skippedMsg = reportState.skipped ? `, skipped ${reportState.skipped}` : "";
+    const errorMsg = reportState.errors ? `, errors ${reportState.errors}` : "";
+    updateReportStatus(doneMsg + skippedMsg + errorMsg);
+
+    // Ensure print is enabled at the end even if partial
+    $("#printReport").prop("disabled", false);
+}
+
+function buildReportShell(rootPerson, spouseFilterId = "all") {
+    const $report = $("#descendantsReport");
+    $report.empty();
+
+    if (rootPerson && rootPerson.$el) {
+        const name = rootPerson.$el.find("a.profileLink").first().text().trim();
+        // Spouses in the tree use .spouseProfileLink (exclude switch links)
+        let $spouses = rootPerson.$el
+            .children("dl.spouse")
+            .find("a")
+            .filter(function () {
+                return !$(this).hasClass("switch");
+            });
+
+        if (spouseFilterId && spouseFilterId !== "all") {
+            const filtered = $spouses.filter(function () {
+                const $dd = $(this).closest("dd");
+                return String($dd.data("id")) === String(spouseFilterId);
+            });
+            if (filtered.length) {
+                $spouses = filtered;
+            }
+        }
+
+        const spouseNames = $spouses
+            .map(function () {
+                return $(this).text().trim();
+            })
+            .get()
+            .filter(Boolean);
+
+        const spouseName = spouseNames.length ? " and " + joinWithAnd(spouseNames) : "";
+        if (name) {
+            $report.append(`<h1 class="report-main-title">Descendants of ${name}${spouseName}</h1>`);
+        }
+    }
+}
+
+function collectReportPeople(maxGeneration, spouseFilterId = "all") {
+    const spouseFilter = spouseFilterId && spouseFilterId !== "all" ? String(spouseFilterId) : null;
+    let allowedIds = null;
+    if (spouseFilter) {
+        const $root = $("#descendants > li.person").first();
+        if ($root.length) {
+            const rootId = String($root.data("id"));
+            allowedIds = new Set([rootId]);
+            const stack = [];
+
+            $root
+                .children("ul.personList")
+                .children("li.person")
+                .each(function () {
+                    const $child = $(this);
+                    const fatherId = $child.data("father") ? String($child.data("father")) : "";
+                    const motherId = $child.data("mother") ? String($child.data("mother")) : "";
+                    const otherParentId = fatherId === rootId ? motherId : motherId === rootId ? fatherId : "";
+                    if (otherParentId && otherParentId === spouseFilter) {
+                        stack.push($child);
+                    }
+                });
+
+            while (stack.length) {
+                const $node = stack.pop();
+                const nodeId = String($node.data("id"));
+                if (nodeId && !allowedIds.has(nodeId)) {
+                    allowedIds.add(nodeId);
+                    $node
+                        .children("ul.personList")
+                        .children("li.person")
+                        .each(function () {
+                            stack.push($(this));
+                        });
+                }
+            }
+        }
+    }
+
+    const people = [];
+    $("#descendants li.person").each(function () {
+        const $li = $(this);
+        const personIdStr = String($li.data("id"));
+        if (allowedIds && !allowedIds.has(personIdStr)) {
+            return; // Skip branches not matching the spouse filter
+        }
+        const generation = parseInt($li.closest("ul.personList").data("generation")) || 0;
+        if (generation <= maxGeneration) {
+            people.push({
+                id: $li.data("id"),
+                wtid: $li.data("name"),
+                aboville: $li.data("aboville"),
+                $el: $li,
+                generation: generation,
+            });
+        }
+    });
+    // Keep existing order (as displayed) which is already breadth-first
+    return people;
+}
+
+async function processReportQueue(queue) {
+    reportState.expandedSet = new Set(queue.map((p) => String(p.id)));
+    // Root person is always #1
+    if (queue.length > 0) {
+        reportState.lastReportNumber = 1;
+        reportState.reportNumberMap.set(String(queue[0].id), 1);
+    }
+
+    while (queue.length && !reportState.cancel) {
+        const batch = queue.splice(0, REPORT_LIMITS.batchSize);
+
+        const cachedPeople = batch.filter(
+            (p) => window.descendantsReportCache[p.id] || window.descendantsReportCache[p.wtid]
+        );
+        const toFetch = batch.filter((p) => !cachedPeople.includes(p));
+
+        // Render cached items immediately without refetching
+        cachedPeople.forEach((person) => {
+            if (reportState.cancel) return;
+            const data = processReportPersonData(null, person, {});
+            renderReportPerson(person, data);
+        });
+
+        if (!toFetch.length) {
+            continue;
+        }
+
+        // Update status with what we are doing
+        const wtidList = toFetch.map((p) => p.wtid).join(", ");
+        updateReportStatus(`Fetching bios for: ${wtidList}...`);
+
+        const batchMap = await fetchReportBatch(toFetch);
+
+        // Fetch spouses for this batch to get their vitals and parents
+        const spouseIds = new Set();
+        Object.values(batchMap).forEach((p) => {
+            if (p.Spouses) {
+                Object.values(p.Spouses).forEach((s) => {
+                    if (s.Id) spouseIds.add(s.Id);
+                });
+            }
+        });
+
+        let spouseMap = {};
+        if (spouseIds.size > 0) {
+            updateReportStatus(`Fetching spouse details for: ${wtidList}...`);
+            const spouseIdList = Array.from(spouseIds).join(",");
+            const [, , spouses] =
+                (await callWithRetry(() =>
+                    WikiTreeAPI.getPeople("TA_DescReportSpouses", spouseIdList, reportFields, { resolveRedirect: 1 })
+                )) || [];
+            spouseMap = spouses || {};
+        }
+
+        toFetch.forEach((person) => {
+            if (reportState.cancel) return;
+            const apiPerson = batchMap[String(person.id)] || batchMap[person.wtid];
+            const data = processReportPersonData(apiPerson, person, spouseMap);
+            renderReportPerson(person, data);
+        });
+
+        if (!reportState.cancel && REPORT_LIMITS.batchDelayMs > 0 && queue.length > 0) {
+            await wait(REPORT_LIMITS.batchDelayMs);
+        }
+
+        if (reportState.bytes >= REPORT_LIMITS.totalChars) {
+            updateReportStatus(`Stopped: reached size cap (${Math.round(reportState.bytes / 1000)} KB).`);
+            break;
+        }
+    }
+
+    finishReportBuild();
+    refreshReportSpouseFilterOptions();
+}
+
+async function fetchReportBatch(batch) {
+    const keys = batch.map((p) => p.id).filter(Boolean);
+    if (!keys.length) {
+        return {};
+    }
+    try {
+        const [, , people] =
+            (await callWithRetry(() =>
+                WikiTreeAPI.getPeople("TA_DescReport", keys, reportFields, {
+                    bioFormat: "both",
+                    resolveRedirect: 1,
+                    getRelatives: 1, // Fallback to ensure Spouses are always fetched
+                })
+            )) || [];
+        return people || {};
+    } catch (error) {
+        console.error("getPeople batch failed", error);
+        reportState.errors += batch.length;
+        return {};
+    }
+}
+
+function processReportPersonData(apiPerson, person, spouseMap) {
+    const cacheKey = person.id || person.wtid;
+    const cached = window.descendantsReportCache[cacheKey];
+    if (cached) {
+        reportState.done++;
+        reportState.bytes += cached.bioHtml?.length || 0;
+        return cached;
+    }
+
+    if (!apiPerson) {
+        reportState.skipped++;
+        return { bioHtml: "", endnotes: [], skipped: true };
+    }
+
+    const bioHtml = apiPerson?.bioHTML || apiPerson?.Bio;
+    if (!bioHtml) {
+        reportState.skipped++;
+        return { bioHtml: "", endnotes: [], skipped: true };
+    }
+
+    if (bioHtml.length > REPORT_LIMITS.perBioChars) {
+        reportState.skipped++;
+        return { bioHtml: "", endnotes: [], skipped: true, reason: "bio too large" };
+    }
+
+    const sanitized = sanitizeBioHtml(bioHtml);
+    const processed = extractEndnotesFromBio(sanitized, person.id);
+
+    const totalSize = reportState.bytes + processed.bioHtml.length;
+    if (totalSize > REPORT_LIMITS.totalChars) {
+        reportState.cancel = true;
+        reportState.skipped++;
+        return { bioHtml: processed.bioHtml, endnotes: processed.endnotes, partial: true };
+    }
+
+    reportState.done++;
+    reportState.bytes += processed.bioHtml.length;
+    processed.photoUrl = getPhotoUrl(apiPerson?.PhotoData?.url, apiPerson?.Photo);
+
+    // Attach rich spouse data
+    processed.spouses = [];
+    if (apiPerson.Spouses) {
+        Object.values(apiPerson.Spouses).forEach((sRef) => {
+            const sFull = spouseMap[String(sRef.Id)];
+            // Merge reference (marriage date/loc) with full profile (vitals/parents)
+            const merged = sFull ? Object.assign({}, sRef, sFull) : sRef;
+            processed.spouses.push(merged);
+        });
+    }
+
+    window.descendantsReportCache[cacheKey] = processed;
+    return processed;
+}
+
+function sanitizeBioHtml(bioHtml) {
+    const $wrapper = $("<div></div>").append(bioHtml);
+
+    // Remove known-bad elements but keep tables if they might be used for layout/images
+    $wrapper.find("script,style").remove();
+    $wrapper.find(".aContents,.status,.sticker,.toc").remove();
+    $wrapper.find("div.status, div.sticker, #toc").remove(); // Remove status, stickers, and TOC
+
+    // Fix relative URLs and open external links in new tabs
+    $wrapper.find("a").each(function () {
+        const $a = $(this);
+        const href = $a.attr("href") || "";
+        if (href && !href.startsWith("#") && !/^[a-z]+:/i.test(href)) {
+            $a.attr("href", buildWikiTreeUrl(href));
+        }
+        if (href && !href.startsWith("#")) {
+            $a.attr("target", "_blank");
+        }
+    });
+
+    $wrapper.find("img").each(function () {
+        const $img = $(this);
+        const src = $img.attr("src") || "";
+        if (src && !/^https?:\/\//i.test(src) && !src.startsWith("data:")) {
+            $img.attr("src", buildWikiTreeUrl(src));
+        }
+        $img.addClass("report-bio-image");
+    });
+
+    // Strip empty paragraphs, paragraphs containing only <br>, or containing only whitespace
+    $wrapper.find("p").each(function () {
+        const text = $(this).text().trim();
+        const hasBr = $(this).find("br").length > 0;
+        const hasOtherStuff = $(this).children().not("br").length > 0;
+        if (!text && !hasOtherStuff) {
+            $(this).remove();
+        }
+    });
+
+    // Remove bare <br> tags that are direct children of wrapper (often cluttering the end/start)
+    $wrapper.children("br").remove();
+
+    // Ensure paragraphs exist for readability; wrap bare text nodes in paragraphs
+    $wrapper
+        .contents()
+        .filter(function () {
+            return this.nodeType === 3 && this.textContent.trim().length > 0;
+        })
+        .each(function () {
+            const $p = $("<p></p>").text(this.textContent);
+            $(this).replaceWith($p);
+        });
+    return $wrapper;
+}
+
+function extractEndnotesFromBio($wrapper, personId) {
+    const notes = [];
+    const seenRefs = new Map();
+
+    $wrapper.find("sup.reference").each(function () {
+        const $sup = $(this);
+        const href = $sup.find("a").attr("href") || "";
+
+        let num;
+        if (href && seenRefs.has(href)) {
+            num = seenRefs.get(href);
+        } else {
+            num = notes.length + 1;
+            let noteHtml = "";
+            if (href.startsWith("#")) {
+                const target = $wrapper.find(href);
+                if (target.length) {
+                    noteHtml = target.html();
+                    target.remove();
+                }
+            }
+            if (!noteHtml) {
+                noteHtml = $sup.text() || "Citation";
+            }
+            notes.push(noteHtml);
+            if (href) {
+                seenRefs.set(href, num);
+            }
+        }
+        $sup.replaceWith(`<sup class="report-citation">[${num}]</sup>`);
+    });
+
+    return { bioHtml: $wrapper.html(), endnotes: notes };
+}
+
+function getAncestryTrace($personLi) {
+    const ancestors = [];
+    let $current = $personLi.parents("li.person").first();
+    while ($current.length) {
+        const nameText = $current.find("a.profileLink").first().text().trim();
+        const firstName = nameText.split(" ")[0] || nameText;
+        const parentGen = (parseInt($current.closest("ul.personList").data("generation")) || 0) + 1;
+        ancestors.push(`${firstName}<sup>${parentGen}</sup>`);
+        $current = $current.parents("li.person").first();
+    }
+    if (ancestors.length === 0) return "";
+    return `<span class="report-ancestry-trace">(${ancestors.join(", ")})</span>`;
+}
+
+function formatSpouseNarrative(spouses, personGender) {
+    if (!spouses || spouses.length === 0) return "";
+
+    const results = spouses.map((s) => {
+        const name = getPreferredName(s, { uppercase: true });
+        const mDate = formatDateForReport(s.MarriageDate || s.marriage_date);
+        const mLoc = formatPlaceForReport(s.MarriageLocation || s.marriage_location);
+        const bDate = formatDateForReport(s.BirthDate);
+        const bLoc = formatPlaceForReport(s.BirthLocation);
+        const dDate = formatDateForReport(s.DeathDate);
+        const dLoc = formatPlaceForReport(s.DeathLocation);
+
+        let parentStr = "";
+        const father = s.Father ? s.Father.FullName || s.Father.Name : "";
+        const mother = s.Mother ? s.Mother.FullName || s.Mother.Name : "";
+        if (father || mother) {
+            const rel = s.Gender === "Male" ? "son" : s.Gender === "Female" ? "daughter" : "child";
+            parentStr = `, ${rel} of ${father || "unknown"}${father && mother ? " and " : ""}${mother || ""}`;
+        }
+
+        let vitalsStr = "";
+        if (bDate || bLoc || dDate || dLoc) {
+            const subj = s.Gender === "Male" ? "He" : s.Gender === "Female" ? "She" : "They";
+            vitalsStr = ` ${subj} was born ${bDate || ""}${bLoc ? " in " + bLoc : ""}${
+                dDate ? " and died " + dDate + (dLoc ? " in " + dLoc : "") : ""
+            }.`;
+        }
+
+        const g = personGender ? personGender.toLowerCase() : "";
+        const action =
+            g === "male" || g === "m" ? "He married" : g === "female" || g === "f" ? "She married" : "They married";
+        return `${action} ${name}${mDate ? " " + mDate : ""}${mLoc ? " in " + mLoc : ""}${parentStr}.${vitalsStr}`;
+    });
+
+    return results.join(" ");
+}
+
+function renderReportPerson(person, data) {
+    const $el = person.$el;
+    const wtid = person.wtid || "";
+    const name = $el.find("a.profileLink").first().text() || wtid;
+    const { birthDate, birthPlace, deathDate, deathPlace } = getReportVitalData($el);
+    const personGender = $el.data("gender");
+    // Register reports always show spouses regardless of tree view toggle
+    const spousesNarrative = formatSpouseNarrative(data.spouses, personGender);
+    const { listHtml: childrenList, count: childrenCount } = buildChildrenList($el, data.spouses, person.id);
+
+    const reportNumber = reportState.reportNumberMap.get(String(person.id)) || "";
+    const generation = person.generation + 1;
+
+    // Generation Header
+    if (generation > reportState.currentGeneration) {
+        reportState.currentGeneration = generation;
+        $("#descendantsReport").append(`<h2 class="report-generation-header">Generation No. ${generation}</h2>`);
+    }
+
+    const ancestryTrace = getAncestryTrace($el);
+
+    const endnoteList = data?.endnotes?.length
+        ? `<ol class="report-endnotes">${data.endnotes.map((n) => `<li>${n}</li>`).join("")}</ol>`
+        : "";
+
+    const bioHtml = data?.bioHtml ? data.bioHtml : "<em>Biography not loaded or skipped for this profile.</em>";
+
+    let photoHtml = "";
+    if (data?.photoUrl) {
+        photoHtml = `<img class="report-photo" src="${data.photoUrl}" alt="${name}">`;
+    }
+
+    let birthHtml = "";
+    if (birthDate || birthPlace) {
+        birthHtml = `<div class="report-vital-line">b. ${birthDate}${
+            birthDate && birthPlace ? ", " : ""
+        }${birthPlace}</div>`;
+    }
+
+    let deathHtml = "";
+    if (deathDate || deathPlace) {
+        deathHtml = `<div class="report-vital-line">d. ${deathDate}${
+            deathDate && deathPlace ? ", " : ""
+        }${deathPlace}</div>`;
+    }
+
+    const nameDisplay = name.toUpperCase();
+
+    // Extract sections from bio
+    const $tempBio = $("<div></div>").append(bioHtml);
+    let notesHtml = "";
+    $tempBio.find("h2").each(function () {
+        const $h2 = $(this);
+        if ($h2.text().toLowerCase().includes("research notes")) {
+            const $notes = $h2.nextUntil("h2");
+            const $notesWrapper = $("<div></div>").append($notes.clone());
+            notesHtml = `<div class="report-notes"><span class="report-section-label">Notes for ${nameDisplay}:</span>${$notesWrapper.html()}</div>`;
+            $h2.remove();
+            $notes.remove();
+        }
+    });
+    const finalBioHtml = $tempBio.html();
+
+    const reportBlock = $(`
+        <article class="report-person" data-wtid="${wtid}">
+            <header class="report-person-header">
+                <div class="report-person-title">
+                    <span class="report-id-num">${reportNumber ? reportNumber + ". " : ""}</span>
+                    <span class="report-name">${nameDisplay}<sup>${generation}</sup></span>
+                    ${ancestryTrace}
+                    <span class="report-aboville-inline">${person.aboville}</span>
+                </div>
+                ${photoHtml}
+                <div class="report-vitals">
+                    <span class="report-name-inline">${nameDisplay}</span> was born ${birthDate}${
+                        birthPlace ? " in " + birthPlace : ""
+                    }${deathDate ? " and died " + deathDate + (deathPlace ? " in " + deathPlace : "") : ""}. ${spousesNarrative}
+                </div>
+            </header>
+            
+            <div class="report-bio">${finalBioHtml}</div>
+            
+            ${notesHtml}
+
+            ${endnoteList}
+
+            ${
+                childrenList
+                    ? `<div class="report-children"><span class="report-section-label">Children of ${nameDisplay} are:</span>${childrenList}</div>`
+                    : ""
+            }
+        </article>
+    `);
+
+    $("#descendantsReport").append(reportBlock);
+}
+
+function formatPlaceForReport(place) {
+    if (!place) return "";
+    const parts = place
+        .split(",")
+        .map((p) => p.trim())
+        .filter(Boolean);
+    return parts.slice(0, 3).join(", ");
+}
+
+function formatDateForReport(rawDate, status) {
+    if (!rawDate) return "";
+    const converted = convertDate(rawDate, window.descendantsSettings.dateFormat, status || "");
+    return converted ? converted.trim() : "";
+}
+
+function getReportVitalData($el) {
+    const birthDate = formatDateForReport($el.data("birth-date"), $el.data("birth-date-status"));
+    const deathDate = formatDateForReport($el.data("death-date"), $el.data("death-date-status"));
+
+    let birthPlace = "";
+    let deathPlace = "";
+
+    if (window.descendantsSettings.showPlaces) {
+        const birthDom = $el.find(":scope > .birthDeathDetails .birthPlace").first().text().trim();
+        const deathDom = $el.find(":scope > .birthDeathDetails .deathPlace").first().text().trim();
+        const birthData = ($el.data("birth-place") || "").toString().trim();
+        const deathData = ($el.data("death-place") || "").toString().trim();
+        birthPlace = formatPlaceForReport(birthDom || birthData);
+        deathPlace = formatPlaceForReport(deathDom || deathData);
+    }
+
+    return { birthDate, birthPlace, deathDate, deathPlace };
+}
+
+function buildChildrenList($li, spouses = [], personId) {
+    const children = $li.children("ul.personList").children("li.person");
+    if (!children.length) {
+        return { listHtml: "", count: 0 };
+    }
+    const personIdStr = personId ? String(personId) : String($li.data("id"));
+
+    const spouseById = new Map();
+    spouses.forEach((s) => {
+        if (s?.Id) {
+            spouseById.set(String(s.Id), s);
+        }
+    });
+
+    const lookupSpouseNameFromDom = (spouseId) => {
+        if (!spouseId) return "";
+        const $dd = $li.children("dl.spouse").find(`dd[data-id='${spouseId}']`).first();
+        const domName = (
+            $dd.data("fullname") ||
+            $dd
+                .find("a")
+                .filter(function () {
+                    return !$(this).hasClass("switch");
+                })
+                .first()
+                .text() ||
+            $dd.text() ||
+            ""
+        ).trim();
+        return domName;
+    };
+
+    const grouped = new Map();
+    const groupOrder = [];
+    const items = [];
+    let childIndex = 1;
+    children.each(function () {
+        const $child = $(this);
+        const childId = String($child.data("id"));
+        const name = $child.find("a.profileLink").first().text() || $child.data("name");
+        const birthDate = formatDateForReport($child.data("birth-date"), $child.data("birth-date-status"));
+        const deathDate = formatDateForReport($child.data("death-date"), $child.data("death-date-status"));
+        const birthPlace = $child.find(".birthPlace").first().text().trim();
+
+        const roman = getRomanNumeral(childIndex++);
+        let arabic = "";
+
+        // If this child is in the expanded set, assign them the next report number
+        if (reportState.expandedSet && reportState.expandedSet.has(childId)) {
+            if (!reportState.reportNumberMap.has(childId)) {
+                reportState.lastReportNumber++;
+                reportState.reportNumberMap.set(childId, reportState.lastReportNumber);
+            }
+            arabic = reportState.reportNumberMap.get(childId) + ".";
+        }
+
+        let dates = "";
+        if (birthDate || deathDate) {
+            const separator = birthDate && deathDate ? " – " : "";
+            dates = ` (${birthDate || ""}${separator}${deathDate || ""})`;
+        }
+
+        let place = "";
+        if (birthPlace) {
+            place = `, b. ${formatPlaceForReport(birthPlace)}`;
+        }
+
+        const fatherId = $child.data("father") ? String($child.data("father")) : "";
+        const motherId = $child.data("mother") ? String($child.data("mother")) : "";
+        let otherParentId = "";
+        if (fatherId && fatherId === personIdStr) {
+            otherParentId = motherId;
+        } else if (motherId && motherId === personIdStr) {
+            otherParentId = fatherId;
+        }
+
+        const groupKey = otherParentId || "unknown";
+        if (!grouped.has(groupKey)) {
+            grouped.set(groupKey, { spouse: spouseById.get(groupKey), items: [] });
+            groupOrder.push(groupKey);
+        }
+
+        const abovilleHtml = `<span class="report-aboville-inline">${$child.data("aboville")}</span>`;
+        const arabicNum = `<span class="report-arabic-num">${arabic}</span>`;
+        const romanNum = `<span class="report-roman-num">${roman}.</span>`;
+
+        const itemHtml = `<li><span class="report-child-prefix">${arabicNum}${romanNum}${abovilleHtml}</span><span class="report-child-content">${name}${dates}${place}</span></li>`;
+        grouped.get(groupKey).items.push(itemHtml);
+        items.push(itemHtml);
+    });
+
+    if (grouped.size <= 1) {
+        return { listHtml: `<ul class="report-children-list">${items.join("")}</ul>`, count: children.length };
+    }
+
+    const escapeHtml = (txt) =>
+        $("<div></div>")
+            .text(txt || "")
+            .html();
+
+    const groupsHtml = groupOrder
+        .map((key) => {
+            const group = grouped.get(key);
+            const spouseName = group.spouse
+                ? getPreferredName(group.spouse, { uppercase: false })
+                : key !== "unknown" && key
+                  ? lookupSpouseNameFromDom(key) || getPreferredName({ Name: key }, { uppercase: false })
+                  : "Unknown spouse";
+            const safeLabel = escapeHtml(spouseName);
+            return `<div class="report-children-group"><div class="report-children-spouse">Children with ${safeLabel}</div><ul class="report-children-list">${group.items.join(
+                ""
+            )}</ul></div>`;
+        })
+        .join("");
+
+    return { listHtml: groupsHtml, count: children.length };
+}
+
+function updateReportStatus(message) {
+    const $status = $("#descendantsReportStatus");
+    const $controlStatus = $("#reportStatusText");
+
+    if (reportState?.running) {
+        $controlStatus.text("");
+        if ($status.find("#descendantsReportTree").length === 0) {
+            $status
+                .empty()
+                .append(
+                    "<img id='descendantsReportTree' src='./views/cc7/images/tree.gif' alt='Loading' title='Working'>"
+                );
+            $("#descendantsReportTree").css({
+                display: "block",
+                margin: "6px auto",
+                height: "100px",
+                width: "100px",
+                borderRadius: "50%",
+                border: "4px solid forestgreen",
+            });
+        }
+        return;
+    }
+
+    $status.find("#descendantsReportTree").remove();
+    $status.text(message || "");
+    $controlStatus.text("");
 }

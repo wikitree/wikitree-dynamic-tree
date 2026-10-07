@@ -25,8 +25,15 @@ window.FamilyView = class FamilyView extends window.View {
      * @param person_id
      */
     init(container_selector, person_id) {
-        const view = new window.FamilyGroup(container_selector, person_id);
-        view.displayFamilyGroup();
+        this.close();
+        this.view = new window.FamilyGroup(container_selector, person_id);
+        this.view.displayFamilyGroup();
+    }
+
+    close() {
+        if (this.view && this.view.close) {
+            this.view.close();
+        }
     }
 };
 
@@ -91,6 +98,49 @@ window.FamilyGroup = class FamilyGroup {
             "IsLiving,DataStatus,Privacy," +
             "Father,Mother,Photo,PhotoData," +
             "Parents,Children,Spouses,Siblings";
+
+        const sharedFormatId = window.DateFormatOptions ? window.DateFormatOptions.getStoredFormatId() : null;
+        const sharedDateFormat = window.DateFormatOptions
+            ? window.DateFormatOptions.getFormatValue(sharedFormatId, "wtDate") || "D MMM YYYY"
+            : "D MMM YYYY";
+        const sharedStatusFormat = window.DateFormatOptions
+            ? window.DateFormatOptions.getStoredStatusFormat()
+            : "abbreviations";
+        this.options = {
+            showWTID: false,
+            dateFormat: sharedDateFormat,
+            dateStatusFormat: sharedStatusFormat,
+        };
+        this.localStorageKey = "familyView_options";
+        this.loadOptions();
+        this.isClosed = false;
+    }
+
+    loadOptions() {
+        const storedOptions = localStorage.getItem(this.localStorageKey);
+        if (storedOptions) {
+            try {
+                const parsed = JSON.parse(storedOptions);
+                this.options = { ...this.options, ...parsed };
+            } catch (e) {
+                console.error("Error loading familyView options", e);
+            }
+        }
+        if (window.DateFormatOptions) {
+            const legacyId = window.DateFormatOptions.getFormatIdFromWtDate(this.options.dateFormat);
+            if (legacyId) {
+                window.DateFormatOptions.setStoredFormatId(legacyId);
+            }
+            this.options.dateFormat =
+                window.DateFormatOptions.getFormatValue(window.DateFormatOptions.getStoredFormatId(), "wtDate") ||
+                this.options.dateFormat;
+            this.options.dateStatusFormat = window.DateFormatOptions.getStoredStatusFormat();
+            window.DateFormatOptions.setStoredStatusFormat(this.options.dateStatusFormat);
+        }
+    }
+
+    saveOptions() {
+        localStorage.setItem(this.localStorageKey, JSON.stringify(this.options));
     }
 
     /**
@@ -152,6 +202,29 @@ window.FamilyGroup = class FamilyGroup {
         return person.BirthName;
     }
 
+    formatDateWithStatus(person, fieldName, statusFieldName = fieldName) {
+        const formatted = window.wtDate(person, fieldName, {
+            formatString: this.options.dateFormat,
+            withCertainty: false,
+        });
+        if (!formatted || formatted === "[unknown]") return formatted || "";
+
+        const status =
+            person?.DataStatus?.[statusFieldName] ||
+            person?.data_status?.[statusFieldName] ||
+            person?.DataStatus?.[fieldName] ||
+            person?.data_status?.[fieldName] ||
+            "";
+
+        const statusPrefix = window.DateFormatOptions
+            ? window.DateFormatOptions.formatStatus(status, this.options.dateStatusFormat)
+            : "";
+
+        if (!statusPrefix) return formatted;
+        if (["<", ">", "~"].includes(statusPrefix.trim())) return `${statusPrefix}${formatted}`;
+        return `${statusPrefix} ${formatted}`;
+    }
+
     /**
      * Create a link to the given persons profile page using the provided linkText
      *
@@ -210,13 +283,17 @@ window.FamilyGroup = class FamilyGroup {
      * @returns {string}
      */
     getProfilePicHTML(person) {
+        let name = person.RealName || "";
+        if (name) {
+            name = name.charAt(0).toUpperCase() + name.slice(1);
+        }
         if (person.Photo) {
-            return `<img alt="Profile image for ${person.RealName}" src="${this.baseWikiURL}${person.PhotoData.url}"/><br/>`;
+            return `<img alt="Profile image for ${name}" src="${this.baseWikiURL}${person.PhotoData.url}"/><br/>`;
         } else {
             if (person.Gender === "Male") {
-                return `<img alt="No photo available for "${person.RealName}" src="${this.baseWikiURL}${this.imgMaleShadow}"/><br/>`;
+                return `<img alt="No photo available for ${name}" src="${this.baseWikiURL}${this.imgMaleShadow}"/><br/>`;
             }
-            return `<img alt="No photo available for "${person.RealName}" src="${this.baseWikiURL}${this.imgFemaleShadow}"/><br/>`;
+            return `<img alt="No photo available for ${name}" src="${this.baseWikiURL}${this.imgFemaleShadow}"/><br/>`;
         }
     }
 
@@ -250,12 +327,15 @@ window.FamilyGroup = class FamilyGroup {
             html += this.getProfilePicHTML(person);
         }
         html += `<strong>${this.linkedProfileName(person)}</strong><br/>`;
+        if (this.options.showWTID) {
+            html += `<span class="fv_wt-id">(${person.Name})</span><br/>`;
+        }
         if (person.BirthDate && person.BirthDate !== "0000-00-00" && person.DataStatus.BirthDate !== "blank") {
             let birth_place = this.grabField(person, "BirthLocation");
             if (birth_place.length > 1) {
                 birth_place = ` in ${birth_place}`;
             }
-            const birthDate = window.wtDate(person, "BirthDate", { formatString: "D MMM YYYY" });
+            const birthDate = this.formatDateWithStatus(person, "BirthDate");
             html += `Born: ${birthDate}${birth_place}<br/>`;
         } else if (person.BirthDateDecade) {
             html += `Born: ${person.BirthDateDecade}<br/>`;
@@ -266,7 +346,7 @@ window.FamilyGroup = class FamilyGroup {
                 if (death_place.length > 1) {
                     death_place = ` in ${death_place}`;
                 }
-                const deathDate = window.wtDate(person, "DeathDate", { formatString: "D MMM YYYY" });
+                const deathDate = this.formatDateWithStatus(person, "DeathDate");
                 html += `Died: ${deathDate}${death_place}<br/>`;
             } else if (person.DeathDateDecade) {
                 html += `Died: ${person.DeathDateDecade}<br/>`;
@@ -355,9 +435,9 @@ window.FamilyGroup = class FamilyGroup {
 
         html += ` the ${childType} of ${fatherName} and ${motherName}.
             See ${this.linkedShortName(person)}'s ${this.linkToTreeAndTools(
-            person,
-            "Tree &amp; Tools page"
-        )} for more views.`;
+                person,
+                "Tree &amp; Tools page"
+            )} for more views.`;
         $("#view-description").html(html);
     }
 
@@ -405,6 +485,10 @@ window.FamilyGroup = class FamilyGroup {
         }
         // Extract the person data from the single element array
         let person = data[0].person;
+
+        if (this.isClosed) return;
+        this.renderOptions();
+
         // Check on the privacy before showing anything…
         // 50 is the public threshold; less than that is private of some kind, check if another field is visible to
         // gauge if it is a private profile that the logged-in user has access to
@@ -454,20 +538,38 @@ window.FamilyGroup = class FamilyGroup {
         // We will work through each spouse and produce a family table for every couple… provided there are any
         // marriages at all
         if (person.Spouses && Object.keys(person.Spouses).length > 0) {
+            console.log("[FamilyView] Found", Object.keys(person.Spouses).length, "spouses");
+            console.log("[FamilyView] Spouses structure (is Array?):", Array.isArray(person.Spouses));
+            console.log("[FamilyView] Spouses keys:", Object.keys(person.Spouses));
+            console.log("[FamilyView] Spouses content:", person.Spouses);
+            
+            // Convert array to object keyed by ID if needed
+            let spousesObj = person.Spouses;
+            if (Array.isArray(person.Spouses)) {
+                console.log("[FamilyView] Converting Spouses array to object");
+                spousesObj = {};
+                person.Spouses.forEach(spouse => {
+                    spousesObj[spouse.Id] = spouse;
+                });
+                console.log("[FamilyView] Converted Spouses object:", spousesObj);
+            }
+            
             const spouseList = this.sortByDate(
-                Object.values(person.Spouses).map((x) =>
+                Object.values(spousesObj).map((x) =>
                     Object({
                         Id: x.Id,
                         Date: x.marriage_date || "0000-00-00", // Protect against missing marriage dates
                     })
                 )
             );
+            console.log("[FamilyView] Sorted spouseList:", spouseList);
 
             for (const spouseEntry in spouseList) {
                 if (spouseList.hasOwnProperty(spouseEntry)) {
                     const spousesKey = spouseList[spouseEntry].Id;
-                    if (person.Spouses.hasOwnProperty(spousesKey)) {
-                        const spouse = person.Spouses[spousesKey];
+                    console.log("[FamilyView] Processing spouse with key:", spousesKey, "hasOwnProperty?:", spousesObj.hasOwnProperty(spousesKey));
+                    if (spousesObj.hasOwnProperty(spousesKey)) {
+                        const spouse = spousesObj[spousesKey];
                         let marr_place = this.grabField(spouse, "marriage_location");
                         if (marr_place.length > 1) {
                             marr_place = `in ${marr_place}`;
@@ -475,34 +577,122 @@ window.FamilyGroup = class FamilyGroup {
                         let html = `<div class="fv_familyBlock">
                             <h2>${person.RealName} and ${this.fullName(spouse)}</h2>
                             <h3>${person.RealName} married ${this.birthName(spouse)},
-                            ${window.wtDate(spouse, "marriage_date", { formatString: "D MM YYYY" })}
+                            ${this.formatDateWithStatus(spouse, "marriage_date")}
                             ${marr_place}</h3>`;
                         html += this.extractFamilyGroupHTML(person, spouse, spousal_relation, spousesKey);
                         html += "</div>";
 
+                        console.log("[FamilyView] Appending family block HTML to #family_group");
                         wv.append(html);
+                    } else {
+                        console.log("[FamilyView] Spouse not found in spousesObj with key:", spousesKey);
                     }
                 }
             }
         } else {
             // No spouses… just give the details for the person alone
+            console.log("[FamilyView] No spouses found, displaying person alone");
             wv.append(this.extractFamilyGroupHTML(person, null, spousal_relation, "0"));
         }
 
         if (person.Children && Object.keys(person.Children).length > 0) {
+            console.log("[FamilyView] Adding children list");
             let html = this.createChildListIntroductionLine(person);
             for (const childListKey in person.childList) {
                 if (person.childList.hasOwnProperty(childListKey)) {
                     const childrenKey = person.childList[childListKey].Id;
                     if (person.Children.hasOwnProperty(childrenKey)) {
                         const child = person.Children[childrenKey];
-                        html += `<li>${this.createMiniBioHTML(child, false)}</li>`;
+                        let childBio = this.createMiniBioHTML(child, false);
+                        html += `<li>${childBio}</li>`;
                     }
                 }
             }
             html += `</ol>`;
+            console.log("[FamilyView] Appending children list to #children_list");
             $("#children_list").append(html);
+        } else {
+            console.log("[FamilyView] No children to display");
         }
+        
+        console.log("[FamilyView] displayFamilyGroup() completed successfully");
+    }
+
+    renderOptions() {
+        const existing = $("#familyViewOptions");
+        if (existing.length > 0) {
+            existing.remove();
+        }
+        const selectedFormatId = window.DateFormatOptions ? window.DateFormatOptions.getStoredFormatId() : null;
+        const selectedStatusId = window.DateFormatOptions
+            ? window.DateFormatOptions.getStoredStatusFormat()
+            : this.options.dateStatusFormat;
+        const dateOptionsHtml = window.DateFormatOptions
+            ? window.DateFormatOptions.buildFormatOptionsHtml(selectedFormatId)
+            : "";
+        const statusOptionsHtml = window.DateFormatOptions
+            ? window.DateFormatOptions.buildStatusOptionsHtml(selectedStatusId)
+            : "";
+        const optionsHTML = `
+            <div id="familyViewOptions" class="familyViewOptions">
+                <label for="dateFormatSelect">Date Format:</label>
+                <select id="dateFormatSelect">
+                    ${dateOptionsHtml}
+                </select>
+                <label for="dateStatusSelect">Date Status:</label>
+                <select id="dateStatusSelect">
+                    ${statusOptionsHtml}
+                </select>
+                <label><input type="checkbox" id="showWTID" ${
+                    this.options.showWTID ? "checked" : ""
+                }> WikiTree IDs</label>
+            </div>
+        `;
+        $("#view-container").before(optionsHTML);
+
+        $("#showWTID").on("change", (e) => {
+            this.options.showWTID = e.target.checked;
+            this.saveOptions();
+            this.displayFamilyGroup();
+        });
+
+        $("#dateFormatSelect").on("change", (e) => {
+            const selectedId = e.target.value;
+            if (window.DateFormatOptions) {
+                this.options.dateFormat =
+                    window.DateFormatOptions.getFormatValue(selectedId, "wtDate") || this.options.dateFormat;
+                window.DateFormatOptions.setStoredFormatId(selectedId);
+            } else {
+                const fallbackMap = {
+                    dsmy: "D MMM YYYY",
+                    smdy: "MMM D, YYYY",
+                    mdy: "MMMM D, YYYY",
+                    dmy: "D MMMM YYYY",
+                    iso: "YYYY-MM-DD",
+                    y: "YYYY",
+                };
+                this.options.dateFormat = fallbackMap[selectedId] || this.options.dateFormat;
+            }
+            this.saveOptions();
+            this.displayFamilyGroup();
+        });
+
+        $("#dateStatusSelect").on("change", (e) => {
+            this.options.dateStatusFormat = e.target.value;
+            if (window.DateFormatOptions) {
+                window.DateFormatOptions.setStoredStatusFormat(this.options.dateStatusFormat);
+            }
+            this.saveOptions();
+            this.displayFamilyGroup();
+        });
+    }
+
+    close() {
+        this.isClosed = true;
+        $("#showWTID").off();
+        $("#dateFormatSelect").off();
+        $("#dateStatusSelect").off();
+        $("#familyViewOptions").remove();
     }
 
     /**

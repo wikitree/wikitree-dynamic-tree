@@ -50,7 +50,7 @@ header > * {
 }
 
 main {
-  background: white;
+  background: #f7f6f0;
   padding: var(--content-padding);
 }
 
@@ -395,6 +395,14 @@ main {
 
 .alignRight {
   text-align: right;
+}
+
+/* Adoptive / Biological label */
+.AdoBioLabelXYWH {
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: bold;
+  color: white;
+  font-size: 32px;
 }
 
 /* Disable buttons in the Button Bar Panel by adding this class */
