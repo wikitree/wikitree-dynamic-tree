@@ -119,7 +119,7 @@ export function mountApp(container, key, options) {
           <label id="suTreeWhiteLabel" hidden title="Leave the white parts of the picture empty, so a white design shows as a gap">
             <input type="checkbox" id="suTreeWhite"> Leave white empty
           </label>
-          <input type="file" id="suTreeFile" accept="image/*" hidden>
+          <input type="file" id="suTreeFile" accept="image/*" class="sutree-file" tabindex="-1" aria-hidden="true">
           <label>Reach <select id="suTreeScope"></select></label>
           <span class="sutree-stepper" title="Go further out, or come back in">
             <button type="button" id="suTreeFewer" aria-label="One fewer">&minus;</button>
@@ -411,6 +411,18 @@ export function mountApp(container, key, options) {
     }
     const chooseFile = () => find("#suTreeFile")[0].click();
 
+    /**
+     * "My picture" was chosen and there is no picture yet. The file chooser is opened at once where the browser allows it, but
+     * Safari only opens one from a click on a button, not from choosing in a menu, so the Choose picture button is shown too,
+     * with a note saying to click it. Until a picture is chosen the tree stays as it was.
+     */
+    function askForPicture() {
+        find("#suTreeShapeKind").val("image");
+        find("#suTreeChoose").prop("hidden", false);
+        say("Click Choose picture… to pick a picture from your computer.");
+        chooseFile();
+    }
+
     /** Use a picture that comes with the view, loading it the first time. */
     async function useBuiltIn(picture) {
         try {
@@ -438,7 +450,7 @@ export function mountApp(container, key, options) {
             return redraw();
         }
         if (choice === "image") {
-            if (!state.mine) return chooseFile(); // setShapeKind follows once there is a picture
+            if (!state.mine) return askForPicture(); // setShapeKind follows once there is a picture
             state.picture = state.mine;
             state.leaveWhite = false;
             setShapeKind("image");

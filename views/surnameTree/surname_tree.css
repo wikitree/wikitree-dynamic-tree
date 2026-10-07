@@ -366,3 +366,13 @@
   opacity: 0.5;
   cursor: default;
 }
+
+/* the file input is kept on the page, out of sight, because Safari will not open a chooser from an input that is not displayed */
+.sutree-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
