@@ -4,6 +4,7 @@ Created By: Azure Robinson (Robinson-27225)
 
 import {
     BACKDROP_OPACITY,
+    CELL,
     BARK_OPACITY,
     COLORS,
     CROWN_SHADOW_OFFSET,
@@ -27,6 +28,64 @@ export const TREE_FONT = '"Roboto Condensed", "Arial Narrow", Oswald, Impact, Ha
 export const treeFont = (size) => `bold ${size}px ${TREE_FONT}`;
 
 /** A function that measures the width of a word in the tree's font, for the layout. */
+let inkCanvas = null;
+
+/**
+ * The cells of the layout grid that a word's letters themselves cover (not the box round them), as [columns across, rows down]
+ * from the cell holding the word's middle, with `pad` pixels of room added round the letters. Round letters such as O and D
+ * leave their middles free, so a short name can go inside them. Returns null where the page cannot draw text to find out, and
+ * the layout then makes do with the box.
+ */
+export function inkOffsets(text, size, angle, pad) {
+    try {
+        const scale = size < 24 ? 2 : 1; // small type is looked at more closely
+        const canvas = inkCanvas || (inkCanvas = document.createElement("canvas"));
+        const g = canvas.getContext("2d", { willReadFrequently: true });
+        g.font = treeFont(size * scale);
+        const width = g.measureText(text).width;
+        const half = Math.ceil(Math.hypot(width, size * scale) / 2 + (pad + CELL) * scale) + 2;
+        const side = half * 2;
+        canvas.width = side; // (this also clears it)
+        canvas.height = side;
+        g.font = treeFont(size * scale);
+        g.textAlign = "center";
+        g.textBaseline = "middle";
+        g.fillStyle = "#000";
+        g.translate(half, half);
+        g.rotate((angle * Math.PI) / 180);
+        g.fillText(text, 0, size * scale * 0.04);
+        const { data } = g.getImageData(0, 0, side, side);
+        // how much ink there is in any rectangle, from a running total
+        const across = side + 1;
+        const total = new Uint32Array(across * across);
+        for (let y = 0; y < side; y++) {
+            for (let x = 0; x < side; x++) {
+                total[(y + 1) * across + x + 1] =
+                    (data[(y * side + x) * 4 + 3] > 60 ? 1 : 0) +
+                    total[y * across + x + 1] +
+                    total[(y + 1) * across + x] -
+                    total[y * across + x];
+            }
+        }
+        const inkIn = (x0, y0, x1, y1) =>
+            total[y1 * across + x1] - total[y0 * across + x1] - total[y1 * across + x0] + total[y0 * across + x0];
+        const reach = Math.ceil(half / (scale * CELL));
+        const cells = [];
+        for (let dr = -reach; dr <= reach; dr++) {
+            for (let dc = -reach; dc <= reach; dc++) {
+                const x0 = Math.max(0, Math.floor(half + (dc * CELL - CELL / 2 - pad) * scale));
+                const x1 = Math.min(side, Math.ceil(half + (dc * CELL + CELL / 2 + pad) * scale));
+                const y0 = Math.max(0, Math.floor(half + (dr * CELL - CELL / 2 - pad) * scale));
+                const y1 = Math.min(side, Math.ceil(half + (dr * CELL + CELL / 2 + pad) * scale));
+                if (x1 > x0 && y1 > y0 && inkIn(x0, y0, x1, y1) > 0) cells.push([dc, dr]);
+            }
+        }
+        return cells;
+    } catch (error) {
+        return null;
+    }
+}
+
 export function makeMeasure() {
     const g = document.createElement("canvas").getContext("2d");
     return (text, size) => {
@@ -218,7 +277,7 @@ function drawOutlinedTree(g, tree) {
 function drawBackdrop(g, shape) {
     if (!shape.pictureImage) return;
     g.save();
-    g.globalAlpha = BACKDROP_OPACITY;
+    g.globalAlpha = shape.backdropOpacity ?? BACKDROP_OPACITY;
     g.drawImage(shape.pictureImage, 0, 0, WIDTH, HEIGHT);
     g.restore();
 }

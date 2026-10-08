@@ -51,6 +51,20 @@ of a profile page, mostly showing in the margins either side of the page, so a b
 use it, save the picture, upload it to WikiTree, and set it as the background image of your profile (see
 [Help:Background Images](https://www.wikitree.com/wiki/Help:Background_Images)).
 
+**Fill the gaps** is off to start with. Every name is placed once, the most common first and sized by how common it is, and the
+rarer names go into whatever room is left, in smaller and smaller type and close together, as in a word cloud made by hand. Ticking
+**Fill the gaps** then repeats the _rarer_ names in small type until nothing more fits (the commonest names are not repeated).
+
+**A photograph as the shape.** A picture whose edge is mostly one plain colour has a background, and the words fill what is
+left. A photograph has scenery to its edges, so there is nothing to cut away: the words fill all of the picture, as big as will let
+every name fit, with the picture showing behind them, and **Fill the whole picture** is ticked for you. Untick it to cut a
+background away instead (the **Cut-out** slider then works). The pictures that come with the app always have a background.
+
+**Close fitting.** Names are laid out on a fine grid (2 pixels a cell) and take up the room of their letters, not of the box round
+them, so a short name can sit inside the O or the D of a long one. A name is tried at sizes down to a very small one before it is
+left out, and at most 1,500 names are tried. With a very long list the biggest names are made smaller, so that more of the names
+fit, rather than leaving the rare ones out.
+
 **Names that did not fit.** Every name is tried again in any gap, in smaller type, before it is left out. The note under the tree
 says how many were left out: one to three are named in it, and for more there is a **See the list** link, which opens a list of
 them with how many profiles each has. Click one in the list to see its people.
@@ -67,7 +81,7 @@ The options can be given after the view, so a link opens the tree as set:
 | `degrees`     | 1 to 10                                                  | 7           |
 | `biological`  | `0` or `1`                                               | `1`         |
 | `adoptive`    | `0` or `1`                                               | `1`         |
-| `fill`        | `0` or `1` (repeat names in small type to fill the gaps) | `1`         |
+| `fill`        | `0` or `1` (repeat names in small type to fill the gaps) | `0`         |
 | `look`        | `shaded`, `flat`, `outlined`                             | `shaded`    |
 
 For example: `#name=Example-42&view=surnametree&names=first&scope=cc7&degrees=5&adoptive=0`

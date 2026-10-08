@@ -19,10 +19,19 @@ export const MAX_SENSITIVITY = 160;
 /** A shape that covers less of the frame than this is not a shape (the picture is all background, or all one colour). */
 export const MIN_COVERAGE = 0.02;
 /** Bits of the picture smaller than this many cells are dust, and are dropped, unless nothing bigger exists. */
-const MIN_ISLAND = 40;
+const MIN_ISLAND = Math.round(40 * (4 / CELL) ** 2);
 /** With leaveWhite, a pixel whose red, green and blue are all at least this much counts as white. */
 const WHITE = 232;
 export const MAX_FILE_BYTES = 15 * 1024 * 1024;
+/**
+ * A picture whose edge is mostly one colour (or up to three, like a checkerboard) has a background to cut away. When less of the
+ * edge than this is background, the picture is a photograph, with scenery to its edges, and the words fill all of it.
+ */
+export const PLAIN_EDGE_SHARE = 0.6;
+/** How far (in colour) a pixel on the edge may be from the background's colour and still count as plain. */
+export const PLAIN_EDGE_TOLERANCE = 14;
+/** How strongly a whole picture shows behind the words: more than a cut-out shape, since the picture is the point. */
+export const WHOLE_BACKDROP_OPACITY = 0.4;
 
 /** Where a picture of this size goes in the frame: as big as fits, centred. */
 export function placeInFrame(width, height) {
@@ -35,9 +44,10 @@ export function placeInFrame(width, height) {
 /**
  * The colours of the picture's background: the main colours along its four edges, at most three. A plain background is one
  * colour; the grey and white squares of a "transparent" picture saved with its checkerboard are two. A colour counts when at
- * least a tenth of the edge is that colour (or close to it, since a JPEG's colours drift a little).
+ * least a tenth of the edge is that colour (or close to it, since a JPEG's colours drift a little). Returns { colours, share },
+ * where share is how much of the edge those colours make up: nearly all of it for a plain background, little for a photograph.
  */
-function edgeColours(pixels, rect) {
+export function edgeColours(pixels, rect) {
     const { width, data } = pixels;
     const samples = [];
     const take = (x, y) => {
@@ -52,7 +62,7 @@ function edgeColours(pixels, rect) {
         take(rect.x, y);
         take(rect.x + rect.w - 1, y);
     }
-    if (!samples.length) return [[255, 255, 255]];
+    if (!samples.length) return { colours: [[255, 255, 255]], share: 1 };
     const near = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) <= 36;
     const total = samples.length;
     const colours = [];
@@ -72,7 +82,14 @@ function edgeColours(pixels, rect) {
         colours.push([0, 1, 2].map((c) => Math.round(group.reduce((sum, other) => sum + other[c], 0) / group.length)));
         left = left.filter((other) => !near(best, other));
     }
-    return colours.length ? colours : [[255, 255, 255]];
+    // How plain the edge is: how much of it is within a hair of one of those colours. A plain background is, give or take the
+    // noise of a JPEG; the edge of a photograph, even a dark one, is full of small changes.
+    const close = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) <= PLAIN_EDGE_TOLERANCE;
+    const plain = samples.filter((sample) => colours.some((colour) => close(sample, colour))).length;
+    return {
+        colours: colours.length ? colours : [[255, 255, 255]],
+        share: colours.length ? plain / total : 0,
+    };
 }
 
 /** Drop little isolated bits (dust, specks) from a mask of cells, keeping everything big enough to be part of the shape. */
@@ -115,18 +132,26 @@ function removeSpecks(mask, cols, rows) {
  * the picture placed in it at `rect` (see placeInFrame). A picture with transparent parts is cut out by its transparency;
  * any other is cut out by its background, taken to be the main colour or colours along its edges, and every pixel further
  * from all of them than `sensitivity` is the shape. With `leaveWhite`, white (or nearly white) parts inside the picture are
- * left empty too, so a white design on a coloured logo shows as a gap. Returns { kind: "image", masks, cellRgb, pixelMask, coverage, background }, where masks is
+ * left empty too, so a white design on a coloured logo shows as a gap. With `whole`, all of the picture is the shape, which is
+ * right for a photograph with no background to cut away. Returns { kind: "image", masks, cellRgb, pixelMask, coverage,
+ * background, plainShare, whole }, where plainShare is how much of the picture's edge is background (see PLAIN_EDGE_SHARE) and masks is
  * like buildMasks' (the whole shape is "crown", and there is no "trunk"), cellRgb holds the average colour of each cell
  * (three bytes a cell), and coverage is the share of the frame that the shape fills.
  */
-export function shapeFromPixels(pixels, rect, sensitivity = DEFAULT_SENSITIVITY, { leaveWhite = false } = {}) {
+export function shapeFromPixels(
+    pixels,
+    rect,
+    sensitivity = DEFAULT_SENSITIVITY,
+    { leaveWhite = false, whole = false } = {}
+) {
     const { width, data } = pixels;
     let transparent = 0;
     for (let y = rect.y; y < rect.y + rect.h; y++) {
         for (let x = rect.x; x < rect.x + rect.w; x++) if (data[(y * width + x) * 4 + 3] < 128) transparent++;
     }
     const useAlpha = transparent / (rect.w * rect.h) > 0.03;
-    const background = useAlpha ? null : edgeColours(pixels, rect);
+    const edge = useAlpha ? { colours: null, share: 1 } : edgeColours(pixels, rect);
+    const background = whole ? null : edge.colours;
 
     const on = new Uint8Array(width * pixels.height);
     for (let y = rect.y; y < rect.y + rect.h; y++) {
@@ -184,7 +209,10 @@ export function shapeFromPixels(pixels, rect, sensitivity = DEFAULT_SENSITIVITY,
         cellRgb,
         pixelMask: on, // the shape pixel by pixel (WIDTH x HEIGHT, as in the frame), for a smooth outline behind the words
         coverage: filled / (cols * rows),
-        background: useAlpha ? "transparent" : background, // "transparent", or a list of [red, green, blue]
+        background: useAlpha ? "transparent" : edge.colours, // "transparent", or a list of [red, green, blue]
+        plainShare: edge.share,
+        whole,
+        backdropOpacity: whole ? WHOLE_BACKDROP_OPACITY : undefined,
     };
 }
 

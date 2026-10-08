@@ -278,7 +278,7 @@ function addBackdrop(viewport, shape) {
         "y": 0,
         "width": WIDTH,
         "height": HEIGHT,
-        "opacity": BACKDROP_OPACITY,
+        "opacity": shape.backdropOpacity ?? BACKDROP_OPACITY,
         "pointer-events": "none",
     });
     image.setAttribute("href", shape.picture);
