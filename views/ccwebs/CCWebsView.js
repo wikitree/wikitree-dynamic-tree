@@ -9,9 +9,33 @@
         GAPV = 34,
         GAPH = 96;
     const ARROW_PTS = {
-        up: [[0, -12], [9, 0], [3, 0], [3, 12], [-3, 12], [-3, 0], [-9, 0]],
-        down: [[0, 12], [9, 0], [3, 0], [3, -12], [-3, -12], [-3, 0], [-9, 0]],
-        side: [[12, 0], [0, -9], [0, -3], [-12, -3], [-12, 3], [0, 3], [0, 9]],
+        up: [
+            [0, -12],
+            [9, 0],
+            [3, 0],
+            [3, 12],
+            [-3, 12],
+            [-3, 0],
+            [-9, 0],
+        ],
+        down: [
+            [0, 12],
+            [9, 0],
+            [3, 0],
+            [3, -12],
+            [-3, -12],
+            [-3, 0],
+            [-9, 0],
+        ],
+        side: [
+            [12, 0],
+            [0, -9],
+            [0, -3],
+            [-12, -3],
+            [-12, 3],
+            [0, 3],
+            [0, 9],
+        ],
     };
     const CERT = {
         5: ["icon-dna-none.svg", 16, 25],
@@ -27,13 +51,17 @@
     };
 
     function esc(value) {
-        return String(value ?? "").replace(/[&<>"']/g, (c) => ({
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#39;",
-        })[c]);
+        return String(value ?? "").replace(
+            /[&<>"']/g,
+            (c) =>
+                ({
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    '"': "&quot;",
+                    "'": "&#39;",
+                })[c]
+        );
     }
 
     function parseIds(text) {
@@ -122,7 +150,9 @@
     }
 
     function ordinal(number) {
-        return number + (number % 100 >= 11 && number % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][number % 10] || "th");
+        return (
+            number + (number % 100 >= 11 && number % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][number % 10] || "th")
+        );
     }
 
     function greats(count) {
@@ -137,11 +167,24 @@
         const male = path[path.length - 1].Gender === "Male";
         const female = path[path.length - 1].Gender === "Female";
         const gendered = (m, f, neutral) => (male ? m : female ? f : neutral);
-        if (!downs) return greats(ups - 2) + (ups === 1 ? gendered("father", "mother", "parent") : gendered("grandfather", "grandmother", "grandparent"));
-        if (!ups) return greats(downs - 2) + (downs === 1 ? gendered("son", "daughter", "child") : gendered("grandson", "granddaughter", "grandchild"));
+        if (!downs)
+            return (
+                greats(ups - 2) +
+                (ups === 1
+                    ? gendered("father", "mother", "parent")
+                    : gendered("grandfather", "grandmother", "grandparent"))
+            );
+        if (!ups)
+            return (
+                greats(downs - 2) +
+                (downs === 1
+                    ? gendered("son", "daughter", "child")
+                    : gendered("grandson", "granddaughter", "grandchild"))
+            );
         const half = !sharedSpouseId(path);
         const halfPrefix = half ? "half-" : "";
-        if (ups === 1 && downs === 1) return half ? `½ ${gendered("brother", "sister", "sibling")}` : gendered("brother", "sister", "sibling");
+        if (ups === 1 && downs === 1)
+            return half ? `½ ${gendered("brother", "sister", "sibling")}` : gendered("brother", "sister", "sibling");
         if (ups === 1) return greats(downs - 2) + halfPrefix + gendered("nephew", "niece", "nibling");
         if (downs === 1) return greats(ups - 2) + halfPrefix + gendered("uncle", "aunt", "uncle/aunt");
         const degree = Math.min(ups, downs) - 1;
@@ -180,21 +223,26 @@
     }
 
     function boxSvg(person, x, y, fill, spouse) {
-        const photo = person.Id < 0
-            ? ""
-            : person.PhotoData?.url
-              ? WIKITREE + person.PhotoData.url
-              : `${WIKITREE}/images/icons/${person.Gender === "Female" ? "female" : "male"}.gif`;
+        const photo =
+            person.Id < 0
+                ? ""
+                : person.PhotoData?.url
+                  ? WIKITREE + person.PhotoData.url
+                  : `${WIKITREE}/images/icons/${person.Gender === "Female" ? "female" : "male"}.gif`;
         const centerX = x + 50 + (BW - 60) / 2;
         let name = esc(displayName(person));
         if (person.Id > 0 && person.Name) {
             name = `<a href="${WIKITREE}/wiki/${encodeURIComponent(person.Name)}" target="_blank" rel="noopener">${name}</a>`;
         }
-        return `<rect x="${x}" y="${y}" rx="10" ry="10" width="${BW}" height="${BH}" fill="${fill}" stroke="black"/>` +
+        return (
+            `<rect x="${x}" y="${y}" rx="10" ry="10" width="${BW}" height="${BH}" fill="${fill}" stroke="black"/>` +
             (photo ? `<image height="40" href="${esc(photo)}" x="${x + 10}" y="${y + 2}"/>` : "") +
             `<text class="nm" text-anchor="middle" x="${centerX}" y="${y + 20}">${name}</text>` +
             `<text class="dt" text-anchor="middle" x="${centerX}" y="${y + 42}">${esc(dates(person))}</text>` +
-            (spouse ? `<text class="sp" text-anchor="middle" x="${centerX}" y="${y + 58}">&amp; ${esc(spouse)}</text>` : "");
+            (spouse
+                ? `<text class="sp" text-anchor="middle" x="${centerX}" y="${y + 58}">&amp; ${esc(spouse)}</text>`
+                : "")
+        );
     }
 
     function certSvg(status, x, y) {
@@ -212,7 +260,7 @@
         items.forEach((item) => {
             item.path.forEach((person, index) => {
                 if (!nodes.has(person.Id)) {
-                    nodes.set(person.Id, { person, tags: [], turns: [], last: false });
+                    nodes.set(person.Id, { person, tags: [], relations: [], turns: [], last: false });
                     adjacency.set(person.Id, []);
                 }
                 if (!index) return;
@@ -228,7 +276,10 @@
             });
             const end = nodes.get(item.path[item.path.length - 1].Id);
             end.last = true;
-            if (tagged) end.tags.push(item.n);
+            if (tagged) {
+                end.tags.push(item.n);
+                if (item.relation) end.relations.push(item.relation);
+            }
             const turningPoint = turnIndex(item.path);
             if (turningPoint > 0) nodes.get(item.path[turningPoint].Id).turns.push(sharedSpouseId(item.path));
         });
@@ -247,7 +298,10 @@
             kids.set(id, []);
             adjacency.get(id).forEach((edge) => {
                 if (levels.has(edge.to)) return;
-                levels.set(edge.to, levels.get(id) + (edge.direction === "up" ? 1 : edge.direction === "down" ? -1 : 0));
+                levels.set(
+                    edge.to,
+                    levels.get(id) + (edge.direction === "up" ? 1 : edge.direction === "down" ? -1 : 0)
+                );
                 kids.get(id).push(edge);
                 queue.push(edge.to);
             });
@@ -318,7 +372,8 @@
                 const x2 = x(right);
                 const midY = y(from) + BH / 2;
                 if (normType(person.pathType) === "spouse") {
-                    svg += `<line x1="${x1}" y1="${midY - 4}" x2="${x2}" y2="${midY - 4}" stroke="red" stroke-width="3"/>` +
+                    svg +=
+                        `<line x1="${x1}" y1="${midY - 4}" x2="${x2}" y2="${midY - 4}" stroke="red" stroke-width="3"/>` +
                         `<line x1="${x1}" y1="${midY + 4}" x2="${x2}" y2="${midY + 4}" stroke="red" stroke-width="3"/>`;
                 } else {
                     svg += `<line x1="${x1}" y1="${midY}" x2="${x2}" y2="${midY}" stroke="blue" stroke-width="3"/>`;
@@ -355,25 +410,36 @@
             if (node.tags.length) {
                 svg += `<text x="${x(id) + BW - 6}" y="${y(id) + BH - 6}" text-anchor="end" font-size="13" font-weight="bold" fill="#064">#${node.tags.join(", #")}</text>`;
             }
+            if (node.relations.length) {
+                svg += `<text x="${x(id) + BW / 2}" y="${y(id) + BH + 15}" text-anchor="middle" font-size="14" font-weight="bold" fill="darkgreen">${esc([...new Set(node.relations)].join("; "))}</text>`;
+            }
         });
         const width = 10 + maxColumn * (BW + GAPH) + BW + 10;
-        const height = 10 + (maxLevel - minLevel + 1) * (BH + GAPV) - GAPV + 10;
+        const height = 10 + (maxLevel - minLevel + 1) * (BH + GAPV) - GAPV + 10 + (tagged ? 18 : 0);
         return `<div class="ccw-diagram"><svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${svg}</svg></div>`;
     }
 
     function summary(path) {
         const colours = pathColours(path);
         const cls = (index) => (colours[index] === "lightgreen" ? "hlg" : "hl");
-        let html = `<b class="${cls(path.length - 1)}">${esc(displayName(path[path.length - 1]))}</b> is ` +
+        const end = path.length - 1;
+        let html =
+            `<b class="${cls(end)}">${esc(displayName(path[end]))}</b> is ` +
             `<span class="${cls(0)}">${esc(displayName(path[0]))}'s</span>`;
-        for (let index = 1; index < path.length; index++) {
-            const label = relLabel(path[index], path[index - 1]);
-            html += ` <span class="${cls(index)}">${esc(label)}${index === path.length - 1 ? "" : "'s"}</span>`;
+        let start = 1;
+        while (start <= end) {
+            let stop = start;
+            while (stop < end && colours[stop + 1] === colours[start]) stop++;
+            const labels = [];
+            for (let index = start; index <= stop; index++) labels.push(relLabel(path[index], path[index - 1]));
+            const text = simplifyFamilyRelationships(`(${labels.join("'s ")})`);
+            html += ` <span class="${cls(start)}">${esc(text)}${stop === end ? "" : "'s"}</span>`;
+            start = stop + 1;
         }
         return html + "!";
     }
 
-    function summaryB(path) {
+    function summaryB(path, spouseNames = {}) {
         const relation = familyRelation(path);
         if (!relation) return summary(path);
         const turn = turnIndex(path);
@@ -381,10 +447,17 @@
         const colours = pathColours(path);
         const cls = (index) => (colours[index] === "lightgreen" ? "hlg" : "hl");
         const end = path.length - 1;
-        return `<b class="${cls(end)}">${esc(displayName(path[end]))}</b> is ` +
+        const spouseId = sharedSpouseId(path);
+        const spouseName = spouseId ? spouseNames[spouseId] : "";
+        const ancestors =
+            `<span class="${cls(topIndex)}">${esc(displayName(path[topIndex]))}</span>` +
+            (spouseName ? ` and <span class="${cls(topIndex)}">${esc(spouseName)}</span>` : "");
+        return (
+            `<b class="${cls(end)}">${esc(displayName(path[end]))}</b> is ` +
             `<span class="${cls(0)}">${esc(displayName(path[0]))}</span>'s ` +
             `<span class="${cls(end)}">${esc(relation)}</span> ` +
-            `<span class="hint">(common ancestor: <span class="${cls(topIndex)}">${esc(displayName(path[topIndex]))}</span>)</span>`;
+            `<span class="hint">(common ancestor${spouseName ? "s" : ""}: ${ancestors})</span>`
+        );
     }
 
     function samePath(a, b) {
@@ -420,7 +493,9 @@
             #ccwebs-view .ccw-summary b { color: #555; }
             #ccwebs-view .ccw-summary .hl { background: #ffffe0; }
             #ccwebs-view .ccw-summary .hlg { background: lightgreen; }
+            #ccwebs-view .ccw-toolbar { margin-top: 10px; }
             #ccwebs-view details { margin-top: 6px; }
+            #ccwebs-view .g2g-title { font-size: larger; color: orange; background-color: black; }
         `;
         document.head.appendChild(style);
     }
@@ -433,7 +508,7 @@
 
         meta() {
             return {
-                title: "Connection Checkers",
+                title: "Connection Checkers Web",
                 description:
                     "Visualize the shortest and common-ancestor connection paths between a primary profile and this week's Connection Checkers profiles.",
                 docs: "",
@@ -442,6 +517,7 @@
         }
 
         init(containerSelector, personId, params = {}) {
+            condLog("Initializing the Connection Checkers view...");
             this.runId++;
             addStyles();
             this.container = document.querySelector(containerSelector);
@@ -455,14 +531,18 @@
                         <button type="button" class="btn btn-secondary btn-sm" id="ccw-find-game">Find this week's game</button>
                         <button type="button" class="btn btn-secondary btn-sm" id="ccw-fetch-ids">Get WikiTree IDs from page</button>
                         <span id="ccw-get-status" class="ccw-hint" role="status"></span>
+                        <div id="ccw-game-info" hidden>
+                            <strong class="g2g-title"id="ccw-game-title"></strong>
+                            <a class="btn btn-secondary btn-sm" id="ccw-view-g2g" target="_blank" rel="noopener noreferrer">View G2G post</a>
+                        </div>
                         <details>
                             <summary>Paste game page source if browser access is blocked</summary>
                             <textarea id="ccw-page-source" aria-label="Connection Checkers page source"></textarea>
                             <button type="button" class="btn btn-secondary btn-sm" id="ccw-parse-source">Parse pasted source</button>
                         </details>
-                        <label for="ccw-primary">Primary person's WikiTree ID</label>
-                        <input type="text" id="ccw-primary" placeholder="e.g. Clarke-11007">
-                        <label for="ccw-ids">This week's Connection Checkers people</label>
+                             <!-- <label for="ccw-primary">Primary person's WikiTree ID</label>
+                            <input type="text" id="ccw-primary" placeholder="e.g. Windsor-1"> -->
+                        <label for="ccw-ids">Check out the web of Connections with these people:</label>
                         <textarea id="ccw-ids" placeholder="Paste WikiTree IDs, profile links, or the game page text"></textarea>
                         <div class="ccw-hint">IDs are extracted from pasted text or WikiTree profile links. Up to 12 profiles are used.</div>
                         <button type="button" class="btn btn-primary" id="ccw-show">Show connections</button>
@@ -471,13 +551,15 @@
                     <div id="ccw-out"></div>
                 </section>`;
             const root = this.container.querySelector("#ccwebs-view");
-            root.querySelector("#ccw-primary").value = selectedId;
+            // root.querySelector("#ccw-primary").value = selectedId;
             if (params.cc) root.querySelector("#ccw-ids").value = params.cc.split(",").join("\n");
             root.querySelector("#ccw-show").addEventListener("click", () => this.run());
             root.querySelector("#ccw-find-game").addEventListener("click", () => this.findCurrentGame());
             root.querySelector("#ccw-fetch-ids").addEventListener("click", () => this.fetchGameIds());
             root.querySelector("#ccw-parse-source").addEventListener("click", () => this.parsePastedSource());
             if (params.cc) this.run();
+            this.findCurrentGame();
+            condLog("Connection Checkers view initialized.");
         }
 
         close() {
@@ -497,7 +579,9 @@
                 return;
             }
             root.querySelector("#ccw-ids").value = ids.join("\n");
-            this.setFetchStatus(`Found ${ids.length} profile IDs${ids.length > 12 ? "; only the first 12 will be used" : ""}.`);
+            this.setFetchStatus(
+                `Found ${ids.length} profile IDs${ids.length > 12 ? "; only the first 12 will be used" : ""}.`
+            );
         }
 
         setFetchStatus(message, error = false) {
@@ -508,6 +592,7 @@
         }
 
         async findCurrentGame() {
+            condLog("Looking for this week's game on the WikiTree home page...");
             this.setFetchStatus("Looking for this week's game on the WikiTree home page...");
             try {
                 const response = await fetch(`${WIKITREE}/`, { credentials: "include" });
@@ -519,7 +604,10 @@
                     return /connection checkers/i.test(anchor.textContent) && /\/g2g\//i.test(href);
                 });
                 if (!gameLink) {
-                    this.setFetchStatus("Could not find the Connection Checkers link on the WikiTree home page. Enter the game URL manually.", true);
+                    this.setFetchStatus(
+                        "Could not find the Connection Checkers link on the WikiTree home page. Enter the game URL manually.",
+                        true
+                    );
                     return;
                 }
                 const url = new URL(gameLink.getAttribute("href"), WIKITREE).href;
@@ -529,6 +617,11 @@
                 this.setFetchStatus(
                     `The browser could not read the WikiTree home page (${error.message}). Enter the game URL manually. If needed, open that game page and paste its source below.`,
                     true
+                );
+                console.error(
+                    "Error fetching the WikiTree home page:",
+                    error,
+                    `The browser could not read the WikiTree home page (${error.message}). Enter the game URL manually. If needed, open that game page and paste its source below.`
                 );
             }
         }
@@ -562,7 +655,17 @@
                     return;
                 }
                 root.querySelector("#ccw-ids").value = ids.join("\n");
-                this.setFetchStatus(`Found ${ids.length} profile IDs${ids.length > 12 ? "; only the first 12 will be used" : ""}.`);
+                const pageTitle = new DOMParser()
+                    .parseFromString(html, "text/html")
+                    .querySelector("h1")
+                    ?.textContent.trim();
+                const gameInfo = root.querySelector("#ccw-game-info");
+                root.querySelector("#ccw-game-title").textContent = pageTitle || "";
+                root.querySelector("#ccw-view-g2g").href = parsed.href;
+                gameInfo.hidden = false;
+                this.setFetchStatus(
+                    `Found ${ids.length} profile IDs${ids.length > 12 ? "; only the first 12 will be used" : ""}.`
+                );
             } catch (error) {
                 this.setFetchStatus(
                     `The browser could not read that page (${error.message}). Open the game page, copy its page source into the box above, then choose "Parse pasted source".`,
@@ -585,16 +688,21 @@
         }
 
         async run() {
+            condLog("Running the connection checkers ...");
             const root = this.root;
             if (!root) return;
-            const primary = root.querySelector("#ccw-primary").value.match(ID_RE)?.[0];
+            const primary = document.querySelector("#wt-id-text").value.match(ID_RE)?.[0];
             if (!primary) {
-                root.querySelector("#ccw-progress").innerHTML = '<span class="ccw-error">Enter the primary WikiTree ID (for example Clarke-11007).</span>';
+                document.querySelector("#ccw-progress").innerHTML =
+                    '<span class="ccw-error">Enter the primary WikiTree ID (for example Windsor-1).</span>';
                 return;
             }
-            let ids = parseIds(root.querySelector("#ccw-ids").value).filter((id) => id.toLowerCase() !== primary.toLowerCase());
+            let ids = parseIds(document.querySelector("#ccw-ids").value).filter(
+                (id) => id.toLowerCase() !== primary.toLowerCase()
+            );
             if (!ids.length) {
-                root.querySelector("#ccw-progress").innerHTML = '<span class="ccw-error">Paste the Connection Checkers profile IDs first.</span>';
+                document.querySelector("#ccw-progress").innerHTML =
+                    '<span class="ccw-error">Paste the Connection Checkers profile IDs first.</span>';
                 return;
             }
             let note = "";
@@ -604,8 +712,8 @@
             }
 
             const runId = ++this.runId;
-            const output = root.querySelector("#ccw-out");
-            const progress = root.querySelector("#ccw-progress");
+            const output = document.querySelector("#ccw-out");
+            const progress = document.querySelector("#ccw-progress");
             output.innerHTML = "";
             const results = new Array(ids.length);
             const common = new Array(ids.length);
@@ -627,7 +735,8 @@
                         (relation === 2 ? common : results)[index] = { status: `Request failed: ${error.message}` };
                     }
                     completed++;
-                    if (runId === this.runId && this.root) progress.textContent = `Loading ${completed} of ${jobs.length}${note}`;
+                    if (runId === this.runId && this.root)
+                        progress.textContent = `Loading ${completed} of ${jobs.length}${note}`;
                 }
             };
             await Promise.all([worker(), worker(), worker()]);
@@ -655,7 +764,8 @@
                         spouseWarning = `WikiTree did not return spouse profile details${peopleResult?.status ? `: ${peopleResult.status}` : "."}`;
                     } else {
                         Object.values(peopleResult.people).forEach((person) => {
-                            const name = `${person.FirstName || person.RealName || ""} ${person.LastNameAtBirth || ""}`.trim();
+                            const name =
+                                `${person.FirstName || person.RealName || ""} ${person.LastNameAtBirth || ""}`.trim();
                             if (name) spouseNames[person.Id] = name;
                         });
                     }
@@ -674,7 +784,8 @@
         }
 
         renderResults(output, ids, results, common, spouseNames) {
-            let tabs = '<div id="ccw-tabs">';
+            let tabs =
+                '<div class="ccw-toolbar"><button type="button" class="btn btn-secondary btn-sm" data-format="png">PNG</button> <button type="button" class="btn btn-secondary btn-sm" data-format="svg">SVG</button> <button type="button" class="btn btn-secondary btn-sm" data-format="pdf">PDF</button></div><div id="ccw-tabs">';
             let body = "";
             let index = 0;
             const addTab = (label, id, result, heading) => {
@@ -687,7 +798,7 @@
                 }</span></h2>${
                     valid
                         ? renderMerged([{ n: label, path }], false, spouseNames) +
-                          `<div class="ccw-summary">${heading ? summaryB(path) : summary(path)}</div>`
+                          `<div class="ccw-summary">${heading ? summaryB(path, spouseNames) : summary(path)}</div>`
                         : `<div class="ccw-error">${esc(result.status || "No connection path found (the profile may be private or unconnected).")}</div>`
                 }</div>`;
                 index++;
@@ -700,7 +811,18 @@
                 const commonPath = commonResult.path || [];
                 if (!commonResult.status && commonPath.length > 1 && !samePath(commonPath, shortest.path || [])) {
                     addTab(`${profileIndex + 1}B`, id, commonResult, " (through a common ancestor)");
-                    bItems.push({ n: `${profileIndex + 1}B`, path: commonPath });
+                    bItems.push({
+                        n: `${profileIndex + 1}B`,
+                        path: commonPath,
+                        relation:
+                            familyRelation(commonPath) ||
+                            simplifyFamilyRelationships(
+                                `(${commonPath
+                                    .slice(1)
+                                    .map((person, i) => relLabel(person, commonPath[i]))
+                                    .join("'s ")})`
+                            ),
+                    });
                 }
             });
             if (bItems.length) {
@@ -714,17 +836,110 @@
             }
             output.innerHTML = tabs + "</div>" + body;
             const show = (tabIndex) => {
-                output.querySelectorAll("#ccw-tabs button").forEach((button) =>
-                    button.classList.toggle("active", Number(button.dataset.index) === tabIndex)
+                output
+                    .querySelectorAll("#ccw-tabs button")
+                    .forEach((button) => button.classList.toggle("active", Number(button.dataset.index) === tabIndex));
+                output
+                    .querySelectorAll(".ccw-result")
+                    .forEach((result, resultIndex) => result.classList.toggle("active", resultIndex === tabIndex));
+            };
+            output
+                .querySelectorAll("#ccw-tabs button")
+                .forEach((button) => button.addEventListener("click", () => show(Number(button.dataset.index))));
+            show(0);
+            output
+                .querySelectorAll(".ccw-toolbar button")
+                .forEach((button) =>
+                    button.addEventListener("click", () => this.saveDiagramImage(button.dataset.format))
                 );
-                output.querySelectorAll(".ccw-result").forEach((result, resultIndex) =>
-                    result.classList.toggle("active", resultIndex === tabIndex)
+        }
+
+        async saveDiagramImage(format = "png") {
+            const svg = this.root?.querySelector(".ccw-result.active svg");
+            if (!svg) return;
+            const tab = this.root.querySelector("#ccw-tabs button.active")?.textContent || "diagram";
+            const clone = svg.cloneNode(true);
+            clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+            clone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+            const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
+            style.textContent = `
+                text { fill: #000; font-family: Arial, Helvetica, sans-serif; }
+                a { text-decoration: underline; }
+                .nm { font-size: 17px; font-family: 'Arial Narrow', Arial, sans-serif; }
+                .sp { font-size: 14px; }
+                .dt { font-size: 16px; }
+                .rel { font-size: 15px; font-weight: bold; fill: orange; paint-order: stroke; stroke: #fff; stroke-width: 4px; }`;
+            clone.insertBefore(style, clone.firstChild);
+            const toDataUrl = (blob) =>
+                new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            // Embed images so the canvas isn't tainted; drop any that can't be loaded.
+            await Promise.all(
+                [...clone.querySelectorAll("image")].map(async (image) => {
+                    try {
+                        const response = await fetch(image.getAttribute("href"));
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        image.setAttribute("href", await toDataUrl(await response.blob()));
+                    } catch {
+                        image.remove();
+                    }
+                })
+            );
+            const width = Number(svg.getAttribute("width"));
+            const height = Number(svg.getAttribute("height"));
+            const markup = new XMLSerializer().serializeToString(clone);
+            const baseName = `connection-checkers-${tab.replace(/\s+/g, "-")}`;
+            const download = (blob, extension) => {
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `${baseName}.${extension}`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+            };
+            if (format === "svg") {
+                download(new Blob([markup], { type: "image/svg+xml" }), "svg");
+                return;
+            }
+            const scale = 2;
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement("canvas");
+                canvas.width = width * scale;
+                canvas.height = height * scale;
+                const context = canvas.getContext("2d");
+                context.fillStyle = "#fff";
+                context.fillRect(0, 0, canvas.width, canvas.height);
+                context.drawImage(img, 0, 0, canvas.width, canvas.height);
+                if (format === "png") {
+                    canvas.toBlob((blob) => blob && download(blob, "png"), "image/png");
+                    return;
+                }
+                canvas.toBlob(
+                    async (blob) => {
+                        if (!blob) return;
+                        download(
+                            buildPdf(
+                                new Uint8Array(await blob.arrayBuffer()),
+                                canvas.width,
+                                canvas.height,
+                                width,
+                                height
+                            ),
+                            "pdf"
+                        );
+                    },
+                    "image/jpeg",
+                    0.95
                 );
             };
-            output.querySelectorAll("#ccw-tabs button").forEach((button) =>
-                button.addEventListener("click", () => show(Number(button.dataset.index)))
-            );
-            show(0);
+            img.onerror = () => this.setFetchStatus("Could not create the image.", true);
+            img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(markup);
         }
     };
 
@@ -750,5 +965,326 @@
         });
         if (!ids.length) parseIds(html).forEach(add);
         return ids;
+    }
+
+    // Minimal single-page PDF wrapping a JPEG; the page is sized to the diagram (in points).
+    function buildPdf(jpeg, pixelWidth, pixelHeight, pageWidth, pageHeight) {
+        const encoder = new TextEncoder();
+        const chunks = [];
+        const offsets = [];
+        let length = 0;
+        const add = (data) => {
+            const bytes = typeof data === "string" ? encoder.encode(data) : data;
+            chunks.push(bytes);
+            length += bytes.length;
+        };
+        const object = (number, body) => {
+            offsets[number] = length;
+            add(`${number} 0 obj\n${body}\nendobj\n`);
+        };
+        const content = `q ${pageWidth} 0 0 ${pageHeight} 0 0 cm /Im0 Do Q`;
+        add("%PDF-1.4\n");
+        object(1, "<< /Type /Catalog /Pages 2 0 R >>");
+        object(2, "<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
+        object(
+            3,
+            `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>`
+        );
+        offsets[4] = length;
+        add(
+            `4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${pixelWidth} /Height ${pixelHeight} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`
+        );
+        add(jpeg);
+        add("\nendstream\nendobj\n");
+        object(5, `<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+        const xref = length;
+        add(`xref\n0 6\n0000000000 65535 f \n`);
+        for (let i = 1; i <= 5; i++) add(`${String(offsets[i]).padStart(10, "0")} 00000 n \n`);
+        add(`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+        return new Blob(chunks, { type: "application/pdf" });
+    }
+
+    function condLog() {}
+
+    function simplifyFamilyRelationships(chain) {
+        const simplified = simplifyChain(chain);
+        if (!chain || simplified !== chain || !/^\([^()]*\)$/.test(chain)) return simplified;
+        // Nothing was simplified: drop the first component and try to simplify the rest.
+        const parts = chain.slice(1, -1).split("'s ");
+        if (parts.length < 2) return simplified;
+        return `${parts[0]}'s ${simplifyFamilyRelationships(`(${parts.slice(1).join("'s ")})`)}`;
+    }
+
+    function simplifyChain(chain) {
+        if (!chain) return "";
+        let thisHalfPrefix = "";
+        const isHalfRelationship = false;
+        // console.log("Starting to simplify family relationships for chain:", chain);
+        // Remove redundant "'s " at the end of the chain
+        chain = chain.replace(/'s $/, "");
+
+        // Remove consecutive "'s " occurrences
+        chain = chain.replace(/'s 's /g, "'s ");
+
+        // get all (strings) of relationships
+        var relationships = chain.match(/\(.*?\)/g);
+        let halfPrefix = "½ ";
+        // console.log("Extracted relationships from chain:", relationships);
+        // Go through them one by one, and convert them to simpler forms if possible
+        for (let index = 0; relationships && index < relationships.length; index++) {
+            const element = relationships[index];
+            condLog(element);
+
+            // CASE 1: No simplification possible, keep as is
+            if (element.indexOf(" ") == -1) {
+                let revisedElement = element.replace("(", "").replace(")", "");
+                chain = chain.replace(element, revisedElement);
+            } else {
+                // SOME simplification possible, handle accordingly
+                // FIRST .. remove brackets
+                let revisedElement = element.replace("(", "").replace(")", "");
+
+                // SECOND .. make the relation's pieces more generic
+                revisedElement = revisedElement.replace(/bio-mother's/g, "parent's");
+                revisedElement = revisedElement.replace(/bio-father's/g, "parent's");
+                revisedElement = revisedElement.replace(/mother's/g, "parent's");
+                revisedElement = revisedElement.replace(/father's/g, "parent's");
+                revisedElement = revisedElement.replace(/brother's/g, "sibling's");
+                revisedElement = revisedElement.replace(/sister's/g, "sibling's");
+                revisedElement = revisedElement.replace(/son's/g, "child's");
+                revisedElement = revisedElement.replace(/daughter's/g, "child's");
+                revisedElement = revisedElement.replace(/husband's/g, "spouse's");
+                revisedElement = revisedElement.replace(/wife's/g, "spouse's");
+                let numParents = (revisedElement.match(/parent's/g) || []).length;
+                let numSiblings = (revisedElement.match(/sibling's/g) || []).length;
+                let numChildren = (revisedElement.match(/child's/g) || []).length;
+                let numSpouses = (revisedElement.match(/spouse's/g) || []).length;
+                let numSpaces = (revisedElement.match(/ /g) || []).length;
+                condLog({ numParents });
+                condLog({ numChildren });
+                condLog({ numSiblings });
+                condLog({ numSpouses });
+                condLog({ numSpaces });
+
+                condLog({ revisedElement });
+                condLog("sibling:", revisedElement.indexOf("sibling"));
+                // THIRD ... based on the counts of generic relationships, further simplify if possible
+
+                if (revisedElement.indexOf(halfPrefix) !== -1 && numSpaces == 1) {
+                    chain = chain.replace(element, revisedElement);
+                } else if (numParents > 0 && numSiblings + numChildren + numSpouses == 0) {
+                    // a DIRECT ANCESTOR (or Aunt/Uncle)
+                    revisedElement = revisedElement.replace(/parent's/g, "").trim();
+                    if (revisedElement == "mother" || revisedElement == "father") {
+                        if (numParents == 1) {
+                            revisedElement = "grand" + revisedElement;
+                        } else if (numParents == 2) {
+                            revisedElement = "great grand" + revisedElement;
+                        } else {
+                            revisedElement = numParents - 1 + "x great grand" + revisedElement;
+                        }
+                        chain = chain.replace(element, revisedElement);
+                    } else if (
+                        revisedElement == "brother" ||
+                        revisedElement == "sister" ||
+                        revisedElement == halfPrefix + "brother" ||
+                        revisedElement == halfPrefix + "sister"
+                    ) {
+                        thisHalfPrefix = "";
+                        if (revisedElement.includes(halfPrefix)) {
+                            thisHalfPrefix = halfPrefix;
+                        }
+                        if (revisedElement.includes("brother")) {
+                            revisedElement = "uncle";
+                        } else if (revisedElement.includes("sister")) {
+                            revisedElement = "aunt";
+                        }
+
+                        if (numParents == 1) {
+                            // If the uncle/aunt, no additional prefix is needed.
+                        } else if (numParents == 2) {
+                            revisedElement = "grand" + revisedElement;
+                        } else if (numParents == 3) {
+                            revisedElement = "great grand" + revisedElement;
+                        } else {
+                            revisedElement = numParents - 2 + "x great grand" + revisedElement;
+                        }
+                        revisedElement = thisHalfPrefix + revisedElement;
+                        chain = chain.replace(element, revisedElement);
+                    }
+                } else if (numChildren > 0 && numParents + numSiblings + numSpouses == 0) {
+                    // a DIRECT DESCENDANT
+                    revisedElement = revisedElement.replace(/child's/g, "").trim();
+                    if (revisedElement == "son" || revisedElement == "daughter") {
+                        if (numChildren == 1) {
+                            revisedElement = "grand" + revisedElement;
+                        } else if (numChildren == 2) {
+                            revisedElement = "great grand" + revisedElement;
+                        } else {
+                            revisedElement = numChildren - 1 + "x great grand" + revisedElement;
+                        }
+                        chain = chain.replace(element, revisedElement);
+                    }
+                } else if (
+                    numChildren > 0 &&
+                    numSiblings == 1 &&
+                    numParents + numSpouses == 0 &&
+                    (revisedElement.indexOf("sibling") == 0 || revisedElement.indexOf(halfPrefix + "sibling") == 0)
+                ) {
+                    thisHalfPrefix = "";
+                    if (revisedElement.includes(halfPrefix + "sibling")) {
+                        thisHalfPrefix = halfPrefix;
+                    }
+
+                    // a NIECE OR NEPHEW
+                    revisedElement = revisedElement
+                        .replace(/child's/g, "")
+                        .replace(/sibling's/, "")
+                        .replace(halfPrefix, "")
+                        .trim();
+                    if (revisedElement == "son" || revisedElement == "daughter") {
+                        if (revisedElement == "son") {
+                            revisedElement = "nephew";
+                        } else if (revisedElement == "daughter") {
+                            revisedElement = "niece";
+                        }
+                        if (numChildren == 1) {
+                            revisedElement = "grand" + revisedElement;
+                        } else if (numChildren == 2) {
+                            revisedElement = "great grand" + revisedElement;
+                        } else {
+                            revisedElement = numChildren - 1 + "x great grand" + revisedElement;
+                        }
+                        revisedElement = thisHalfPrefix + revisedElement;
+                        chain = chain.replace(element, revisedElement);
+                    }
+                } else if (revisedElement == "parent's brother") {
+                    revisedElement = "uncle";
+                    chain = chain.replace(element, revisedElement);
+                } else if (revisedElement == "parent's sister") {
+                    revisedElement = "aunt";
+                    chain = chain.replace(element, revisedElement);
+                } else if (revisedElement == "parent's ½ brother") {
+                    revisedElement = "½ uncle";
+                    chain = chain.replace(element, revisedElement);
+                } else if (revisedElement == "parent's ½ sister") {
+                    revisedElement = "½ aunt";
+                    chain = chain.replace(element, revisedElement);
+                } else if (revisedElement == "sibling's son") {
+                    revisedElement = "nephew";
+                    chain = chain.replace(element, revisedElement);
+                } else if (revisedElement == "sibling's daughter") {
+                    revisedElement = "niece";
+                    chain = chain.replace(element, revisedElement);
+                } else if (revisedElement == "½ sibling's son") {
+                    revisedElement = "½ nephew";
+                    chain = chain.replace(element, revisedElement);
+                } else if (revisedElement == "½ sibling's daughter") {
+                    revisedElement = "½ niece";
+                    chain = chain.replace(element, revisedElement);
+                } else {
+                    // handle other cases if necessary - mostly Cousins
+                    // simplify chain into clusters
+                    let clusterPattern = element.replace(/parent/g, "P");
+                    clusterPattern = clusterPattern.replace(/father/g, "P");
+                    clusterPattern = clusterPattern.replace(/mother/g, "P");
+                    clusterPattern = clusterPattern.replace(/sibling/g, "S");
+                    clusterPattern = clusterPattern.replace(/brother/g, "S");
+                    clusterPattern = clusterPattern.replace(/sister/g, "S");
+                    clusterPattern = clusterPattern.replace(/child/g, "C");
+                    clusterPattern = clusterPattern.replace(/daughter/g, "C");
+                    clusterPattern = clusterPattern.replace(/son/g, "C");
+                    clusterPattern = clusterPattern.replace(/ /g, "");
+                    clusterPattern = clusterPattern.replace(/\(/g, "");
+                    clusterPattern = clusterPattern.replace(/\)/g, "");
+                    clusterPattern = clusterPattern.replace(/'s/g, "");
+                    condLog("Cluster Pattern: ", clusterPattern);
+
+                    let prevLength = clusterPattern.length;
+                    let corePattern = clusterPattern.replace(/PP/g, "P").replace(/SS/g, "S").replace(/CC/g, "C");
+                    let currLength = corePattern.length;
+                    while (currLength < prevLength) {
+                        prevLength = currLength;
+                        corePattern = corePattern.replace(/PP/g, "P").replace(/SS/g, "S").replace(/CC/g, "C");
+                        currLength = corePattern.length;
+                    }
+                    condLog("Core Pattern: ", corePattern);
+                    if (corePattern == "bio-PSC") {
+                        corePattern = "PSC";
+                    } else if (corePattern == "bio-PC") {
+                        corePattern = "PC";
+                    }
+                    let numParents = (clusterPattern.match(/P/g) || []).length;
+                    let numSiblings = (clusterPattern.match(/S/g) || []).length;
+                    let numChildren = (clusterPattern.match(/C/g) || []).length;
+
+                    if (corePattern === "PSC" || corePattern === "P½SC") {
+                        condLog("Core Pattern #s: ", numParents, numSiblings, numChildren);
+                        // parent(s) + sibling + child(ren) --> some form of cousin (or half cousin if the sibling is a 1/2 sibling)
+
+                        thisHalfPrefix = "";
+                        if (corePattern.includes("½")) {
+                            thisHalfPrefix = halfPrefix;
+                        }
+
+                        if (numSiblings == 1) {
+                            revisedElement = " cousin";
+                            condLog("Identified as cousin based on core pattern.");
+                            let cousinType = Math.min(numParents, numChildren);
+                            condLog("Cousin Type: ", cousinType);
+                            let numRemoved = Math.max(numParents, numChildren) - cousinType;
+                            revisedElement =
+                                (cousinType == 1
+                                    ? "1st"
+                                    : cousinType == 2
+                                      ? "2nd"
+                                      : cousinType == 3
+                                        ? "3rd"
+                                        : cousinType + "th") + " cousin";
+                            if (numRemoved > 0) {
+                                revisedElement += " " + (numRemoved == 1 ? "once" : numRemoved + "x") + " removed";
+                            }
+                            revisedElement = thisHalfPrefix + revisedElement;
+                            chain = chain.replace(element, revisedElement);
+                        }
+                    } else if (corePattern === "PC" && numParents > 1 && numChildren > 1) {
+                        // parent child relationship, like you get from getConnections when restricting to descending from common ancestor
+                        thisHalfPrefix = "";
+                        if (isHalfRelationship == true) {
+                            thisHalfPrefix = "½ ";
+                        }
+                        condLog("Core Pattern #s: ", numParents, numSiblings, numChildren);
+                        let cousinType = Math.min(numParents, numChildren);
+                        condLog("Cousin Type: ", cousinType);
+                        let numRemoved = Math.max(numParents, numChildren) - cousinType;
+                        revisedElement =
+                            (cousinType == 2
+                                ? "1st"
+                                : cousinType == 3
+                                  ? "2nd"
+                                  : cousinType == 4
+                                    ? "3rd"
+                                    : cousinType - 1 + "th") + " cousin";
+                        if (numRemoved > 0) {
+                            revisedElement += " " + (numRemoved == 1 ? "once" : numRemoved + "x") + " removed";
+                        }
+                        revisedElement = thisHalfPrefix + revisedElement;
+                        chain = chain.replace(element, revisedElement);
+                    } else if (corePattern === "S") {
+                        // revisedElement = "sibling";
+                    } else if (corePattern === "C") {
+                        // revisedElement = "child";
+                    }
+                }
+            }
+        }
+
+        // chain = chain.replace(/mother's brother/g, "uncle");
+        // chain = chain.replace(/father's brother/g, "uncle");
+        // chain = chain.replace(/mother's sister/g, "aunt");
+        // chain = chain.replace(/father's sister/g, "aunt");
+
+        // console.log("Final simplified chain:", chain);
+        return chain;
     }
 })();
