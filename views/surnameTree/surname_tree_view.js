@@ -1,7 +1,7 @@
 /*
  * Surname Tree
  *
- * A word cloud in the shape of a tree, made from the names of a person's ancestors or CC7: surnames, first names,
+ * A word cloud in the shape of a tree, made from the names of a person's ancestors or CC7, or of everyone in a category or a WikiTree+ search: surnames, first names,
  * middle names or both given names. Biological relatives, adoptive ones, or both. Hover a name to see how many profiles
  * have it, click it to list them, and click a person in the list for a card.
  *
@@ -11,7 +11,7 @@
 import { mountApp } from "./surname_tree_app.js";
 
 /** The options in the address after the view (#name=...&view=surnametree&names=first&scope=cc7&degrees=5). */
-const URL_PARAMS = ["names", "scope", "generations", "degrees", "biological", "adoptive", "fill", "look"];
+const URL_PARAMS = ["names", "scope", "generations", "degrees", "biological", "adoptive", "fill", "look", "query"];
 
 /** Where the built-in pictures are kept: the folder this script is in. */
 const IMAGES_URL = new URL("./", import.meta.url).href;
@@ -30,8 +30,8 @@ window.SurnameTreeView = class SurnameTreeView extends View {
             title: "Surname Tree",
             description:
                 "A word cloud in the shape of a tree, made from the surnames (or first or middle names) of this " +
-                "person's ancestors or CC7, with biological relatives, adoptive ones or both. Hover a name to see how " +
-                "many profiles have it, click it to list them.",
+                "person's ancestors or CC7, with biological relatives, adoptive ones or both, or of everyone in a " +
+                "category or a WikiTree+ search. Hover a name to see how many profiles have it, click it to list them.",
             docs: "https://github.com/wikitree/wikitree-dynamic-tree/blob/main/views/surnameTree/README.md",
             params: URL_PARAMS,
         };
@@ -46,6 +46,7 @@ window.SurnameTreeView = class SurnameTreeView extends View {
             names: params.names,
             look: params.look,
             scope: params.scope,
+            query: params.query,
             generations: parseInt(params.generations, 10),
             degrees: parseInt(params.degrees, 10),
             biological: asFlag(params.biological),

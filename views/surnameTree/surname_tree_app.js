@@ -22,6 +22,7 @@ import {
     DEFAULT_BANNER_WORD,
     buildBannerShape,
     frameOf,
+    groupQuery,
     unseenNote,
     unseenRows,
     seededRandom,
@@ -83,6 +84,7 @@ export function mountApp(container, key, options) {
         biological: options.biological !== false,
         adoptive: options.adoptive !== false,
         fillGaps: options.fillGaps === true, // repeats of the rarer names are for the member to ask for
+        query: String(options.query || "").trim(), // what was typed for a category or a search
         seed: hashString(String(key)),
         shape: buildTree(hashString(String(key))), // what the words fill: an oak, or the shape cut out of a picture
         look: lookById(options.look).id,
@@ -152,6 +154,10 @@ export function mountApp(container, key, options) {
           </label>
           <input type="file" id="suTreeFile" accept="image/*" class="sutree-file" tabindex="-1" aria-hidden="true">
           <label>Reach <select id="suTreeScope"></select></label>
+          <span id="suTreeQueryBox" class="sutree-querybox" hidden>
+            <input type="text" id="suTreeQuery" size="38" autocomplete="off" spellcheck="false">
+            <button type="button" id="suTreeGo">Draw</button>
+          </span>
           <span class="sutree-stepper" title="Go further out, or come back in">
             <button type="button" id="suTreeFewer" aria-label="One fewer">&minus;</button>
             <span id="suTreeAmount" aria-live="polite"></span>
@@ -243,6 +249,7 @@ export function mountApp(container, key, options) {
             .prop("selected", scope.id === state.scope)
             .appendTo(find("#suTreeScope"))
     );
+    find("#suTreeQuery").val(state.query);
     find("#suTreeBio").prop("checked", state.biological);
     find("#suTreeAdopt").prop("checked", state.adoptive);
     find("#suTreeFill").prop("checked", state.fillGaps);
@@ -320,6 +327,10 @@ export function mountApp(container, key, options) {
         find("#suTreeAmount").text(`${amount} ${amount === 1 ? scope.unit : scope.units}`);
         find("#suTreeFewer").prop("disabled", amount <= scope.min);
         find("#suTreeMore").prop("disabled", amount >= scope.max);
+        // a category or a search has no generations or degrees, and no biological or adoptive family
+        find(".sutree-stepper, .sutree-show").prop("hidden", !!scope.group);
+        find("#suTreeQueryBox").prop("hidden", !scope.group);
+        find("#suTreeQuery").attr("placeholder", scope.placeholder || "");
     }
     const typesText = () =>
         state.biological && state.adoptive
@@ -329,6 +340,14 @@ export function mountApp(container, key, options) {
               : "adoptive only";
 
     const emptyMessage = () => {
+        if (scopeInfo().group) {
+            const what = scopeInfo().what;
+            return groupQuery(state.scope, state.query)
+                ? `Nobody was found in that ${what}. Check how it is written${
+                      what === "category" ? " (the name as on its WikiTree page)" : ", as WikiTree+ would take it"
+                  }; private profiles are not counted.`
+                : `Type the ${what === "category" ? "name of a category" : "WikiTree+ search"} above and press Draw.`;
+        }
         if (!state.biological) {
             return "No adoptive connections were found for this person in this reach. Tick Biological as well to see the whole family.";
         }
@@ -421,11 +440,16 @@ export function mountApp(container, key, options) {
                 state.people,
                 "person",
                 "people"
-            )} ` + `(${scope.name}, ${state.amount[scope.id]} ${scope.units}, ${typesText()}).`;
+            )} ` +
+            (scope.group
+                ? `(${scope.name}: ${state.query}).`
+                : `(${scope.name}, ${state.amount[scope.id]} ${scope.units}, ${typesText()}).`);
         // the names that found no room are told: the first few in the note, and more when the pointer rests on it
         const left = state.words.filter((w) => !wordGroups.has(w.text)).map((w) => w.text);
         const unseenText = unseenNote(left, kind.noun, kind.nouns, UNSEEN_LISTED);
-        const cut = state.raw.truncated ? " Only the first 60,000 people were read." : "";
+        const cut = state.raw.truncated
+            ? ` Only the first ${(state.raw.limit || 60000).toLocaleString()} people were read.`
+            : "";
         say(
             `${state.caption}${unseenText}${cut}${state.shapeNote} Hover a ${kind.noun} to see how many profiles it has, and click it to list them.`
         );
@@ -446,9 +470,16 @@ export function mountApp(container, key, options) {
     async function load() {
         const request = ++state.request;
         const { scope } = state;
-        const amount = state.amount[scope];
+        const group = scopeInfo().group;
+        const query = group ? groupQuery(scope, state.query) : "";
+        const amount = group ? query : state.amount[scope];
         const cacheKey = `${scope}:${amount}`;
         syncControls();
+        if (group && !query) {
+            // nothing to look for yet
+            state.raw = { entries: [], truncated: false };
+            return refresh();
+        }
         if (!state.loaded[cacheKey]) {
             say("Counting names...");
             $app.find(actionButtons).prop("disabled", true);
@@ -607,6 +638,17 @@ export function mountApp(container, key, options) {
     find("#suTreeScope").on("change", (e) => {
         state.scope = e.target.value;
         load();
+    });
+    // a category or a search is drawn when the member presses Draw (or Enter), not at every key
+    const draw = () => {
+        state.query = String(find("#suTreeQuery").val()).trim();
+        if (state.query) state.seed = hashString(state.query);
+        closeList();
+        load();
+    };
+    find("#suTreeGo").on("click", draw);
+    find("#suTreeQuery").on("keydown", (e) => {
+        if (e.key === "Enter") draw();
     });
     const step = (by) => {
         const scope = scopeInfo();

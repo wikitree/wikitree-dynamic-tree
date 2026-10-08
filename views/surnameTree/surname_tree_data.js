@@ -110,7 +110,35 @@ export async function fetchNearby(key, degrees, onProgress = () => {}) {
     return { entries: entriesFromReach(reach, byId), truncated, rootId: idOf(root) };
 }
 
-/** Fetch the people for a scope ("ancestors" or "cc7") and an amount (generations or degrees). */
+/** WikiTree+ answers a search with the numbers of the profiles found; this is the most that are read for a category or search. */
+export const MAX_GROUP_PROFILES = 5000;
+const WT_PLUS_SEARCH = "https://plus.wikitree.com/function/WTWebProfileSearch/Profiles.json";
+
+/**
+ * Everyone a WikiTree+ query finds (a category, or a search), then each one's profile. WikiTree+ is asked for the profiles'
+ * numbers and WikiTree for the people, so what is shown is as current as the API. None of them is "biological" or "adoptive",
+ * so each counts as both and the tick boxes make no difference. Returns { entries, truncated, found, limit }, where `truncated`
+ * is true when the query found more than `limit` profiles.
+ */
+export async function fetchGroup(query, onProgress = () => {}) {
+    const url = `${WT_PLUS_SEARCH}?Query=${encodeURIComponent(query)}&MaxProfiles=${MAX_GROUP_PROFILES}&PageSize=-1&Format=JSON`;
+    const response = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error(`WikiTree+ answered ${response.status}`);
+    const answer = ((await response.json()) || {}).response || {};
+    const ids = (answer.profiles || []).slice(0, MAX_GROUP_PROFILES);
+    const found = Number(answer.found) || ids.length;
+    const byId = new Map();
+    for (let i = 0; i < ids.length; i += KEYS_PER_REQUEST) {
+        const people = await peopleByKeys(ids.slice(i, i + KEYS_PER_REQUEST), PERSON_FIELDS);
+        people.forEach((person) => idOf(person) && byId.set(idOf(person), person));
+        onProgress(byId.size);
+    }
+    const entries = [...byId.values()].map((person) => ({ person, bio: true, adopt: true }));
+    return { entries, truncated: found > ids.length, found, limit: MAX_GROUP_PROFILES };
+}
+
+/** Fetch the people for a scope ("ancestors", "cc7", "category" or "search") and an amount (generations or degrees, or the query). */
 export function fetchScope(scope, key, amount, onProgress) {
+    if (scope === "category" || scope === "search") return fetchGroup(amount, onProgress);
     return scope === "cc7" ? fetchNearby(key, amount, onProgress) : fetchAncestors(key, amount, onProgress);
 }

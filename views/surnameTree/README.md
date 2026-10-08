@@ -19,6 +19,14 @@ left out.
 10 degrees, where parents, children, siblings and spouses each count as one degree). The **−** and **+** buttons add or
 take away generations or degrees.
 
+**A category** or **A WikiTree+ search**: instead of a person's family, the tree is made from everyone in a WikiTree category
+(type its name, such as `Mayflower Passengers`, or paste the category's address) or everyone a
+[WikiTree+](https://plus.wikitree.com/) search finds (type the search, such as `Surname=Smith Location=Ohio Born=1850..1900`,
+or paste the address of a WikiTree+ search page). Press **Draw** (or Enter). WikiTree+ gives the profiles' numbers and WikiTree
+the people, so private profiles are left out; at most 5,000 are read, and the note under the tree says when there were more.
+Biological and adoptive family do not apply, so those boxes go away. The profile in the Tree Apps box is not used for these,
+but is still needed to open the app.
+
 **Show**: **Biological** and **Adoptive**, together or one at a time. WikiTree marks a parent as not the birth parent
 (adoptive, step or foster) with `DataStatus.Father` or `DataStatus.Mother` of 5, and names the birth parent in
 `BioFather` or `BioMother`. A person counts as biological family if they can be reached by birth links alone, and as
@@ -76,13 +84,14 @@ The options can be given after the view, so a link opens the tree as set:
 | Option        | Values                                                   | Default     |
 | ------------- | -------------------------------------------------------- | ----------- |
 | `names`       | `surname`, `first`, `middle`, `given`                    | `surname`   |
-| `scope`       | `ancestors`, `cc7`                                       | `ancestors` |
+| `scope`       | `ancestors`, `cc7`, `category`, `search`                 | `ancestors` |
 | `generations` | 2 to 12                                                  | 8           |
 | `degrees`     | 1 to 10                                                  | 7           |
 | `biological`  | `0` or `1`                                               | `1`         |
 | `adoptive`    | `0` or `1`                                               | `1`         |
 | `fill`        | `0` or `1` (repeat names in small type to fill the gaps) | `0`         |
 | `look`        | `shaded`, `flat`, `outlined`                             | `shaded`    |
+| `query`       | the category or search, for `scope=category` or `search` |             |
 
 For example: `#name=Example-42&view=surnametree&names=first&scope=cc7&degrees=5&adoptive=0`
 
@@ -93,7 +102,7 @@ For example: `#name=Example-42&view=surnametree&names=first&scope=cc7&degrees=5&
 | `surname_tree_view.js`   | The view the Tree Apps page uses: `meta()`, `init()`, `close()`, and the options in the address       |
 | `surname_tree_app.js`    | The app: its controls, hover, list, card and saving                                                   |
 | `surname_tree_core.js`   | Names, parent links, who is biological or adoptive, dates, the tree's shape, the word layout, colours |
-| `surname_tree_data.js`   | The API calls (`WikiTreeAPI.getPeople`)                                                               |
+| `surname_tree_data.js`   | The API calls (`WikiTreeAPI.getPeople`) and the WikiTree+ search for a category or search             |
 | `surname_tree_svg.js`    | The SVG drawing, and wheel and drag zoom                                                              |
 | `surname_tree_zoom.js`   | Zoom and pan arithmetic                                                                               |
 | `surname_tree_image.js`  | A picture as the shape: cutting out its silhouette, and the colour of each word                       |

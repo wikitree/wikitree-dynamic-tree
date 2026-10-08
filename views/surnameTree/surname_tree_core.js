@@ -161,9 +161,70 @@ export const SCOPES = [
         max: 10,
         start: 7,
     },
+    {
+        id: "category",
+        name: "A category",
+        hint: "everyone in a WikiTree category, such as a one-name study, a place or a cemetery",
+        group: true,
+        what: "category",
+        placeholder: "Category name, e.g. Mayflower Passengers",
+        unit: "category",
+        units: "categories",
+        min: 1,
+        max: 1,
+        start: 1,
+    },
+    {
+        id: "search",
+        name: "A WikiTree+ search",
+        hint: "everyone a WikiTree+ search finds, such as Surname=Smith Location=Ohio",
+        group: true,
+        what: "search",
+        placeholder: "WikiTree+ query, e.g. Surname=Smith Born=1850..1900",
+        unit: "search",
+        units: "searches",
+        min: 1,
+        max: 1,
+        start: 1,
+    },
 ];
 
 export const scopeById = (id) => SCOPES.find((s) => s.id === id) || SCOPES[0];
+
+/**
+ * The WikiTree+ query for a category as a member would type or paste it: "Mayflower Passengers", "Category:Mayflower_Passengers",
+ * or "Cemeteries, Cheshire". WikiTree+ wants underscores for spaces, and two underscores for the ", " in a category's name.
+ * Returns "" when nothing usable was given.
+ */
+export function categoryQuery(text) {
+    let name = String(text ?? "")
+        .trim()
+        .replace(/^https?:\/\/[^/]*wikitree\.com\/wiki\//i, "")
+        .replace(/^Category:/i, "")
+        .replace(/[\u0022\u201c\u201d]/g, "")
+        .trim();
+    name = name.replace(/,\s+/g, "__").replace(/\s+/g, "_");
+    return name ? `CategoryFull=${name}` : "";
+}
+
+/**
+ * The WikiTree+ query for a search as a member would type or paste it: the query itself (`Surname=Smith Born=1850`), or the
+ * address of a WikiTree+ search page, whose `Query=` part is taken. Returns "" when nothing usable was given.
+ */
+export function searchQuery(text) {
+    const given = String(text ?? "").trim();
+    if (/^https?:\/\//i.test(given)) {
+        try {
+            return (new URL(given).searchParams.get("Query") || "").trim();
+        } catch (e) {
+            return "";
+        }
+    }
+    return given;
+}
+
+/** The WikiTree+ query for what the member typed in a group scope (a category or a search), or "". */
+export const groupQuery = (scopeId, text) => (scopeId === "category" ? categoryQuery(text) : searchQuery(text));
 
 /** WikiTree's `DataStatus.Father` / `DataStatus.Mother` value for a parent who is not the birth parent. */
 const NON_BIOLOGICAL = 5;
