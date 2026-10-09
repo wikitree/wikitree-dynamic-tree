@@ -55,6 +55,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "fandoku": new FandokuView(),
         "fractal": new FractalView(),
         "ahnentafel": new AhnentafelView(),
+        "genealogyReport": new GenealogyReportView(),
         "surnames": new SurnamesView(),
         "webs": new WebsView(),
         "familygroup": new FamilyView(),
