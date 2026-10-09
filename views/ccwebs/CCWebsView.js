@@ -553,7 +553,7 @@
                 </section>`;
             const root = this.container.querySelector("#ccwebs-view");
             // root.querySelector("#ccw-primary").value = selectedId;
-            if (params.cc) root.querySelector("#ccw-ids").value = params.cc.split(",").join("\n");
+            if (params.cc) root.querySelector("#ccw-ids").value = this.withoutExcluded(params.cc.split(",")).join("\n");
             root.querySelector("#ccw-show").addEventListener("click", () => this.run());
             root.querySelector("#ccw-find-game").addEventListener("click", () => this.findCurrentGame());
             root.querySelector("#ccw-fetch-ids").addEventListener("click", () => this.fetchGameIds());
@@ -567,10 +567,23 @@
             return this.container?.querySelector("#ccwebs-view");
         }
 
+        // IDs that must not appear in the list: the primary person and the logged-in user.
+        withoutExcluded(ids) {
+            const excluded = new Set(
+                [
+                    document.querySelector("#wt-id-text")?.value.match(ID_RE)?.[0],
+                    window.wtViewRegistry?.session?.lm?.user?.name,
+                ]
+                    .filter(Boolean)
+                    .map((id) => String(id).toLowerCase())
+            );
+            return ids.filter((id) => !excluded.has(id.toLowerCase()));
+        }
+
         parsePastedSource() {
             const root = this.root;
             if (!root) return;
-            const ids = parseIds(root.querySelector("#ccw-page-source").value);
+            const ids = this.withoutExcluded(parseIds(root.querySelector("#ccw-page-source").value));
             if (!ids.length) {
                 this.setFetchStatus("No WikiTree profile IDs were found in the pasted source.", true);
                 return;
@@ -646,7 +659,7 @@
                 const response = await fetch(parsed.href, { credentials: "include" });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const html = await response.text();
-                const ids = parseIdsFromHtml(html);
+                const ids = this.withoutExcluded(parseIdsFromHtml(html));
                 if (!ids.length) {
                     this.setFetchStatus("No WikiTree profile IDs were found on that page.", true);
                     return;
