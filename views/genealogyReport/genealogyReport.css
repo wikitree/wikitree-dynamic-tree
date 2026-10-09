@@ -1,0 +1,428 @@
+/* Genealogy Report view. Everything is scoped under .genealogyReportView so it cannot leak into other views. */
+
+.genealogyReportView {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 0 1rem 3rem;
+}
+
+.genealogyReportView .gr-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.genealogyReportView .gr-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  width: 100%;
+}
+
+.genealogyReportView .gr-estimate,
+.genealogyReportView .gr-status {
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.genealogyReportView .gr-report {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: #222;
+  overflow-wrap: anywhere; /* long URLs in citations must wrap, not clip */
+}
+
+.genealogyReportView .gr-title {
+  margin: 1.5rem 0;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #222;
+}
+
+.genealogyReportView .gr-report h1 {
+  font-size: 2rem;
+  margin: 0 0 0.25rem;
+}
+.genealogyReportView .gr-report h2 {
+  font-size: 1.5rem;
+  margin: 2rem 0 0.75rem;
+  break-after: avoid;
+}
+.genealogyReportView .gr-report h3 {
+  font-size: 1.2rem;
+  margin: 0 0 0.25rem;
+  break-after: avoid;
+}
+.genealogyReportView .gr-report h4 {
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin: 0.75rem 0 0.25rem;
+  color: #444;
+}
+.genealogyReportView .gr-report h5 {
+  font-size: 1rem;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.genealogyReportView .gr-generation {
+  break-before: page;
+}
+.genealogyReportView .gr-entry {
+  padding: 0.75rem 0 1rem;
+  border-top: 1px solid #ddd;
+  clear: both;
+}
+.genealogyReportView .gr-entry-ref,
+.genealogyReportView .gr-entry-private {
+  color: #555;
+}
+
+.genealogyReportView .gr-wtid {
+  font-size: 0.85rem;
+  font-weight: normal;
+  color: #555;
+}
+.genealogyReportView .gr-relationship {
+  font-size: 0.85rem;
+  font-weight: normal;
+  font-style: italic;
+  color: #555;
+  margin-left: 0.5rem;
+}
+.genealogyReportView .gr-parent-toggle {
+  margin: 0.25rem 0;
+}
+.genealogyReportView .gr-parent-mode {
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0.1rem 0.6rem;
+  border: 1px solid #888;
+  background: #fff;
+  color: #222;
+  cursor: pointer;
+}
+.genealogyReportView .gr-parent-mode:first-child {
+  border-radius: 3px 0 0 3px;
+}
+.genealogyReportView .gr-parent-mode:last-child {
+  border-radius: 0 3px 3px 0;
+  border-left: 0;
+}
+.genealogyReportView .gr-parent-mode[aria-pressed="true"] {
+  background: #1f3a2c;
+  border-color: #1f3a2c;
+  color: #fff;
+  font-weight: bold;
+}
+.genealogyReportView .gr-path {
+  margin: 0.2rem 0 0.4rem;
+  font-size: 0.85rem;
+  color: #555;
+}
+.genealogyReportView .gr-path a {
+  color: inherit;
+}
+.genealogyReportView .gr-vital {
+  margin: 0.1rem 0;
+}
+.genealogyReportView .gr-portrait {
+  float: right;
+  max-width: 7rem;
+  max-height: 9rem;
+  margin: 0 0 0.5rem 1rem;
+  border: 1px solid #ccc;
+}
+
+.genealogyReportView .gr-family dl {
+  display: grid;
+  grid-template-columns: 9rem 1fr;
+  gap: 0.2rem 1rem;
+  margin: 0;
+  font-size: 0.95rem;
+}
+.genealogyReportView .gr-family dt {
+  font-weight: bold;
+}
+.genealogyReportView .gr-family dd {
+  margin: 0;
+}
+
+.genealogyReportView .gr-bio table {
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  max-width: 100%;
+}
+.genealogyReportView .gr-bio th,
+.genealogyReportView .gr-bio td {
+  border: 1px solid #ccc;
+  padding: 0.15rem 0.4rem;
+}
+.genealogyReportView .gr-bio img {
+  max-width: 100%;
+  height: auto;
+}
+.genealogyReportView .gr-ref a {
+  text-decoration: none;
+}
+
+.genealogyReportView .gr-notes {
+  margin: 0.75rem 0 0;
+  padding-left: 1.5rem;
+  font-size: 0.85rem;
+  color: #333;
+}
+
+.genealogyReportView .gr-table {
+  border-collapse: collapse;
+  margin: 0.5rem 0 1rem;
+}
+.genealogyReportView .gr-table th,
+.genealogyReportView .gr-table td {
+  border: 1px solid #ccc;
+  padding: 0.2rem 0.75rem;
+  text-align: left;
+}
+.genealogyReportView .gr-countries {
+  columns: 2;
+}
+.genealogyReportView .gr-index ul {
+  columns: 2;
+  column-gap: 2rem;
+  padding-left: 1rem;
+  font-size: 0.9rem;
+}
+.genealogyReportView .gr-index li {
+  break-inside: avoid;
+}
+.genealogyReportView .gr-research-note {
+  background: #f6f3e8;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid #b59b3d;
+}
+
+/* Sections that mirror Tree Apps (statistics, fan chart, calendar, surnames) */
+.genealogyReportView .gr-form-label {
+  font-weight: bold;
+}
+.genealogyReportView .gr-section {
+  break-before: page;
+}
+.genealogyReportView .gr-section-note {
+  color: #444;
+  font-size: 0.9rem;
+}
+
+.genealogyReportView .gr-stats-table {
+  font-size: 0.8rem;
+}
+.genealogyReportView .gr-stats-table th,
+.genealogyReportView .gr-stats-table td {
+  padding: 0.2rem 0.45rem;
+  vertical-align: top;
+}
+/* The report breaks long addresses anywhere; table cells and headings should only break between words. */
+.genealogyReportView .gr-stats-table th,
+.genealogyReportView .gr-stats-table td,
+.genealogyReportView .gr-calendar-table td {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+.genealogyReportView .gr-table-scroll {
+  overflow-x: auto;
+}
+.genealogyReportView .gr-stats-table {
+  width: 100%;
+}
+.genealogyReportView .gr-stats-table th {
+  background: #f1f1ea;
+}
+.genealogyReportView .gr-stats-overall {
+  margin-top: 0.75rem;
+}
+
+.genealogyReportView .gr-fan-figure {
+  text-align: center;
+}
+.genealogyReportView .gr-fan-svg {
+  width: 100%;
+  max-width: 62rem;
+  height: auto;
+  font-family: Georgia, "Times New Roman", serif;
+}
+.genealogyReportView .gr-fan-wedge {
+  stroke: #fff;
+  stroke-width: 1;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+.genealogyReportView .gr-fan-m {
+  fill: #cfe2f4;
+}
+.genealogyReportView .gr-fan-f {
+  fill: #f5d3e2;
+}
+.genealogyReportView .gr-fan-g1 {
+  fill-opacity: 0.8;
+}
+.genealogyReportView .gr-fan-hidden {
+  fill: #e6e6e6;
+}
+.genealogyReportView .gr-fan-root {
+  fill: #efe6c2;
+}
+.genealogyReportView .gr-fan-wedge:hover {
+  stroke: #1f3a2c;
+  stroke-width: 2;
+}
+.genealogyReportView .gr-fan-svg a,
+.genealogyReportView .gr-fan-svg a:hover {
+  text-decoration: none;
+}
+.genealogyReportView .gr-fan-text {
+  fill: #1c1c1c;
+  pointer-events: none;
+}
+
+.genealogyReportView .gr-surname-row {
+  display: grid;
+  grid-template-columns: 7rem 1fr 1fr;
+  gap: 0.25rem 1rem;
+  align-items: baseline;
+  padding: 0.25rem 0;
+  border-top: 1px solid #e4e4dc;
+}
+.genealogyReportView .gr-surname-root {
+  grid-column: 1 / -1;
+  text-align: center;
+}
+.genealogyReportView .gr-surname-label {
+  font-size: 0.8rem;
+  color: #666;
+}
+.genealogyReportView .gr-surname {
+  display: inline-block;
+  margin: 0 0.6rem 0 0;
+  color: #555;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+.genealogyReportView .gr-surname-new {
+  color: #1f3a2c;
+  font-weight: bold;
+}
+.genealogyReportView .gr-surname-g1 {
+  font-size: 2.1rem;
+}
+.genealogyReportView .gr-surname-g2 {
+  font-size: 1.8rem;
+}
+.genealogyReportView .gr-surname-g3 {
+  font-size: 1.55rem;
+}
+.genealogyReportView .gr-surname-g4 {
+  font-size: 1.35rem;
+}
+.genealogyReportView .gr-surname-g5 {
+  font-size: 1.2rem;
+}
+.genealogyReportView .gr-surname-g6 {
+  font-size: 1.05rem;
+}
+.genealogyReportView .gr-surname-g7 {
+  font-size: 0.95rem;
+}
+.genealogyReportView .gr-surname-list {
+  columns: 3;
+  column-gap: 2rem;
+  font-size: 0.9rem;
+}
+
+.genealogyReportView .gr-calendar-summary {
+  color: #444;
+}
+.genealogyReportView .gr-month {
+  break-inside: avoid;
+}
+.genealogyReportView .gr-calendar-table {
+  width: 100%;
+  font-size: 0.9rem;
+}
+.genealogyReportView .gr-calendar-table {
+  table-layout: fixed;
+}
+.genealogyReportView .gr-calendar-table td:nth-child(2) {
+  width: 6rem;
+}
+.genealogyReportView .gr-calendar-table td:nth-child(4) {
+  width: 38%;
+}
+.genealogyReportView .gr-day {
+  width: 2.5rem;
+  text-align: right;
+  font-weight: bold;
+}
+
+/* The wide sections print on landscape pages. */
+@page wide {
+  size: landscape;
+  margin: 1.5cm;
+}
+.genealogyReportView .gr-wide {
+  page: wide;
+}
+
+@media print {
+  .genealogyReportView .gr-table-scroll {
+    overflow: visible;
+  }
+  .genealogyReportView .gr-parent-toggle {
+    display: none !important;
+  }
+  /* The Tree Apps page has a tinted background; a printed report should be plain white. */
+  html,
+  body,
+  main,
+  #view-container,
+  .genealogyReportView,
+  .genealogyReportView .gr-report {
+    background: #fff !important;
+  }
+
+  /* Hide the Tree Apps chrome and this view's own controls; print only the report. */
+  header,
+  .tabs--wrapper,
+  #info-panel,
+  #view-loader,
+  #wt-status,
+  .genealogyReportView .gr-form,
+  .genealogyReportView .gr-status {
+    display: none !important;
+  }
+
+  .genealogyReportView {
+    max-width: none;
+    padding: 0;
+  }
+  .genealogyReportView .gr-report {
+    font-size: 11pt;
+  }
+  .genealogyReportView .gr-entry {
+    break-inside: auto;
+  }
+  .genealogyReportView .gr-family {
+    break-inside: avoid;
+  }
+  .genealogyReportView a {
+    color: inherit;
+    text-decoration: none;
+  }
+  @page {
+    margin: 2cm;
+  }
+}
