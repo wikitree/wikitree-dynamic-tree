@@ -515,6 +515,7 @@
             #ccwebs-view .ccw-summary .hlg { background: lightgreen; }
             #ccwebs-view .ccw-toolbar { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
             #ccwebs-view .ccw-diagram svg { max-width: none; }
+            #ccwebs-view .ccw-map-frame { width: 100%; height: 75vh; min-height: 500px; border: 2px solid green; border-radius: 12px; background: #fff; }
             #ccwebs-view details { margin-top: 6px; }
             #ccwebs-view .g2g-title { font-size: larger; color: orange; background-color: black; }
         `;
@@ -947,6 +948,14 @@
                 )}</div>`;
                 index++;
             }
+            if (ids.length) {
+                const mapUrl = `https://plus.wikitree.com/findmap.htm?aid=${encodeURIComponent(
+                    ids.map((id) => `WikiTreeID=${id}`).join(" OR ")
+                )}&grouptype=S`;
+                tabs += `<button type="button" data-index="${index}" data-map="1" title="Map of the profiles of the week">Map</button>`;
+                body += `<div class="ccw-result ccw-map"><h2>Map <span class="hint">${ids.length} profiles (excluding the primary person) &middot; <a href="${esc(mapUrl)}" target="_blank" rel="noopener noreferrer">open in a new tab</a></span></h2><iframe class="ccw-map-frame" title="WikiTree Plus map" data-src="${esc(mapUrl)}"></iframe></div>`;
+                index++;
+            }
             output.innerHTML = tabs + "</div>" + body;
             const show = (tabIndex) => {
                 output
@@ -955,6 +964,8 @@
                 output
                     .querySelectorAll(".ccw-result")
                     .forEach((result, resultIndex) => result.classList.toggle("active", resultIndex === tabIndex));
+                const frame = output.querySelector(".ccw-result.active .ccw-map-frame");
+                if (frame && !frame.getAttribute("src")) frame.setAttribute("src", frame.dataset.src);
             };
             output
                 .querySelectorAll("#ccw-tabs button")
