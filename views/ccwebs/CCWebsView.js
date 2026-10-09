@@ -401,7 +401,9 @@
                 const branchesUp =
                     adjacency.get(lower).filter((link) => levels.get(link.to) > levels.get(lower)).length > 1;
                 const anchor = branchesUp ? upper : lower;
-                svg += arrowSvg(kind, x(anchor) + 25, topY + GAPV / 2) + labelSvg(label, x(anchor) + BW / 2, bottomY - (kind === "up" ? 14 : 4));
+                svg +=
+                    arrowSvg(kind, x(anchor) + 25, topY + GAPV / 2) +
+                    labelSvg(label, x(anchor) + BW / 2, bottomY - (kind === "up" ? 14 : 4));
                 svg += certSvg(person.pathStatus, x(anchor) + BW, topY + 2);
             }
         });
@@ -545,9 +547,9 @@
             this.container.innerHTML = `
                 <section id="ccwebs-view">
                     <div class="ccw-form">
-                        <label for="ccw-game-select">Connection Checkers game</label>
+                        <label for="ccw-game-select">Choose Connection Checkers game (or other option)</label>
                         <select id="ccw-game-select"><option value="current">Show this week's Connection Checkers game profiles</option></select>
-                        <label for="ccw-game-url">Connection Checkers game page URL</label>
+                        <label for="ccw-game-url">URL from which to fetch WikiTree IDs:</label>
                         <input type="text" id="ccw-game-url" placeholder="https://www.wikitree.com/g2g/...">
                         <button type="button" class="btn btn-secondary btn-sm" id="ccw-fetch-ids">Get WikiTree IDs from page</button>
                         <span id="ccw-get-status" class="ccw-hint" role="status"></span>
@@ -556,7 +558,7 @@
                             <a class="btn btn-secondary btn-sm" id="ccw-view-g2g" target="_blank" rel="noopener noreferrer">View G2G post</a>
                         </div>
                         <details>
-                            <summary>Paste game page source if browser access is blocked</summary>
+                            <summary>Paste page source if browser access is blocked</summary>
                             <textarea id="ccw-page-source" aria-label="Connection Checkers page source"></textarea>
                             <button type="button" class="btn btn-secondary btn-sm" id="ccw-parse-source">Parse pasted source</button>
                         </details>
@@ -919,6 +921,21 @@
                                     .join("'s ")})`
                             ),
                     });
+                } else if (samePath(commonPath, shortest.path || [])) {
+                    // The common path is the same as the shortest path, so we log it and still add it to bItems.
+                    console.log(`Common path for profile ${profileIndex + 1} is the same as the shortest path.`);
+                    bItems.push({
+                        n: `${profileIndex + 1}B`,
+                        path: commonPath,
+                        relation:
+                            familyRelation(commonPath) ||
+                            simplifyFamilyRelationships(
+                                `(${commonPath
+                                    .slice(1)
+                                    .map((person, i) => relLabel(person, commonPath[i]))
+                                    .join("'s ")})`
+                            ),
+                    });
                 }
             });
             if (bItems.length) {
@@ -1090,11 +1107,17 @@
 
     // Reads the "Connection Checkers G2G posts" table: Date | G2G post # | Topic | WikiTree IDs (optional)
     function parseGameRows(text) {
-        const clean = (value) => String(value || "").replace(/'{3}/g, "").replace(/\s+/g, " ").trim();
+        const clean = (value) =>
+            String(value || "")
+                .replace(/'{3}/g, "")
+                .replace(/\s+/g, " ")
+                .trim();
         const rows = [];
         const doc = new DOMParser().parseFromString(text, "text/html");
         doc.querySelectorAll("tr").forEach((tr) => {
-            const cells = [...tr.children].filter((cell) => /^t[dh]$/i.test(cell.tagName)).map((c) => clean(c.textContent));
+            const cells = [...tr.children]
+                .filter((cell) => /^t[dh]$/i.test(cell.tagName))
+                .map((c) => clean(c.textContent));
             if (cells.length >= 3) rows.push(cells);
         });
         if (!rows.length) {
