@@ -260,7 +260,7 @@
         items.forEach((item) => {
             item.path.forEach((person, index) => {
                 if (!nodes.has(person.Id)) {
-                    nodes.set(person.Id, { person, tags: [], relations: [], turns: [], last: false });
+                    nodes.set(person.Id, { person, tags: [], relations: [], turns: [], last: false, between: false });
                     adjacency.set(person.Id, []);
                 }
                 if (!index) return;
@@ -281,7 +281,11 @@
                 if (item.relation) end.relations.push(item.relation);
             }
             const turningPoint = turnIndex(item.path);
-            if (turningPoint > 0) nodes.get(item.path[turningPoint].Id).turns.push(sharedSpouseId(item.path));
+            if (turningPoint > 0) {
+                nodes.get(item.path[turningPoint].Id).turns.push(sharedSpouseId(item.path));
+                // People between the common ancestor and the profile of the week
+                for (let i = turningPoint + 1; i < item.path.length - 1; i++) nodes.get(item.path[i].Id).between = true;
+            }
         });
 
         const colours = new Map();
@@ -359,7 +363,9 @@
         const maxColumn = Math.max(...columns.values());
         const x = (id) => 10 + columns.get(id) * (BW + GAPH);
         const y = (id) => 10 + (maxLevel - levels.get(id)) * (BH + GAPV);
-        let svg = "";
+        let svg = tagged
+            ? '<defs><linearGradient id="ccw-ancestor-gradient" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="lightyellow"/><stop offset="1" stop-color="#e8f2e9"/></linearGradient></defs>'
+            : "";
         edges.forEach((edge) => {
             const person = edge.person;
             const label = relLabel(person, edge.previous);
@@ -390,8 +396,13 @@
                 const middleY = topY + GAPV / 2;
                 svg += `<polyline fill="none" stroke="rgb(10,108,24)" stroke-width="2" points="${upperX},${topY} ${upperX},${middleY} ${lowerX},${middleY} ${lowerX},${bottomY}"/>`;
                 const kind = levels.get(to) > levels.get(from) ? "up" : "down";
-                svg += arrowSvg(kind, x(to) + 25, topY + GAPV / 2) + labelSvg(label, x(to) + BW / 2, bottomY - 4);
-                svg += certSvg(person.pathStatus, x(to) + BW, topY + 2);
+                // Anchor over the child, unless the child branches to both parents; then keep each
+                // arrow and label under its own parent so they don't overlap.
+                const branchesUp =
+                    adjacency.get(lower).filter((link) => levels.get(link.to) > levels.get(lower)).length > 1;
+                const anchor = branchesUp ? upper : lower;
+                svg += arrowSvg(kind, x(anchor) + 25, topY + GAPV / 2) + labelSvg(label, x(anchor) + BW / 2, bottomY - (kind === "up" ? 14 : 4));
+                svg += certSvg(person.pathStatus, x(anchor) + BW, topY + 2);
             }
         });
         nodes.forEach((node, id) => {
@@ -400,7 +411,11 @@
                     ? "#ffff00"
                     : node.last
                       ? "lightgreen"
-                      : "lightyellow"
+                      : node.turns.length
+                        ? "url(#ccw-ancestor-gradient)"
+                        : node.between
+                          ? "#e8f2e9"
+                          : "lightyellow"
                 : colours.get(id) || "lightgreen";
             const spouse =
                 node.turns.length && node.turns.every((id) => id && id === node.turns[0])
@@ -474,6 +489,9 @@
             #ccwebs-view .ccw-form label { display: block; font-weight: bold; margin-top: 8px; }
             #ccwebs-view .ccw-form input[type="text"], #ccwebs-view .ccw-form textarea { max-width: 700px; width: 100%; }
             #ccwebs-view .ccw-form textarea { height: 90px; }
+            #ccwebs-view .ccw-form label.ccw-inline { display: inline; margin: 0 4px 0 12px; }
+            #ccwebs-view .ccw-form input[type="number"] { width: 4.5em; }
+            #ccwebs-view .ccw-form select { display: block; max-width: 700px; width: 100%; }
             #ccwebs-view .ccw-hint, #ccwebs-view .hint { color: #777; font-size: .85em; }
             #ccwebs-view .ccw-status { margin: 10px 0; color: #555; }
             #ccwebs-view .ccw-error { color: #b00; }
@@ -527,9 +545,10 @@
             this.container.innerHTML = `
                 <section id="ccwebs-view">
                     <div class="ccw-form">
+                        <label for="ccw-game-select">Connection Checkers game</label>
+                        <select id="ccw-game-select"><option value="current">Show this week's Connection Checkers game profiles</option></select>
                         <label for="ccw-game-url">Connection Checkers game page URL</label>
                         <input type="text" id="ccw-game-url" placeholder="https://www.wikitree.com/g2g/...">
-                        <button type="button" class="btn btn-secondary btn-sm" id="ccw-find-game">Find this week's game</button>
                         <button type="button" class="btn btn-secondary btn-sm" id="ccw-fetch-ids">Get WikiTree IDs from page</button>
                         <span id="ccw-get-status" class="ccw-hint" role="status"></span>
                         <div id="ccw-game-info" hidden>
@@ -545,7 +564,9 @@
                             <input type="text" id="ccw-primary" placeholder="e.g. Windsor-1"> -->
                         <label for="ccw-ids">Check out the web of Connections with these people:</label>
                         <textarea id="ccw-ids" placeholder="Paste WikiTree IDs, profile links, or the game page text"></textarea>
-                        <div class="ccw-hint">IDs are extracted from pasted text or WikiTree profile links. Up to 12 profiles are used.</div>
+                        <div class="ccw-hint">IDs are extracted from pasted text or WikiTree profile links.
+                            <label for="ccw-max-ids" class="ccw-inline">Maximum profiles to use:</label>
+                            <input type="number" id="ccw-max-ids" min="1" max="20" value="12"></div>
                         <button type="button" class="btn btn-primary" id="ccw-show">Show connections</button>
                     </div>
                     <div id="ccw-progress" class="ccw-status" role="status"></div>
@@ -554,17 +575,28 @@
             const root = this.container.querySelector("#ccwebs-view");
             // root.querySelector("#ccw-primary").value = selectedId;
             if (params.cc) root.querySelector("#ccw-ids").value = this.withoutExcluded(params.cc.split(",")).join("\n");
+            root.querySelector("#ccw-max-ids").addEventListener("change", (event) => {
+                event.target.value = this.maxIds;
+            });
             root.querySelector("#ccw-show").addEventListener("click", () => this.run());
-            root.querySelector("#ccw-find-game").addEventListener("click", () => this.findCurrentGame());
+            root.querySelector("#ccw-game-select").addEventListener("change", (event) =>
+                this.selectGame(event.target.value)
+            );
             root.querySelector("#ccw-fetch-ids").addEventListener("click", () => this.fetchGameIds());
             root.querySelector("#ccw-parse-source").addEventListener("click", () => this.parsePastedSource());
             if (params.cc) this.run();
             this.findCurrentGame();
+            this.loadGameList();
             condLog("Connection Checkers view initialized.");
         }
 
         get root() {
             return this.container?.querySelector("#ccwebs-view");
+        }
+
+        get maxIds() {
+            const value = parseInt(this.root?.querySelector("#ccw-max-ids")?.value, 10);
+            return Number.isFinite(value) ? Math.min(20, Math.max(1, value)) : 12;
         }
 
         // IDs that must not appear in the list: the primary person and the logged-in user.
@@ -590,7 +622,7 @@
             }
             root.querySelector("#ccw-ids").value = ids.join("\n");
             this.setFetchStatus(
-                `Found ${ids.length} profile IDs${ids.length > 12 ? "; only the first 12 will be used" : ""}.`
+                `Found ${ids.length} profile IDs${ids.length > this.maxIds ? `; only the first ${this.maxIds} will be used` : ""}.`
             );
         }
 
@@ -599,6 +631,59 @@
             if (!status) return;
             status.textContent = message;
             status.classList.toggle("ccw-error", error);
+        }
+
+        async loadGameList() {
+            try {
+                const response = await fetch(`${WIKITREE}/wiki/Space:Connection_Checkers_Web_app`, {
+                    credentials: "include",
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                this.gameRows = parseGameRows(await response.text());
+                const select = this.root?.querySelector("#ccw-game-select");
+                if (!select) return;
+                this.gameRows.forEach((row, index) => {
+                    const option = document.createElement("option");
+                    option.value = String(index);
+                    option.textContent = row.topic;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Could not load the list of Connection Checkers games:", error);
+            }
+        }
+
+        async selectGame(value) {
+            const root = this.root;
+            if (!root) return;
+            const urlField = root.querySelector("#ccw-game-url");
+            if (value === "current") {
+                await this.findCurrentGame();
+                return;
+            }
+            const row = this.gameRows?.[Number(value)];
+            if (!row) return;
+            const post = row.post.trim();
+            if (/^n\/a$/i.test(post)) {
+                urlField.value = "n/a";
+                root.querySelector("#ccw-game-info").hidden = true;
+                const ids = this.withoutExcluded(parseIds(row.ids));
+                root.querySelector("#ccw-ids").value = ids.join("\n");
+                this.setFetchStatus(
+                    ids.length
+                        ? `Loaded ${ids.length} profile IDs${ids.length > this.maxIds ? `; only the first ${this.maxIds} will be used` : ""}.`
+                        : "No WikiTree profile IDs are listed for this row.",
+                    !ids.length
+                );
+            } else if (/^category:/i.test(post)) {
+                urlField.value = `${WIKITREE}/wiki/${post.replace(/\s+/g, "_")}`;
+                await this.fetchGameIds();
+            } else if (/^\d+$/.test(post)) {
+                urlField.value = `${WIKITREE}/g2g/${post}`;
+                await this.fetchGameIds();
+            } else {
+                this.setFetchStatus(`Unrecognised G2G post value: ${post}`, true);
+            }
         }
 
         async findCurrentGame() {
@@ -674,7 +759,7 @@
                 root.querySelector("#ccw-view-g2g").href = parsed.href;
                 gameInfo.hidden = false;
                 this.setFetchStatus(
-                    `Found ${ids.length} profile IDs${ids.length > 12 ? "; only the first 12 will be used" : ""}.`
+                    `Found ${ids.length} profile IDs${ids.length > this.maxIds ? `; only the first ${this.maxIds} will be used` : ""}.`
                 );
             } catch (error) {
                 this.setFetchStatus(
@@ -716,9 +801,10 @@
                 return;
             }
             let note = "";
-            if (ids.length > 12) {
-                ids = ids.slice(0, 12);
-                note = " (using the first 12 profiles)";
+            const maxIds = this.maxIds;
+            if (ids.length > maxIds) {
+                ids = ids.slice(0, maxIds);
+                note = ` (using the first ${maxIds} profiles)`;
             }
 
             const runId = ++this.runId;
@@ -1001,6 +1087,28 @@
             img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(markup);
         }
     };
+
+    // Reads the "Connection Checkers G2G posts" table: Date | G2G post # | Topic | WikiTree IDs (optional)
+    function parseGameRows(text) {
+        const clean = (value) => String(value || "").replace(/'{3}/g, "").replace(/\s+/g, " ").trim();
+        const rows = [];
+        const doc = new DOMParser().parseFromString(text, "text/html");
+        doc.querySelectorAll("tr").forEach((tr) => {
+            const cells = [...tr.children].filter((cell) => /^t[dh]$/i.test(cell.tagName)).map((c) => clean(c.textContent));
+            if (cells.length >= 3) rows.push(cells);
+        });
+        if (!rows.length) {
+            // Fall back to the raw wiki markup
+            text.split(/\r?\n/).forEach((line) => {
+                if (!/^\|(?![-}])/.test(line)) return;
+                const cells = line.slice(1).split("||").map(clean);
+                if (cells.length >= 3) rows.push(cells);
+            });
+        }
+        return rows
+            .filter((cells) => cells[1] && cells[2] && !/g2g post/i.test(cells[1]))
+            .map((cells) => ({ post: cells[1], topic: cells[2], ids: cells[3] || "" }));
+    }
 
     function parseIdsFromHtml(html) {
         const ids = [];
