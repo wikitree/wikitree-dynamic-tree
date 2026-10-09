@@ -493,7 +493,8 @@
             #ccwebs-view .ccw-summary b { color: #555; }
             #ccwebs-view .ccw-summary .hl { background: #ffffe0; }
             #ccwebs-view .ccw-summary .hlg { background: lightgreen; }
-            #ccwebs-view .ccw-toolbar { margin-top: 10px; }
+            #ccwebs-view .ccw-toolbar { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+            #ccwebs-view .ccw-diagram svg { max-width: none; }
             #ccwebs-view details { margin-top: 6px; }
             #ccwebs-view .g2g-title { font-size: larger; color: orange; background-color: black; }
         `;
@@ -560,10 +561,6 @@
             if (params.cc) this.run();
             this.findCurrentGame();
             condLog("Connection Checkers view initialized.");
-        }
-
-        close() {
-            this.runId++;
         }
 
         get root() {
@@ -785,7 +782,7 @@
 
         renderResults(output, ids, results, common, spouseNames) {
             let tabs =
-                '<div class="ccw-toolbar"><button type="button" class="btn btn-secondary btn-sm" data-format="png">PNG</button> <button type="button" class="btn btn-secondary btn-sm" data-format="svg">SVG</button> <button type="button" class="btn btn-secondary btn-sm" data-format="pdf">PDF</button></div><div id="ccw-tabs">';
+                '<div class="ccw-toolbar"><span class="ccw-zoom"><button type="button" class="btn btn-secondary btn-sm" data-zoom="out" title="Zoom out" aria-label="Zoom out">&minus;</button> <button type="button" class="btn btn-secondary btn-sm" data-zoom="in" title="Zoom in" aria-label="Zoom in">+</button> <button type="button" class="btn btn-secondary btn-sm" data-zoom="fit" title="Fit diagram to the window">Fit</button> <button type="button" class="btn btn-secondary btn-sm" data-zoom="reset" title="Actual size">100%</button></span> <span class="ccw-save">Save: <button type="button" class="btn btn-secondary btn-sm" data-format="png">PNG</button> <button type="button" class="btn btn-secondary btn-sm" data-format="svg">SVG</button> <button type="button" class="btn btn-secondary btn-sm" data-format="pdf">PDF</button></span></div><div id="ccw-tabs">';
             let body = "";
             let index = 0;
             const addTab = (label, id, result, heading) => {
@@ -848,10 +845,58 @@
                 .forEach((button) => button.addEventListener("click", () => show(Number(button.dataset.index))));
             show(0);
             output
-                .querySelectorAll(".ccw-toolbar button")
+                .querySelectorAll(".ccw-toolbar button[data-format]")
                 .forEach((button) =>
                     button.addEventListener("click", () => this.saveDiagramImage(button.dataset.format))
                 );
+            output.querySelectorAll(".ccw-toolbar button[data-zoom]").forEach((button) =>
+                button.addEventListener("click", () => {
+                    const action = button.dataset.zoom;
+                    if (action === "fit" || action === "reset") this.zoom = action === "fit" ? "fit" : 1;
+                    else {
+                        const current = this.currentScale();
+                        this.zoom = Math.min(4, Math.max(0.1, current * (action === "in" ? 1.25 : 0.8)));
+                    }
+                    this.applyZoom();
+                })
+            );
+            this.zoom = this.zoom || 1;
+            if (!this.resizeHandler) {
+                this.resizeHandler = () => this.zoom === "fit" && this.applyZoom();
+                window.addEventListener("resize", this.resizeHandler);
+            }
+            output.querySelector("#ccw-tabs").addEventListener("click", () => this.applyZoom());
+            this.applyZoom();
+        }
+
+        currentScale() {
+            const svg = this.root?.querySelector(".ccw-result.active svg");
+            if (!svg) return 1;
+            if (this.zoom !== "fit") return this.zoom;
+            return svg.getBoundingClientRect().width / Number(svg.getAttribute("width")) || 1;
+        }
+
+        applyZoom() {
+            const svg = this.root?.querySelector(".ccw-result.active svg");
+            if (!svg) return;
+            const width = Number(svg.getAttribute("width"));
+            const height = Number(svg.getAttribute("height"));
+            let scale = this.zoom;
+            if (scale === "fit") {
+                const frame = svg.parentElement;
+                const available = frame.clientWidth - 12;
+                const top = frame.getBoundingClientRect().top;
+                const availableHeight = Math.max(200, window.innerHeight - Math.max(top, 0) - 90);
+                scale = Math.max(0.05, Math.min(available / width, availableHeight / height));
+            }
+            svg.style.width = `${width * scale}px`;
+            svg.style.height = `${height * scale}px`;
+        }
+
+        close() {
+            this.runId++;
+            if (this.resizeHandler) window.removeEventListener("resize", this.resizeHandler);
+            this.resizeHandler = null;
         }
 
         async saveDiagramImage(format = "png") {
@@ -859,6 +904,7 @@
             if (!svg) return;
             const tab = this.root.querySelector("#ccw-tabs button.active")?.textContent || "diagram";
             const clone = svg.cloneNode(true);
+            clone.removeAttribute("style");
             clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
             clone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
             const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
