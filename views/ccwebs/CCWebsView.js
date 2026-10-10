@@ -257,24 +257,27 @@
         const edges = new Map();
         const adjacency = new Map();
         const flip = (direction) => (direction === "up" ? "down" : direction === "down" ? "up" : "side");
-        items.forEach((item) => {
+        items.forEach((item, itemIndex) => {
+            // Private people all look alike, so never merge them across (or within) paths
+            item.keys = item.path.map((person, index) => (person.Id < 0 ? `private-${itemIndex}-${index}` : person.Id));
             item.path.forEach((person, index) => {
-                if (!nodes.has(person.Id)) {
-                    nodes.set(person.Id, { person, tags: [], relations: [], turns: [], last: false, between: false });
-                    adjacency.set(person.Id, []);
+                const nodeKey = item.keys[index];
+                if (!nodes.has(nodeKey)) {
+                    nodes.set(nodeKey, { person, tags: [], relations: [], turns: [], last: false, between: false });
+                    adjacency.set(nodeKey, []);
                 }
                 if (!index) return;
                 const previous = item.path[index - 1];
-                const from = previous.Id;
-                const to = person.Id;
-                const key = from < to ? `${from}|${to}` : `${to}|${from}`;
+                const from = item.keys[index - 1];
+                const to = nodeKey;
+                const key = String(from) < String(to) ? `${from}|${to}` : `${to}|${from}`;
                 if (edges.has(key)) return;
                 const direction = relDir(person.pathType);
                 edges.set(key, { from, to, person, previous, direction });
                 adjacency.get(from).push({ to, direction });
                 adjacency.get(to).push({ to: from, direction: flip(direction) });
             });
-            const end = nodes.get(item.path[item.path.length - 1].Id);
+            const end = nodes.get(item.keys[item.keys.length - 1]);
             end.last = true;
             if (tagged) {
                 end.tags.push(item.n);
@@ -282,18 +285,18 @@
             }
             const turningPoint = turnIndex(item.path);
             if (turningPoint > 0) {
-                nodes.get(item.path[turningPoint].Id).turns.push(sharedSpouseId(item.path));
+                nodes.get(item.keys[turningPoint]).turns.push(sharedSpouseId(item.path));
                 // People between the common ancestor and the profile of the week
-                for (let i = turningPoint + 1; i < item.path.length - 1; i++) nodes.get(item.path[i].Id).between = true;
+                for (let i = turningPoint + 1; i < item.path.length - 1; i++) nodes.get(item.keys[i]).between = true;
             }
         });
 
         const colours = new Map();
         if (!tagged) {
-            pathColours(items[0].path).forEach((colour, index) => colours.set(items[0].path[index].Id, colour));
+            pathColours(items[0].path).forEach((colour, index) => colours.set(items[0].keys[index], colour));
         }
 
-        const root = items[0].path[0].Id;
+        const root = items[0].keys[0];
         const levels = new Map([[root, 0]]);
         const kids = new Map();
         const queue = [root];
@@ -652,7 +655,7 @@
                 this.gameRows.forEach((row, index) => {
                     const option = document.createElement("option");
                     option.value = String(index);
-                    option.textContent = row.topic;
+                    option.textContent = (row.date === "Today" ? "" : row.date + " : ") + row.topic;
                     select.appendChild(option);
                 });
             } catch (error) {
@@ -671,6 +674,7 @@
             const row = this.gameRows?.[Number(value)];
             if (!row) return;
             const post = row.post.trim();
+            const datePost = row.date.trim();
             if (/^n\/a$/i.test(post)) {
                 urlField.value = "n/a";
                 root.querySelector("#ccw-game-info").hidden = true;
@@ -999,7 +1003,10 @@
                 ];
                 tabs += `<button type="button" data-index="${index}" title="Summary table of the profiles of the week">Summary</button>`;
                 body += `<div class="ccw-result"><h2>Summary <span class="hint">click a column heading to sort</span></h2><table class="ccw-table" id="ccw-summary-table"><thead><tr>${columns
-                    .map(([key, label]) => `<th data-key="${key}" tabindex="0" role="button">${label}<span class="ccw-sort"></span></th>`)
+                    .map(
+                        ([key, label]) =>
+                            `<th data-key="${key}" tabindex="0" role="button">${label}<span class="ccw-sort"></span></th>`
+                    )
                     .join("")}</tr></thead><tbody></tbody></table></div>`;
                 index++;
                 this.summaryRows = rows;
@@ -1076,7 +1083,9 @@
                     if (xBlank || yBlank) return xBlank === yBlank ? 0 : xBlank ? 1 : -1;
                     return (
                         dir *
-                        (typeof x === "number" ? x - y : String(x).localeCompare(String(y), undefined, { numeric: true }))
+                        (typeof x === "number"
+                            ? x - y
+                            : String(x).localeCompare(String(y), undefined, { numeric: true }))
                     );
                 });
             }
@@ -1237,7 +1246,7 @@
         }
         return rows
             .filter((cells) => cells[1] && cells[2] && !/g2g post/i.test(cells[1]))
-            .map((cells) => ({ post: cells[1], topic: cells[2], ids: cells[3] || "" }));
+            .map((cells) => ({ date: cells[0], post: cells[1], topic: cells[2], ids: cells[3] || "" }));
     }
 
     function parseIdsFromHtml(html) {
