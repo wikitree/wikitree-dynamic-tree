@@ -403,7 +403,7 @@
                 const anchor = branchesUp ? upper : lower;
                 svg +=
                     arrowSvg(kind, x(anchor) + 25, topY + GAPV / 2) +
-                    labelSvg(label, x(anchor) + BW / 2, bottomY - (kind === "up" ? 14 : 4));
+                    labelSvg(label, x(anchor) + BW / 2, bottomY - (kind === "up" ? 19 : 4));
                 svg += certSvg(person.pathStatus, x(anchor) + BW, topY + 2);
             }
         });
@@ -516,6 +516,10 @@
             #ccwebs-view .ccw-toolbar { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
             #ccwebs-view .ccw-diagram svg { max-width: none; }
             #ccwebs-view .ccw-map-frame { width: 100%; height: 75vh; min-height: 500px; border: 2px solid green; border-radius: 12px; background: #fff; }
+            #ccwebs-view .ccw-table { border-collapse: collapse; margin-top: 6px; }
+            #ccwebs-view .ccw-table th, #ccwebs-view .ccw-table td { border: 1px solid #ccc; padding: 4px 10px; text-align: left; }
+            #ccwebs-view .ccw-table th { background: #eee; cursor: pointer; user-select: none; white-space: nowrap; }
+            #ccwebs-view .ccw-table td.num { text-align: right; }
             #ccwebs-view details { margin-top: 6px; }
             #ccwebs-view .g2g-title { font-size: larger; color: orange; background-color: black; }
         `;
@@ -956,7 +960,66 @@
                 body += `<div class="ccw-result ccw-map"><h2>Map <span class="hint">${ids.length} profiles (excluding the primary person) &middot; <a href="${esc(mapUrl)}" target="_blank" rel="noopener noreferrer">open in a new tab</a></span></h2><iframe class="ccw-map-frame" title="WikiTree Plus map" data-src="${esc(mapUrl)}"></iframe></div>`;
                 index++;
             }
+            if (ids.length) {
+                const relationText = (path) =>
+                    familyRelation(path) ||
+                    simplifyFamilyRelationships(
+                        `(${path
+                            .slice(1)
+                            .map((person, i) => relLabel(person, path[i]))
+                            .join("'s ")})`
+                    );
+                const cleanDate = (date) => (!date || /^0000/.test(date) ? "" : date);
+                const rows = ids.map((id, i) => {
+                    const shortest = results[i] || {};
+                    const shortPath = !shortest.status && shortest.path?.length > 1 ? shortest.path : null;
+                    const commonResult = common[i] || {};
+                    const commonPath = !commonResult.status && commonResult.path?.length > 1 ? commonResult.path : null;
+                    const person = (shortPath || commonPath)?.slice(-1)[0] || {};
+                    return {
+                        id: person.Name || id,
+                        first: person.Id < 0 ? "" : person.FirstName || person.RealName || "",
+                        last: person.Id < 0 ? "" : person.LastNameAtBirth || person.LastNameCurrent || "",
+                        birth: cleanDate(person.BirthDate),
+                        death: cleanDate(person.DeathDate),
+                        steps: shortPath ? shortPath.length - 1 : null,
+                        relation: commonPath ? relationText(commonPath) : "",
+                    };
+                });
+                const columns = [
+                    ["id", "WikiTree ID"],
+                    ["first", "First Name"],
+                    ["last", "Last Name"],
+                    ["birth", "Birth Date"],
+                    ["death", "Death Date"],
+                    ["steps", "# of Steps"],
+                    ["relation", "Relationship"],
+                ];
+                tabs += `<button type="button" data-index="${index}" title="Summary table of the profiles of the week">Summary</button>`;
+                body += `<div class="ccw-result"><h2>Summary <span class="hint">click a column heading to sort</span></h2><table class="ccw-table" id="ccw-summary-table"><thead><tr>${columns
+                    .map(([key, label]) => `<th data-key="${key}" tabindex="0" role="button">${label}<span class="ccw-sort"></span></th>`)
+                    .join("")}</tr></thead><tbody></tbody></table></div>`;
+                index++;
+                this.summaryRows = rows;
+                this.summarySort = { key: null, dir: 1 };
+            }
             output.innerHTML = tabs + "</div>" + body;
+            this.renderSummaryTable();
+            output.querySelectorAll("#ccw-summary-table th").forEach((th) => {
+                const sort = () => {
+                    const key = th.dataset.key;
+                    const current = this.summarySort;
+                    this.summarySort = { key, dir: current.key === key ? -current.dir : 1 };
+                    this.renderSummaryTable();
+                };
+                th.addEventListener("click", sort);
+                th.addEventListener("keydown", (event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        sort();
+                    }
+                });
+            });
             const show = (tabIndex) => {
                 output
                     .querySelectorAll("#ccw-tabs button")
@@ -994,6 +1057,37 @@
             }
             output.querySelector("#ccw-tabs").addEventListener("click", () => this.applyZoom());
             this.applyZoom();
+        }
+
+        renderSummaryTable() {
+            const table = this.root?.querySelector("#ccw-summary-table");
+            if (!table || !this.summaryRows) return;
+            const { key, dir } = this.summarySort;
+            const rows = [...this.summaryRows];
+            if (key) {
+                // Blank values always sort last
+                rows.sort((a, b) => {
+                    const x = a[key];
+                    const y = b[key];
+                    const xBlank = x === null || x === "";
+                    const yBlank = y === null || y === "";
+                    if (xBlank || yBlank) return xBlank === yBlank ? 0 : xBlank ? 1 : -1;
+                    return (
+                        dir *
+                        (typeof x === "number" ? x - y : String(x).localeCompare(String(y), undefined, { numeric: true }))
+                    );
+                });
+            }
+            table.querySelector("tbody").innerHTML = rows
+                .map(
+                    (row) =>
+                        `<tr><td><a href="${WIKITREE}/wiki/${encodeURIComponent(row.id)}" target="_blank" rel="noopener noreferrer">${esc(row.id)}</a></td><td>${esc(row.first)}</td><td>${esc(row.last)}</td><td>${esc(row.birth)}</td><td>${esc(row.death)}</td><td class="num">${row.steps ?? ""}</td><td>${esc(row.relation)}</td></tr>`
+                )
+                .join("");
+            table.querySelectorAll("th").forEach((th) => {
+                th.querySelector(".ccw-sort").textContent = th.dataset.key === key ? (dir > 0 ? " ▲" : " ▼") : "";
+                th.setAttribute("aria-sort", th.dataset.key === key ? (dir > 0 ? "ascending" : "descending") : "none");
+            });
         }
 
         currentScale() {
