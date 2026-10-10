@@ -87,13 +87,64 @@ export function splitNames(field) {
     return names;
 }
 
+/**
+ * Small words that belong to the name that follows them, in lower case: the prefixes of Dutch, German, French, Italian, Spanish,
+ * Portuguese, Irish, Scottish, Arabic, Welsh and other names ("van der Berg", "de la Cruz", "Di Caprio", "Mc Kay", "O Brien",
+ * "St John", "ben David"). A word ending in an apostrophe (the O' of "O' Brien") is one too. Such a prefix is kept with the name
+ * after it, so that these are not counted as two surnames.
+ */
+const SURNAME_PARTICLES = new Set(
+    (
+        "van von vom der den de del della delle dei degli di da das do dos du des la las le les lo los el al ten ter te op in het " +
+        "aan bij ap ab af ben bin ibn bat fitz zu zur zum mc mac o \u00f3 n\u00ed nic u\u00ed mhic saint sainte st ste san santa santo"
+    ).split(" ")
+);
+const isParticle = (token) => SURNAME_PARTICLES.has(token.toLowerCase().replace(/\.$/, "")) || /['\u2019]$/.test(token);
+/** Words that only join two surnames ("Garcia y Lopez", "Smith and Jones") and are not names. */
+const SURNAME_CONNECTORS = new Set(["y", "e", "i", "and", "und", "et", "&"]);
+
+/**
+ * The separate surnames in a surname field, in capitals. A field can hold two surnames, with a space ("Blanco Chavez") or a hyphen
+ * ("Diego-Smith"), and each is counted on its own. A prefix is not a surname: it stays with the name after it, so "O'Brien",
+ * "van der Berg", "de la Cruz", "Mc Kay" and "St John" are each one surname, and so is "Smith van der Berg" with Smith: it is SMITH and
+ * VAN DER BERG. Initials, values that stand for nobody ("Unknown") and a surname that appears twice are left out or listed once.
+ */
+export function splitSurnames(field) {
+    const parts = String(field || "")
+        .trim()
+        .split(/([\s,;/\-\u2010-\u2015]+)/); // names and what separates them, alternately
+    const tokens = [];
+    for (let i = 0; i < parts.length; i += 2) {
+        if (!parts[i]) continue;
+        tokens.push({ text: parts[i], separator: i ? parts[i - 1] : "" });
+    }
+    const names = [];
+    for (let i = 0; i < tokens.length; i++) {
+        if (SURNAME_CONNECTORS.has(tokens[i].text.toLowerCase())) continue;
+        let name = tokens[i].text;
+        // a prefix takes the name after it (and, if that is a prefix too, the one after that)
+        while (isParticle(tokens[i].text) && i + 1 < tokens.length) {
+            const next = tokens[i + 1];
+            name += /['\u2019]$/.test(tokens[i].text)
+                ? next.text
+                : /^[\s,;/]+$/.test(next.separator)
+                  ? ` ${next.text}`
+                  : next.separator + next.text;
+            i++;
+        }
+        const clean = name.replace(EDGE_PUNCTUATION, "");
+        if (clean.length < 2 || !/\p{L}/u.test(clean) || NOT_A_SURNAME.test(name) || NOT_A_SURNAME.test(clean))
+            continue;
+        const upper = clean.toLocaleUpperCase();
+        if (!names.includes(upper)) names.push(upper);
+    }
+    return names;
+}
+
 /** The names a person is counted under for this kind of tree, each once: a person with two first names is in both. */
 export function namesOf(person, kind = "surname") {
     if (!person) return [];
-    if (kind === "surname") {
-        const surname = surnameOf(person);
-        return surname ? [surname] : [];
-    }
+    if (kind === "surname") return splitSurnames(person.LastNameAtBirth || person.LastNameCurrent);
     const fields =
         kind === "first"
             ? [person.FirstName]

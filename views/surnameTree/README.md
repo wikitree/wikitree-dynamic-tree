@@ -10,10 +10,15 @@ Created by Azure Robinson (Robinson-27225).
 
 ## What the tree is made of
 
-**Tree of**: surnames (at birth), first names, middle names, or both given names. A field with several names, such as
-"Mary Ann", is split at the spaces and each name is counted on its own (so a person with two first names is in both
-lists, but is one person in the total). "Mary-Ann", with no space, is one name. Initials and "Unknown" or "Private" are
-left out.
+**Tree of**: surnames (at birth), first names, middle names, or both given names. A field with several first or middle names,
+such as "Mary Ann", is split at the spaces and each name is counted on its own (so a person with two first names is in both
+lists, but is one person in the total). "Mary-Ann", with no space, is one name. Initials and "Unknown" or "Private" are left out.
+
+A surname field can hold two surnames, with a space ("Blanco Chavez") or a hyphen ("Diego-Smith"), and each is counted on
+its own, so that person is in both. A prefix is kept with its name, so these stay one surname each: O'Brien, van der Berg, de la
+Cruz, Di Caprio, Mc Kay, Mac Donald, St John, ben David. The prefixes are van, von, der, den, de, del, della, di, da, do, du, la, le,
+el, al, ten, ter, op, ap, ab, ben, bin, fitz, Mc, Mac, O, St, Saint, San and a few more. "Smith van der Berg" is two surnames, SMITH and VAN
+DER BERG. The words "y", "and", "und" and "et" between two surnames ("Garcia y Lopez") are not names.
 
 **Reach**: **Ancestors** (parents, grandparents and so on, 2 to 12 generations) or **CC7** (everyone connected within 1 to
 10 degrees, where parents, children, siblings and spouses each count as one degree). The **−** and **+** buttons add or
