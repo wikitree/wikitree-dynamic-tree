@@ -1,0 +1,161 @@
+.lineage-matrix {
+    color: #222;
+}
+
+.lineage-matrix__status {
+    margin: 0 0 0.75rem;
+    font-size: 0.9rem;
+}
+
+.lineage-matrix__generation-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+}
+
+.lineage-matrix__generation-count {
+    min-width: 4rem;
+}
+
+.lineage-matrix__scroller {
+    overflow: auto;
+    border: 1px solid #000;
+    background: #fff;
+    padding: 0.5rem;
+}
+
+.lineage-matrix__grid {
+    display: grid;
+    grid-template-columns: repeat(var(--column-count), max-content);
+    grid-template-rows: repeat(var(--person-count), 18px);
+    gap: 0;
+    width: max-content;
+    min-width: 100%;
+    padding: 1px 0 0 1px;
+    box-sizing: border-box;
+}
+
+.lineage-matrix__person-cell {
+    border: 1px solid #000;
+    margin: -1px 0 0 -1px;
+}
+
+.lineage-matrix__person-cell,
+.lineage-matrix__family-cell {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0 0.3rem;
+}
+
+.lineage-matrix__person-cell.is-highlighted,
+.lineage-matrix__family-cell.is-highlighted {
+    background: #fff3b0;
+}
+
+.lineage-matrix__family-cell {
+    border: 1px solid #000;
+    margin: -1px 0 0 -1px;
+}
+
+.lineage-matrix__family-cell.b-top {
+    border-top: 1px solid #000;
+}
+
+.lineage-matrix__family-cell.b-right {
+    border-right: 1px solid #000;
+}
+
+.lineage-matrix__family-cell.b-bottom {
+    border-bottom: 1px solid #000;
+}
+
+.lineage-matrix__family-cell.b-left {
+    border-left: 1px solid #000;
+}
+
+.lineage-matrix__family-cell[data-person-id] {
+    cursor: pointer;
+}
+
+.lineage-matrix__family-cell.has-diamond {
+    border: 1px solid #000;
+}
+
+.lineage-matrix__person-cell {
+    justify-content: flex-start;
+    line-height: 16px;
+}
+
+.lineage-matrix__person-cell.is-focus {
+    font-weight: 700;
+}
+
+.lineage-matrix__person-cell.is-spouse {
+    padding-left: 0.9rem;
+}
+
+.lineage-matrix__person-link {
+    min-width: 0;
+    overflow: hidden;
+    color: #174e70;
+    font-size: 0.86rem;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lineage-matrix__person-link:hover,
+.lineage-matrix__person-link:focus-visible {
+    text-decoration: underline;
+}
+
+.lineage-matrix__gender {
+    display: inline-block;
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+}
+
+.lineage-matrix__gender.is-unknown {
+    width: 16px;
+    height: 16px;
+    color: #59666d;
+    font-size: 0.8rem;
+    line-height: 1;
+    text-align: center;
+}
+
+.lineage-matrix__family-cell {
+    justify-content: center;
+    min-width: 0;
+    padding: 0;
+}
+
+.lineage-matrix__family-diamond {
+    display: block;
+    width: 9px;
+    height: 9px;
+    border: 1px solid #000;
+    transform: rotate(45deg);
+}
+
+.lineage-matrix__family-diamond.is-parent {
+    background: #000;
+}
+
+.lineage-matrix__family-circle {
+    display: block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #000;
+}
+
+.lineage-matrix__family-star {
+    font-size: 0.8rem;
+    line-height: 1;
+}
