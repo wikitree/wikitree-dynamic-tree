@@ -977,6 +977,7 @@
                     const commonPath = !commonResult.status && commonResult.path?.length > 1 ? commonResult.path : null;
                     const person = (shortPath || commonPath)?.slice(-1)[0] || {};
                     return {
+                        tab: i + 1,
                         id: person.Name || id,
                         first: person.Id < 0 ? "" : person.FirstName || person.RealName || "",
                         last: person.Id < 0 ? "" : person.LastNameAtBirth || person.LastNameCurrent || "",
@@ -987,6 +988,7 @@
                     };
                 });
                 const columns = [
+                    ["tab", "Tab #"],
                     ["id", "WikiTree ID"],
                     ["first", "First Name"],
                     ["last", "Last Name"],
@@ -1081,7 +1083,7 @@
             table.querySelector("tbody").innerHTML = rows
                 .map(
                     (row) =>
-                        `<tr><td><a href="${WIKITREE}/wiki/${encodeURIComponent(row.id)}" target="_blank" rel="noopener noreferrer">${esc(row.id)}</a></td><td>${esc(row.first)}</td><td>${esc(row.last)}</td><td>${esc(row.birth)}</td><td>${esc(row.death)}</td><td class="num">${row.steps ?? ""}</td><td>${esc(row.relation)}</td></tr>`
+                        `<tr><td class="num">${row.tab}</td><td><a href="${WIKITREE}/wiki/${encodeURIComponent(row.id)}" target="_blank" rel="noopener noreferrer">${esc(row.id)}</a></td><td>${esc(row.first)}</td><td>${esc(row.last)}</td><td>${esc(row.birth)}</td><td>${esc(row.death)}</td><td class="num">${row.steps ?? ""}</td><td>${esc(row.relation)}</td></tr>`
                 )
                 .join("");
             table.querySelectorAll("th").forEach((th) => {
