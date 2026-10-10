@@ -164,8 +164,9 @@
         const ups = directions.filter((direction) => direction === "up").length;
         const downs = directions.filter((direction) => direction === "down").length;
         if (ups + downs !== directions.length || directions.join(",").includes("down,up")) return "";
-        const male = path[path.length - 1].Gender === "Male";
-        const female = path[path.length - 1].Gender === "Female";
+        const male = path[path.length - 1] && path[path.length - 1].Gender && path[path.length - 1].Gender === "Male";
+        const female =
+            path[path.length - 1] && path[path.length - 1].Gender && path[path.length - 1].Gender === "Female";
         const gendered = (m, f, neutral) => (male ? m : female ? f : neutral);
         if (!downs)
             return (
@@ -849,6 +850,27 @@
             await Promise.all([worker(), worker(), worker()]);
             if (runId !== this.runId || !this.root) return;
 
+            const isUnconnected = (result) => /no connection/i.test(result?.status || "");
+            const people = {};
+            const unconnectedIds = ids.filter((id, i) => isUnconnected(results[i]));
+            if (unconnectedIds.length) {
+                try {
+                    const response = await WikiTreeAPI.postToAPI({
+                        action: "getPeople",
+                        appId: APP_ID,
+                        keys: [primary, ...unconnectedIds],
+                        fields: FIELDS,
+                    });
+                    const peopleResult = Array.isArray(response) ? response[0] : response;
+                    Object.values(peopleResult?.people || {}).forEach((person) => {
+                        if (person.Name) people[person.Name.toLowerCase()] = person;
+                    });
+                } catch (error) {
+                    console.error("Could not load the unconnected profiles:", error);
+                }
+            }
+            people.primary = people[primary.toLowerCase()];
+
             const spouseIds = new Set();
             common.forEach((result) => {
                 if (result && !result.status && result.path?.length > 1) {
@@ -881,7 +903,7 @@
                 }
             }
             progress.textContent = "";
-            this.renderResults(output, ids, results, common, spouseNames);
+            this.renderResults(output, ids, results, common, spouseNames, people);
             if (spouseWarning) {
                 progress.textContent = spouseWarning;
                 progress.classList.add("ccw-error");
@@ -890,11 +912,19 @@
             }
         }
 
-        renderResults(output, ids, results, common, spouseNames) {
+        renderResults(output, ids, results, common, spouseNames, people = {}) {
             let tabs =
                 '<div class="ccw-toolbar"><span class="ccw-zoom"><button type="button" class="btn btn-secondary btn-sm" data-zoom="out" title="Zoom out" aria-label="Zoom out">&minus;</button> <button type="button" class="btn btn-secondary btn-sm" data-zoom="in" title="Zoom in" aria-label="Zoom in">+</button> <button type="button" class="btn btn-secondary btn-sm" data-zoom="fit" title="Fit diagram to the window">Fit</button> <button type="button" class="btn btn-secondary btn-sm" data-zoom="reset" title="Actual size">100%</button></span> <span class="ccw-save">Save: <button type="button" class="btn btn-secondary btn-sm" data-format="png">PNG</button> <button type="button" class="btn btn-secondary btn-sm" data-format="svg">SVG</button> <button type="button" class="btn btn-secondary btn-sm" data-format="pdf">PDF</button></span></div><div id="ccw-tabs">';
             let body = "";
             let index = 0;
+            const addUnconnectedTab = (n, id) => {
+                const person = people[id.toLowerCase()] || { Id: 0, Name: id, FirstName: id };
+                const name = displayName(person);
+                const primaryName = people.primary ? displayName(people.primary) : "the primary person";
+                tabs += `<button type="button" data-index="${index}" class="bad" title="${esc(name)} (no connection found)">${n}x</button>`;
+                body += `<div class="ccw-result"><h2>${n}x. ${esc(name)} <span class="hint">${esc(id)} &middot; no connection</span></h2><div class="ccw-diagram"><svg width="${BW + 20}" height="${BH + 20}" viewBox="0 0 ${BW + 20} ${BH + 20}">${boxSvg(person, 10, 10, "lightgreen", "")}</svg></div><div class="ccw-summary">No connection has been found between <b>${esc(primaryName)}</b> and <b>${esc(name)}</b>.</div></div>`;
+                index++;
+            };
             const addTab = (label, id, result, heading) => {
                 const path = result.path || [];
                 const valid = !result.status && path.length > 1;
@@ -913,6 +943,10 @@
             const bItems = [];
             ids.forEach((id, profileIndex) => {
                 const shortest = results[profileIndex] || {};
+                if (/no connection/i.test(shortest.status || "")) {
+                    addUnconnectedTab(profileIndex + 1, id);
+                    return;
+                }
                 addTab(profileIndex + 1, id, shortest, "");
                 const commonResult = common[profileIndex] || {};
                 const commonPath = commonResult.path || [];
@@ -979,7 +1013,7 @@
                     const shortPath = !shortest.status && shortest.path?.length > 1 ? shortest.path : null;
                     const commonResult = common[i] || {};
                     const commonPath = !commonResult.status && commonResult.path?.length > 1 ? commonResult.path : null;
-                    const person = (shortPath || commonPath)?.slice(-1)[0] || {};
+                    const person = (shortPath || commonPath)?.slice(-1)[0] || people[id.toLowerCase()] || {};
                     return {
                         tab: i + 1,
                         id: person.Name || id,
