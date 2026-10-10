@@ -1,0 +1,483 @@
+/* Styles for the Surname Tree feature. Every class starts with sutree so Highlight WBE Features picks it up. */
+
+/* the app sits in the Tree Apps page's view area; Full screen makes it fill the window */
+.sutree-app {
+  box-sizing: border-box;
+  height: max(34rem, min(88vh, 62rem));
+  border: 1px solid #d8d8d0;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #393a3c;
+  font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  overflow: hidden;
+}
+.sutree-app.sutree-full {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+}
+.sutree-dialog {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.sutree-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  padding: 0.7rem 1.2rem;
+}
+.sutree-controls label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+}
+.sutree-controls button {
+  font: inherit;
+  cursor: pointer;
+  padding: 0.25em 0.9em;
+  border: 1px solid #25422d;
+  border-radius: 0.4em;
+  background: #fff;
+  color: #25422d;
+}
+.sutree-controls button:hover:not(:disabled) {
+  background: #e4ebe5;
+}
+.sutree-controls button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.sutree-controls .sutree-primary {
+  background: #25422d;
+  color: #fff;
+}
+.sutree-controls .sutree-primary:hover:not(:disabled) {
+  background: #35603f;
+}
+.sutree-spacer {
+  flex: 1;
+}
+.sutree-main {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  border-top: 1px solid #e3e3dc;
+}
+.sutree-stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  background: #fff;
+}
+.sutree-stage svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  user-select: none;
+}
+.sutree-stage svg:active {
+  cursor: grabbing;
+}
+.sutree-word {
+  cursor: pointer;
+  transition: opacity 0.12s;
+}
+.sutree-word:focus {
+  outline: none;
+}
+.sutree-word:focus-visible text {
+  stroke: #f8a820;
+  stroke-width: 1.5px;
+  paint-order: stroke;
+}
+/* hovering a surname dims the rest, so every copy of it stands out */
+.sutree-hovering .sutree-word:not(.is-hot) {
+  opacity: 0.3;
+}
+.sutree-word.is-hot text,
+.sutree-word.is-selected text {
+  stroke: #f8a820;
+  stroke-width: 2px;
+  paint-order: stroke;
+}
+
+/* the hover note and the profile card are cream, like the fan chart's */
+.sutree-tip,
+.sutree-card {
+  position: absolute;
+  background: #fffaf0;
+  color: #2b2b2b;
+  border: 1px solid #e3d9c3;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  box-shadow: 0 6px 20px rgba(60, 45, 20, 0.18);
+}
+.sutree-tip {
+  max-width: 17rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s;
+  z-index: 2;
+}
+.sutree-tip b,
+.sutree-card b {
+  font-size: 0.85rem;
+  color: inherit;
+}
+.sutree-tip-hint,
+.sutree-card-hint {
+  margin-top: 4px;
+  color: #7a7266;
+  font-size: 0.72rem;
+}
+.sutree-card {
+  z-index: 3;
+  width: 17rem;
+  max-height: 70%;
+  overflow-y: auto;
+  box-shadow: 0 0 0 2px #8fbf5a, 0 6px 20px rgba(60, 45, 20, 0.22);
+}
+.sutree-card[hidden] {
+  display: none;
+}
+.sutree-card a,
+.sutree-card a:link,
+.sutree-card a:visited {
+  color: #2e6b1f !important;
+  text-decoration: underline;
+}
+.sutree-card-rel {
+  color: #1f5f8b;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.sutree-card-id {
+  color: #7a7266;
+}
+.sutree-card-close {
+  float: right;
+  margin: -4px -4px 0 6px;
+  padding: 0 0.3rem;
+  border: 0;
+  background: none;
+  font-size: 1.2rem;
+  line-height: 1;
+  color: #7a7266;
+  cursor: pointer;
+}
+
+/* the list of people with a surname */
+.sutree-list {
+  display: flex;
+  flex-direction: column;
+  width: min(24rem, 42%);
+  border-left: 1px solid #e3e3dc;
+  background: #fbfbf8;
+}
+.sutree-list[hidden] {
+  display: none;
+}
+.sutree-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.8rem;
+  border-bottom: 1px solid #e3e3dc;
+  font-size: 0.85rem;
+}
+.sutree-list-head strong {
+  font-size: 1rem;
+  color: #25422d;
+}
+.sutree-list-head button {
+  border: 0;
+  background: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: #25422d;
+  cursor: pointer;
+}
+.sutree-list-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.3rem 0.8rem 0.8rem;
+}
+.sutree-people {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sutree-person {
+  margin: 0;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid #ecece5;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+.sutree-name {
+  font-weight: bold;
+}
+.sutree-id {
+  margin-left: 0.4rem;
+  color: #6b6b64;
+  font-size: 0.75rem;
+}
+.sutree-tag {
+  margin-left: 0.4rem;
+  padding: 0 0.4em;
+  border-radius: 0.8em;
+  background: #e4ebe5;
+  color: #25422d;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.sutree-life {
+  color: #4b4b46;
+  font-size: 0.78rem;
+}
+.sutree-unknown {
+  color: #9a9a92;
+}
+.sutree-more {
+  display: block;
+  margin: 0.7rem auto 0;
+  padding: 0.25em 0.9em;
+  border: 1px solid #25422d;
+  border-radius: 0.4em;
+  background: #fff;
+  color: #25422d;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* the reach controls */
+.sutree-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.sutree-stepper > span {
+  min-width: 6.2rem;
+  text-align: center;
+  font-weight: bold;
+}
+.sutree-stepper button {
+  width: 1.9rem;
+  padding: 0.25em 0;
+  text-align: center;
+}
+.sutree-show {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+.sutree-show > span {
+  font-weight: bold;
+}
+
+.sutree-status {
+  margin: 0;
+  padding: 0.6rem 1.2rem 0.9rem;
+  color: #5a5a5a;
+  font-size: 0.85rem;
+}
+.sutree-status.sutree-error {
+  color: #b3261e;
+}
+
+.sutree-save {
+  margin: 0 1.2rem 0.6rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid #d8d8d0;
+  border-radius: 0.4rem;
+  background: #f8f8f4;
+}
+.sutree-save[hidden],
+.sutree-save [hidden] {
+  display: none;
+}
+.sutree-formats {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  margin: 0 0 0.6rem;
+  padding: 0;
+  border: 0;
+}
+.sutree-formats legend {
+  float: left;
+  width: auto;
+  margin: 0 1.2rem 0 0;
+  padding: 0;
+  border: 0;
+  font-size: inherit;
+  font-weight: bold;
+}
+.sutree-formats label,
+.sutree-save-row label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+}
+.sutree-save-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-top: 0.5rem;
+}
+.sutree-save-row input[type="number"] {
+  width: 6rem;
+}
+.sutree-note {
+  color: #5a5a5a;
+  font-size: 0.85rem;
+}
+.sutree-save button {
+  font: inherit;
+  cursor: pointer;
+  padding: 0.25em 0.9em;
+  border: 1px solid #25422d;
+  border-radius: 0.4em;
+  background: #fff;
+  color: #25422d;
+}
+.sutree-save button.sutree-primary {
+  background: #25422d;
+  color: #fff;
+}
+.sutree-save button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* the file input is kept on the page, out of sight, because Safari will not open a chooser from an input that is not displayed */
+.sutree-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* the names that did not fit: a cream box like the card, over the lower left of the tree */
+.sutree-unseen {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 3;
+  width: 16rem;
+  max-height: 60%;
+  display: flex;
+  flex-direction: column;
+  background: #fffaf0;
+  color: #2b2b2b;
+  border: 1px solid #e3d9c3;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  box-shadow:
+    0 0 0 2px #8fbf5a,
+    0 6px 20px rgba(60, 45, 20, 0.22);
+}
+.sutree-unseen[hidden] {
+  display: none;
+}
+.sutree-unseen-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 6px 10px;
+  border-bottom: 1px solid #e3d9c3;
+}
+.sutree-unseen-head button {
+  border: 0;
+  background: none;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: #25422d;
+  cursor: pointer;
+}
+.sutree-unseen-body {
+  overflow-y: auto;
+  padding: 4px 10px 8px;
+}
+.sutree-unseen-hint {
+  margin: 4px 0;
+  color: #7a7266;
+  font-size: 0.72rem;
+}
+.sutree-unseen-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sutree-unseen-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 1px 0;
+}
+.sutree-unseen-name,
+.sutree-linkbutton {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: #25590d;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.sutree-unseen-name {
+  font-weight: bold;
+  text-align: left;
+}
+
+/* the wide banner: the stage is as tall as the banner, not the tree */
+.sutree-stage.sutree-banner {
+  flex: 0 1 auto;
+  width: 100%;
+  align-self: flex-start;
+}
+.sutree-stage.sutree-banner svg {
+  height: auto;
+  aspect-ratio: 1000 / 156;
+}
+.sutree-bannerbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.sutree-bannerbox input[type="color"] {
+  width: 2.2rem;
+  height: 1.7rem;
+  padding: 0;
+  border: 1px solid #c9c9c0;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+
+/* a hidden control stays hidden whatever display the page's own styles give it */
+.sutree-app [hidden] {
+  display: none !important;
+}
