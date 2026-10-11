@@ -153,7 +153,8 @@ function bioHtml(entry) {
     return [
         entry.bio.html && `<div class="gr-bio"><h4>Biography</h4>${entry.bio.html}</div>`,
         notes.length &&
-            `<ol class="gr-notes">${notes.map((note, i) => `<li id="gr-n${entry.n}-${i + 1}">${note}</li>`).join("")}</ol>`,
+            `<div class="gr-sources"><h5>Sources</h5><ol class="gr-notes">${notes.map((note, i) => `<li id="gr-n${entry.n}-${i + 1}">${note}</li>`).join("")}</ol></div>`,
+        entry.bio.tailHtml && `<div class="gr-bio gr-bio-tail">${entry.bio.tailHtml}</div>`,
     ]
         .filter(Boolean)
         .join("");

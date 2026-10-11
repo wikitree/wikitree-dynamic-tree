@@ -7,7 +7,7 @@ Each ancestor has:
 - a heading with their Ahnentafel number, name at birth and WikiTree ID
 - birth and death details (qualifiers such as "abt" and "bef" are kept)
 - a **Family** block: parents, the direct-line spouse as a cross-reference ("Married to #3"), any other spouses or partners, siblings (full or half only when both parents are known), and children
-- their biography with the WikiTree page furniture removed and footnotes renumbered per person as endnotes
+- their biography with the WikiTree page furniture removed and footnotes renumbered per person as endnotes under a "Sources" heading, followed by whatever came after the footnote list on the profile (a "See also" list, for example)
 
 The report also has a title, contents, summary findings (ancestors found per generation, countries of birth), a research note listing Ahnentafel positions with no profile, and indexes of names and locations (the locations under one heading per country, in alphabetical order). Use the browser's Print command to save a PDF: it starts with a title page, keeps links visible and clickable, and starts each generation and section on a new page.
 

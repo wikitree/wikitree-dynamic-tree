@@ -204,7 +204,7 @@ export function buildFanChartSvg(model, settings = {}) {
 export function fanChartHtml(model, ctx) {
     const angle = FAN_ANGLES.includes(model.options.fanAngle) ? model.options.fanAngle : 180;
     const appLink = ctx.rootWtId
-        ? ` <a href="${esc(treeAppUrl(ctx.rootWtId, "fanchart"))}">Open the Fan Chart app</a>.`
+        ? ` <a href="${esc(treeAppUrl(ctx.rootWtId, "fanchart"))}">Open the Fan Chart app</a> (it starts with its own five generations).`
         : "";
     const unlabelled =
         model.generations > LAST_LABELLED_GENERATION

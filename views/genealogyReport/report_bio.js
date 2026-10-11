@@ -235,12 +235,17 @@ function removeEmptyElements(root) {
 
 // The report supplies its own "Biography" heading, and after the footnote list is gone a "Sources" heading with
 // nothing under it is just noise.
-function removeRedundantHeadings(root) {
+function removeRedundantHeadings(root, { dropSources = false } = {}) {
     for (const heading of [...root.querySelectorAll("h5")]) {
         const text = heading.textContent.trim();
         if (/^biography$/i.test(text)) {
             heading.remove();
         } else if (/^sources\b/i.test(text)) {
+            // The report puts its own "Sources" heading above the numbered endnotes, so this one would be a second.
+            if (dropSources) {
+                heading.remove();
+                continue;
+            }
             const next = heading.nextElementSibling;
             if (!next || /^H[1-6]$/.test(next.tagName)) heading.remove();
         }
@@ -252,6 +257,31 @@ function unwrapDeadLinks(root) {
     for (const link of [...root.querySelectorAll("a:not([href])")]) {
         link.replaceWith(...link.childNodes);
     }
+}
+
+/**
+ * What follows the footnote list within its section, up to the next heading: on WikiTree this is typically a
+ * "See also:" list (Find a Grave and the like), shown after the numbered sources. The nodes are returned in order.
+ */
+function takeTrailing(refs, body) {
+    const taken = [];
+    let node = refs;
+    while (node && node !== body) {
+        let sibling = node.nextSibling;
+        while (sibling) {
+            const next = sibling.nextSibling;
+            if (
+                sibling.nodeType === 1 &&
+                (/^H[1-6]$/.test(sibling.tagName) || sibling.querySelector("h1,h2,h3,h4,h5,h6"))
+            ) {
+                return taken;
+            }
+            taken.push(sibling);
+            sibling = next;
+        }
+        node = node.parentNode;
+    }
+    return taken;
 }
 
 function noteHtml(li, doc, options) {
@@ -281,7 +311,7 @@ export function sanitizeBio(html, settings = {}) {
     const droppedImages = [];
     const options = { includeImages, droppedImages };
 
-    if (!html || isBlank(html)) return { html: "", notes: [], droppedImages: [] };
+    if (!html || isBlank(html)) return { html: "", notes: [], tailHtml: "", droppedImages: [] };
 
     const source = parse(`<body>${html}</body>`);
     const body = source.body;
@@ -323,18 +353,29 @@ export function sanitizeBio(html, settings = {}) {
         marker.appendChild(link);
         sup.replaceWith(marker);
     });
+    // With the numbered sources shown as endnotes, what follows the list in the biography (the "See also" lists) belongs
+    // after them, not before.
+    const tail = source.createElement("div");
+    const refsList = notes.length ? body.querySelector("ol.references") : null;
+    if (refsList) takeTrailing(refsList, body).forEach((node) => tail.appendChild(node));
     body.querySelectorAll("ol.references").forEach((el) => el.remove());
 
     const out = source.createElement("div");
     copyClean(body, out, source, options);
     unwrapDeadLinks(out);
-    removeRedundantHeadings(out);
+    removeRedundantHeadings(out, { dropSources: notes.length > 0 });
     removeEmptyElements(out);
+
+    const tailOut = source.createElement("div");
+    copyClean(tail, tailOut, source, options);
+    unwrapDeadLinks(tailOut);
+    removeEmptyElements(tailOut);
 
     // Keep every note (even an empty one) so the [n] markers in the text stay aligned with the list.
     return {
         html: out.innerHTML.trim(),
         notes: notes.map((note) => (isBlank(note) ? "Citation" : note)),
+        tailHtml: tailOut.innerHTML.trim(),
         droppedImages,
     };
 }

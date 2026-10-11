@@ -210,6 +210,12 @@
   text-decoration: none;
 }
 
+.genealogyReportView .gr-sources h5 {
+  margin: 1rem 0 0.25rem;
+}
+.genealogyReportView .gr-bio-tail {
+  margin-top: 0.75rem;
+}
 .genealogyReportView .gr-notes {
   margin: 0.75rem 0 0;
   padding-left: 1.5rem;
