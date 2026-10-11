@@ -1,0 +1,78 @@
+[
+  [
+    1,
+    {
+      "Name": "Root-1",
+      "LongNamePrivate": "Robin Root",
+      "Gender": "Female",
+      "Father": 2,
+      "BioFather": 3,
+      "DataStatus": { "Father": "5" },
+      "Meta": { "Degrees": 0 }
+    }
+  ],
+  [
+    2,
+    {
+      "Name": "Adoptive-Father-2",
+      "LongNamePrivate": "Adam Adoptive (Robin)",
+      "Gender": "Male",
+      "DataStatus": {},
+      "Meta": {}
+    }
+  ],
+  [
+    3,
+    {
+      "Name": "Bio-Father-3",
+      "LongNamePrivate": "Ben Biological (Robin)",
+      "Gender": "Male",
+      "Father": 4,
+      "Mother": 5,
+      "BioFather": 6,
+      "BioMother": 7,
+      "DataStatus": { "Father": "5", "Mother": "5" },
+      "Meta": {}
+    }
+  ],
+  [
+    4,
+    {
+      "Name": "Adoptive-Grandfather-4",
+      "LongNamePrivate": "Arthur Adoptive (Ben)",
+      "Gender": "Male",
+      "DataStatus": {},
+      "Meta": {}
+    }
+  ],
+  [
+    5,
+    {
+      "Name": "Adoptive-Grandmother-5",
+      "LongNamePrivate": "Agnes Adoptive (Ben)",
+      "Gender": "Female",
+      "DataStatus": {},
+      "Meta": {}
+    }
+  ],
+  [
+    6,
+    {
+      "Name": "Bio-Grandfather-6",
+      "LongNamePrivate": "Brian Biological (Ben",
+      "Gender": "Male",
+      "DataStatus": {},
+      "Meta": {}
+    }
+  ],
+  [
+    7,
+    {
+      "Name": "Bio-Grandmother-7",
+      "LongNamePrivate": "Beatrice Biological (Ben)",
+      "Gender": "Female",
+      "DataStatus": {},
+      "Meta": {}
+    }
+  ]
+]

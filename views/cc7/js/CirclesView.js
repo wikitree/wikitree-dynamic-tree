@@ -1126,47 +1126,33 @@ export class CirclesView {
             }
         }
 
+        const relation = (person.Relationship?.full || "").replace(/^bio /, "");
         if (degree == 0) {
             textClr = "white";
-        } else if (
-            person.Relationship &&
-            person.Relationship.full &&
-            (person.Relationship.full == "father" ||
-                person.Relationship.full == "mother" ||
-                person.Relationship.full == "parent")
-        ) {
+        } else if (relation && (relation == "father" || relation == "mother" || relation == "parent")) {
             thisClr = "gray";
             textClr = "white";
         } else if (
-            person.Relationship &&
-            person.Relationship.full &&
+            relation &&
             CirclesView.circlesGrayAncs == true &&
-            (person.Relationship.full.indexOf("father") > -1 ||
-                person.Relationship.full.indexOf("mother") > -1 ||
-                person.Relationship.full.indexOf("parent") > -1)
+            (relation.indexOf("father") > -1 || relation.indexOf("mother") > -1 || relation.indexOf("parent") > -1)
         ) {
             thisClr = "gray";
             textClr = "white";
         } else if (
             degree == 1 &&
-            person.Relationship &&
-            person.Relationship.full &&
-            (person.Relationship.full.indexOf("husband") > -1 ||
-                person.Relationship.full.indexOf("wife") > -1 ||
-                person.Relationship.full.indexOf("spouse") > -1)
+            relation &&
+            (relation.indexOf("husband") > -1 || relation.indexOf("wife") > -1 || relation.indexOf("spouse") > -1)
         ) {
             thisClr = "red";
             textClr = "white";
-        } else if (degree == 1 && person.Relationship == "") {
+        } else if (degree == 1 && relation == "") {
             thisClr = "red";
             textClr = "white";
         } else if (
             degree == 1 &&
-            person.Relationship &&
-            person.Relationship.full &&
-            (person.Relationship.full.indexOf("brother") > -1 ||
-                person.Relationship.full.indexOf("sister") > -1 ||
-                person.Relationship.full.indexOf("sibling") > -1)
+            relation &&
+            (relation.indexOf("brother") > -1 || relation.indexOf("sister") > -1 || relation.indexOf("sibling") > -1)
         ) {
             thisClr = "blue";
             textClr = "white";
@@ -1772,43 +1758,35 @@ export class CirclesView {
                             let thisClr = "lawngreen";
                             let textClr = "black";
 
-                            if (
-                                person.Relationship &&
-                                person.Relationship.full &&
-                                (person.Relationship.full == "father" ||
-                                    person.Relationship.full == "mother" ||
-                                    person.Relationship.full == "parent")
-                            ) {
+                            const relation = (person.Relationship?.full || "").replace(/^bio /, "");
+                            if (relation && (relation == "father" || relation == "mother" || relation == "parent")) {
                                 thisClr = "gray";
                                 textClr = "white";
                             } else if (
-                                person.Relationship &&
-                                person.Relationship.full &&
+                                relation &&
                                 CirclesView.circlesGrayAncs == true &&
-                                (person.Relationship.full.indexOf("father") > -1 ||
-                                    person.Relationship.full.indexOf("mother") > -1 ||
-                                    person.Relationship.full.indexOf("parent") > -1)
+                                (relation.indexOf("father") > -1 ||
+                                    relation.indexOf("mother") > -1 ||
+                                    relation.indexOf("parent") > -1)
                             ) {
                                 thisClr = "gray";
                                 textClr = "white";
                             } else if (
-                                person.Relationship &&
-                                person.Relationship.full &&
-                                (person.Relationship.full.indexOf("husband") > -1 ||
-                                    person.Relationship.full.indexOf("wife") > -1 ||
-                                    person.Relationship.full.indexOf("spouse") > -1)
+                                relation &&
+                                (relation.indexOf("husband") > -1 ||
+                                    relation.indexOf("wife") > -1 ||
+                                    relation.indexOf("spouse") > -1)
                             ) {
                                 thisClr = "red";
                                 textClr = "white";
-                            } else if (person.Relationship == "") {
+                            } else if (relation == "") {
                                 thisClr = "red";
                                 textClr = "white";
                             } else if (
-                                person.Relationship &&
-                                person.Relationship.full &&
-                                (person.Relationship.full.indexOf("brother") > -1 ||
-                                    person.Relationship.full.indexOf("sister") > -1 ||
-                                    person.Relationship.full.indexOf("sibling") > -1)
+                                relation &&
+                                (relation.indexOf("brother") > -1 ||
+                                    relation.indexOf("sister") > -1 ||
+                                    relation.indexOf("sibling") > -1)
                             ) {
                                 thisClr = "blue";
                                 textClr = "white";

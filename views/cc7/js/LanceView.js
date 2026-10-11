@@ -109,7 +109,7 @@ export class LanceView {
                         "' data-name=\"" +
                         aPerson.Name +
                         '">' +
-                        CC7Utils.profileLink(linkName, theName) +
+                        CC7Utils.optionalAdoptedProfileLink(aPerson, linkName, theName) +
                         " " +
                         missing.missingIcons +
                         "</li>"

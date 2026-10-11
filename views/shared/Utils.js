@@ -24,17 +24,17 @@ export class Utils {
 
     /**
      * Variables and Functions to deal with PopUps and rolling them up via ESCAPE key
-     * 
+     *
      * based on logic from CC7Views, implemented to work in other Tree Apps
-     * 
+     *
      * variable: #nextZLevel keeps track of the Z level of the most recent (highest) popup
      * using getNextZlevel and setNextZLevel functions
-     * 
-     * 
-     * 
+     *
+     *
+     *
      */
     static #nextZLevel = 99999;
-    static firstTreeAppPopUpPopped = false ;
+    static firstTreeAppPopUpPopped = false;
 
     static getNextZLevel() {
         return ++Utils.#nextZLevel;
@@ -45,35 +45,35 @@ export class Utils {
     }
 
     static closeTopPopup(e) {
-            condLog("closeTopPopUp");
-                if (e.key === "Escape") {
-                    // Find the popup with the highest z-index
-                    condLog("ESCAPE KEY in UTILS / document");
-                    const [lastPopup, highestZIndex] = Utils.findTopPopup();
-        
-                    // Close the popup with the highest z-index
-                    if (lastPopup) {                        
-                        condLog("GOING to SLIDE UP the Fan Chart lastPopup")
-                        lastPopup.slideUp("fast");
-                        setNextZLevel(highestZIndex);
-                    }
-                }
-            }
-            
-    static findTopPopup() {
-            condLog("findTopPopup");
+        condLog("closeTopPopUp");
+        if (e.key === "Escape") {
             // Find the popup with the highest z-index
-            let highestZIndex = 0;
-            let lastPopup = null;
-            $(".pop-up:visible").each(function () {
-                const zIndex = parseInt($(this).css("z-index"), 10);
-                if (zIndex > highestZIndex) {
-                    highestZIndex = zIndex;
-                    lastPopup = $(this);
-                }
-            });
-            return [lastPopup, highestZIndex];
+            condLog("ESCAPE KEY in UTILS / document");
+            const [lastPopup, highestZIndex] = Utils.findTopPopup();
+
+            // Close the popup with the highest z-index
+            if (lastPopup) {
+                condLog("GOING to SLIDE UP the Fan Chart lastPopup");
+                lastPopup.slideUp("fast");
+                setNextZLevel(highestZIndex);
+            }
         }
+    }
+
+    static findTopPopup() {
+        condLog("findTopPopup");
+        // Find the popup with the highest z-index
+        let highestZIndex = 0;
+        let lastPopup = null;
+        $(".pop-up:visible").each(function () {
+            const zIndex = parseInt($(this).css("z-index"), 10);
+            if (zIndex > highestZIndex) {
+                highestZIndex = zIndex;
+                lastPopup = $(this);
+            }
+        });
+        return [lastPopup, highestZIndex];
+    }
 
     /**
      * Append a gif of a shaking tree as an image with id 'tree' to the HTML element with the id given in containerId
@@ -105,7 +105,7 @@ export class Utils {
     }
 
     /**
-     * Do the best effort possible to obtain the requested date of a profile, even if it is approximate and
+     * Do the best effort possible to obtain the requested date of a profile (even if it is approximate) and
      * returns {date:, annotation:, display:}.
      * It is assumed the date fields of the person profile are in the standard form returned by the WT API,
      * namely 'YYYY-MMM-DD' or YYY0s if a decade field is used.
@@ -532,5 +532,45 @@ export class Utils {
         const [r, g, b] = rgb.replace("rgb(", "").replace(")", "").split(",").map(Number);
 
         return "#" + this.componentToHex(r) + this.componentToHex(g) + this.componentToHex(b);
+    }
+
+    /**
+     *
+     * @param {*} wtId A WikiTree profile ID, e.g. "Van_der_Byl-59" or "Van der Byl-59"
+     * @param {*} resultByKey A map returned by e.g. the getPeople API call.
+     * @returns the profile ID of the given WikiTree ID from the given resultByKey map returned by the API.
+     */
+    static getProfileId(wtId, resultByKey) {
+        if (!wtId || !resultByKey) return null;
+        let rslt = resultByKey[wtId];
+        if (!rslt) {
+            // If the id in the original api request contains spaces (e.g. "Van der Byl-59"), then resultByKey will typically also
+            // have it with a space. However, when we want to lookup the profile, we don't always have the id with spaces, or vice
+            // versa. To save us the trouble of figuring out what is the case in each situation, we just try both ways here.
+            if (wtId.includes("_")) {
+                rslt = resultByKey[wtId.replace("_", " ")];
+            } else if (wtId.includes(" ")) {
+                rslt = resultByKey[wtId.replace(" ", "_")];
+            }
+        }
+
+        if (rslt) {
+            // Cater for a result like:
+            //   resultByKey: {
+            //     "Hofmeyr-85": {
+            //         "Id": 10981400,
+            //         "status": "Redirected to 21303918/Hofmeijer-7"
+            //     }
+            //   }
+            //
+            // with no record for 10981400 in the result, but only for 21303918
+            //
+            let id = rslt.Id;
+            if (rslt.status && rslt.status.startsWith("Redirected")) {
+                id = rslt.status.match(/\d+/)[0];
+            }
+            return +id;
+        }
+        return null;
     }
 }

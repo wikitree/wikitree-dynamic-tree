@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="240" height="240" viewBox="0 0 240 240" version="1.1">
+  <defs>
+    <path id="heart" d="M120 96 C116 78 96 58 72 58 C40 58 20 84 20 112 C20 150 112 206 120 216 C128 206 220 150 220 112 C220 84 200 58 168 58 C144 58 124 78 120 96 Z"/>
+    <path id="tri" d="M120 26 L210 202 L30 202 Z"/>
+    <g id="heartR">
+      <use href="#heart" xlink:href="#heart" fill="none" stroke="#C8102E" stroke-width="17" stroke-linejoin="round" stroke-linecap="round"/>
+      <use href="#heart" xlink:href="#heart" fill="none" stroke="#E53949" stroke-width="17" stroke-linejoin="round" stroke-linecap="round" transform="translate(-1.5,-2)"/>
+    </g>
+    <g id="triR">
+      <use href="#tri" xlink:href="#tri" fill="none" stroke="#003A63" stroke-width="17" stroke-linejoin="round" stroke-linecap="round"/>
+      <use href="#tri" xlink:href="#tri" fill="none" stroke="#0A5A86" stroke-width="17" stroke-linejoin="round" stroke-linecap="round" transform="translate(-1.5,-2)"/>
+    </g>
+    <clipPath id="heartOver" clipPathUnits="userSpaceOnUse">
+      <circle cx="140.9" cy="66.9" r="24"/>
+      <circle cx="51.2" cy="160.5" r="24"/>
+    </clipPath>
+  </defs>
+  <use href="#heartR" xlink:href="#heartR"/>
+  <use href="#triR" xlink:href="#triR"/>
+  <g clip-path="url(#heartOver)"><use href="#heartR" xlink:href="#heartR"/></g>
+</svg>
