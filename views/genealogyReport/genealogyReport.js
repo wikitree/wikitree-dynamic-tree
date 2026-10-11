@@ -13,7 +13,7 @@
  */
 
 import { DATE_FORMATS, STATUS_FORMATS } from "./report_dates.js";
-import { MAX_GENERATIONS, estimateCost, normalizeOptions } from "./report_options.js";
+import { MAX_GENERATIONS, estimateCost, normalizeOptions, printTitle } from "./report_options.js";
 import { ReportFetchError, completeReportData, fetchReportData } from "./report_fetch.js";
 import { buildReportModel } from "./report_model.js";
 import { sanitizeBio } from "./report_bio.js";
@@ -136,6 +136,20 @@ window.GenealogyReportView = class GenealogyReportView extends View {
             if (button) this.switchParents(button.dataset.personId, button.dataset.mode);
         });
         this.container.querySelector(".gr-print").addEventListener("click", () => window.print());
+        // The browser suggests the page title as the PDF's file name, so use "Report <WikiTree ID> <YYYYMMDD>" while printing
+        // (this also covers Ctrl/Cmd+P and the browser's own Print command).
+        this.onBeforePrint = () => {
+            if (!this.currentModel || this.savedTitle !== undefined) return;
+            this.savedTitle = document.title;
+            document.title = printTitle(this.currentModel.entries[0]?.person?.wtId || this.rootKey);
+        };
+        this.onAfterPrint = () => {
+            if (this.savedTitle === undefined) return;
+            document.title = this.savedTitle;
+            this.savedTitle = undefined;
+        };
+        window.addEventListener("beforeprint", this.onBeforePrint);
+        window.addEventListener("afterprint", this.onAfterPrint);
         this.container.querySelector(".gr-cancel").addEventListener("click", () => this.cancel());
 
         this.onFormChange();
@@ -145,6 +159,9 @@ window.GenealogyReportView = class GenealogyReportView extends View {
     close() {
         this.runId = (this.runId || 0) + 1; // abandons any run still in flight
         this.ai?.dispose(); // forgets the API key, if one was pasted
+        window.removeEventListener("beforeprint", this.onBeforePrint);
+        window.removeEventListener("afterprint", this.onAfterPrint);
+        this.onAfterPrint?.(); // do not leave the print title behind
         if (this.container) {
             this.container.classList.remove("genealogyReportView");
             this.container.innerHTML = "";
@@ -280,7 +297,7 @@ ${aiPanelHtml()}
         const model = buildReportModel({ rootId: state.rootId, people: state.people, options, parentModes });
         if (options.includeBio && !(await this.attachBiographies(model, options, isCurrent))) return false;
 
-        const generatedOn = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+        const generatedOn = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
         this.reportEl.innerHTML = renderReport(model, { generatedOn });
         this.rootNotice = this.rootNoticeFor(model);
         this.statusEl.textContent =

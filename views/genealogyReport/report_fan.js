@@ -120,8 +120,12 @@ function wedge(n, gen, angle, radii, resolved) {
     const middleRadius = (inner + outer) / 2;
     const side = n % 2 === 0 ? "m" : "f";
 
+    if (resolved === undefined) {
+        // No ancestor here: a blank wedge keeps the fan whole, so the gaps in the tree show where they are.
+        return `<path class="gr-fan-wedge gr-fan-empty" d="${wedgePath(inner, outer, from, to)}"><title>No profile #${n}</title></path>`;
+    }
     if (!resolved) {
-        return `<a href="#${entryId(n)}"><title>Private #${n}</title><path class="gr-fan-wedge gr-fan-hidden" d="${wedgePath(inner, outer, from, to)}"/></a>`;
+        return `<path class="gr-fan-wedge gr-fan-hidden" d="${wedgePath(inner, outer, from, to)}"><title>Private #${n}</title></path>`;
     }
     const { person } = resolved;
     const years_ = years(person);
@@ -163,8 +167,16 @@ export function buildFanChartSvg(model, settings = {}) {
     for (let gen = 2; gen <= generations; gen++) {
         for (let n = 2 ** (gen - 1); n < 2 ** gen; n++) {
             const entry = slotEntries.get(n);
-            if (!entry || entry.kind === "unavailable") continue;
-            parts.push(wedge(n, gen, angle, radii, entry.kind === "hidden" ? null : resolvedByNumber.get(n)));
+            const empty = !entry || entry.kind === "unavailable";
+            parts.push(
+                wedge(
+                    n,
+                    gen,
+                    angle,
+                    radii,
+                    empty ? undefined : entry.kind === "hidden" ? null : resolvedByNumber.get(n)
+                )
+            );
         }
     }
 
@@ -173,9 +185,11 @@ export function buildFanChartSvg(model, settings = {}) {
         ? [root.person.given, root.person.lastNameAtBirth, years(root.person)]
               .filter(Boolean)
               .map((l) => truncate(l, 14))
-        : ["Private"];
+        : [slotEntries.get(1)?.surname || "Private"];
     const rootText = textGroup(rootLines, 13, 0, 0, 0);
-    const rootNode = `<a href="#${entryId(1)}"><title>${esc(root?.person.name || "Private")} #1</title><circle class="gr-fan-wedge gr-fan-root" r="${ROOT_RADIUS - 2}"/>${rootText}</a>`;
+    const rootShape = `<title>${esc(root?.person.name || "Private")} #1</title><circle class="gr-fan-wedge gr-fan-root" r="${ROOT_RADIUS - 2}"/>${rootText}`;
+    // A starting person who is not listed has no entry to link to.
+    const rootNode = root ? `<a href="#${entryId(1)}">${rootShape}</a>` : `<g>${rootShape}</g>`;
 
     const halfAngle = angle / 2;
     const bottom = Math.max(ROOT_RADIUS, halfAngle > 90 ? -outermost * Math.cos(rad(halfAngle)) : 0);

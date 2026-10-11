@@ -6,7 +6,7 @@ import { DATE_FORMATS, DEFAULT_DATE_STYLE, STATUS_FORMATS } from "./report_dates
 
 // Shown in the report so a reader (and anyone helping them) can tell which build is running: browsers keep old copies
 // of a view's files, and a half-updated page is easy to mistake for a bug.
-export const REPORT_VERSION = "2026.10.11-1";
+export const REPORT_VERSION = "2026.10.11-6";
 
 // Sent to the API as "TA-GenealogyReport" (WikiTreeAPI.postToAPI prepends "TA-").
 export const APP_ID = "GenealogyReport";
@@ -74,6 +74,18 @@ export function normalizeOptions(raw = {}) {
     options.parentMode = oneOf(raw.parentMode, ["main", "bio"], DEFAULT_OPTIONS.parentMode);
     options.fanAngle = oneOf(Number(raw.fanAngle), [180, 240, 360], DEFAULT_OPTIONS.fanAngle);
     return options;
+}
+
+/**
+ * The page title while printing. Browsers use it as the suggested file name when saving a PDF:
+ * "Report Robinson-27265 20261011" (WikiTree ID, then the date as YYYYMMDD).
+ */
+export function printTitle(wtId, date = new Date()) {
+    const pad = (n) => String(n).padStart(2, "0");
+    const day = `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}`;
+    // A file name: keep only what WikiTree IDs are made of.
+    const id = String(wtId || "").replace(/[^A-Za-z0-9_-]/g, "");
+    return ["Report", id, day].filter(Boolean).join(" ");
 }
 
 /**

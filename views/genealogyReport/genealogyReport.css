@@ -47,6 +47,45 @@
   font-size: 2rem;
   margin: 0 0 0.25rem;
 }
+/* The Tree Apps page styles every <header> as a tinted row and every <img> as height: auto, which squashes the logo, so
+   the title block and the logo say exactly what they should be. */
+.genealogyReportView .gr-title {
+  display: block;
+  background: transparent;
+  padding: 0;
+}
+.genealogyReportView .gr-title .gr-logo {
+  display: block;
+  width: 96px !important;
+  height: 96px !important;
+  max-width: none !important;
+  max-height: none !important; /* header img { max-height: 40px } in css/wt-header.css */
+  flex: none;
+  object-fit: contain;
+  margin: 0 0 0.5rem;
+}
+.genealogyReportView .gr-rooted {
+  margin: 0;
+  font-style: italic;
+  color: #555;
+}
+.genealogyReportView .gr-for {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: normal;
+}
+.genealogyReportView .gr-report .gr-span {
+  margin: 0.25rem 0 0.75rem;
+  font-size: 1.25rem;
+  font-weight: normal;
+}
+.genealogyReportView .gr-title-foot {
+  font-family: inherit;
+  font-size: 1rem;
+}
+.genealogyReportView .gr-title-foot p {
+  margin: 0.15rem 0;
+}
 .genealogyReportView .gr-report h2 {
   font-size: 1.5rem;
   margin: 2rem 0 0.75rem;
@@ -273,6 +312,10 @@
 .genealogyReportView .gr-fan-hidden {
   fill: #e6e6e6;
 }
+.genealogyReportView .gr-fan-empty {
+  fill: #fafafa;
+  stroke: #ddd;
+}
 .genealogyReportView .gr-fan-root {
   fill: #efe6c2;
 }
@@ -434,6 +477,7 @@
 }
 .genealogyReportView .gr-version {
   color: #777;
+  font-style: italic;
 }
 .genealogyReportView .gr-rel-30 {
   border-color: #2f7d4f;
@@ -511,7 +555,7 @@
   }
 
   /* Hide the Tree Apps chrome and this view's own controls; print only the report. */
-  header,
+  header:not(.gr-title),
   .tabs--wrapper,
   #info-panel,
   #view-loader,
@@ -534,9 +578,58 @@
   .genealogyReportView .gr-family {
     break-inside: avoid;
   }
+  /* Links stay visible on paper and in a PDF, where they are still clickable. */
   .genealogyReportView a {
+    color: #1a5c1a;
+    text-decoration: underline;
+  }
+  .genealogyReportView .gr-fan-svg a {
     color: inherit;
     text-decoration: none;
+  }
+  /* A title page of its own: logo, who the report is for, and where it came from at the foot of the page. */
+  .genealogyReportView .gr-title {
+    display: flex;
+    flex-direction: column;
+    height: 21cm;
+    margin: 0;
+    padding: 0;
+    border-bottom: none;
+    background: #fff !important;
+    text-align: center;
+    break-after: page;
+  }
+  .genealogyReportView .gr-title-main {
+    margin: auto 0;
+  }
+  .genealogyReportView .gr-title .gr-logo {
+    width: 6cm !important;
+    height: 6cm !important;
+    max-height: none !important;
+    margin: 0 auto 1cm;
+  }
+  .genealogyReportView .gr-title .gr-rooted {
+    font-size: 1.5rem;
+    margin-bottom: 1.5cm;
+  }
+  .genealogyReportView .gr-report .gr-title h1 {
+    font-size: 2.75rem;
+    margin-bottom: 0.5cm;
+  }
+  .genealogyReportView .gr-title .gr-for {
+    font-size: 1.5rem;
+    margin-bottom: 0.3cm;
+  }
+  .genealogyReportView .gr-report .gr-title .gr-span {
+    font-size: 1.5rem;
+  }
+  .genealogyReportView .gr-title-foot {
+    margin-top: auto;
+    font-size: 11pt;
+  }
+  /* Contents is a page of its own, and the report proper starts on the next one. */
+  .genealogyReportView .gr-contents {
+    break-after: page;
   }
   @page {
     margin: 2cm;

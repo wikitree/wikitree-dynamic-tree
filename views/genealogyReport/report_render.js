@@ -8,6 +8,9 @@
 import { countryOf, formatDate, formatLifespan } from "./report_dates.js";
 import { compressRanges, generationOf, pathNumbers, relationshipLabel } from "./report_model.js";
 import { REPORT_VERSION, dateStyleOf } from "./report_options.js";
+
+// WikiTree's printable logo (https://www.wikitree.com/photo/png/WikiTree_Images_New).
+const LOGO_URL = "https://www.wikitree.com/photo.php/d/d7/WikiTree_Images_New.png";
 import { WIKITREE_URL, entryId, esc, slotLink, wikiTreeLink } from "./report_html.js";
 import { fanChartHtml } from "./report_fan.js";
 import { CONFIDENT, RELATIONSHIP_STATUS, RESEARCH_STATUS, isMarked, researchStatusOf } from "./report_status.js";
@@ -285,6 +288,16 @@ function summaryHtml(model, ctx) {
 ${years}${countries}${statusSummary}</section>`;
 }
 
+function omittedHtml(model, omitted) {
+    if (!omitted.length) return "";
+    const label = omitted.length === 1 ? `Generation ${omitted[0]} is` : `Generations ${omitted.join(", ")} are`;
+    const living = model.entries.some((e) => omitted.includes(e.gen) && e.kind === "hidden" && e.reason === "living");
+    const why = living
+        ? "living people are hidden (untick \u201cHide living people\u201d to show them)"
+        : "the only profiles in " + (omitted.length === 1 ? "it are" : "them are") + " private or not available";
+    return `<p class="gr-research-note">${label} not shown, because ${why}.</p>`;
+}
+
 function missingHtml(model) {
     if (!model.missingPositions.length) return "";
     return `<p class="gr-research-note"><strong>Research note:</strong> Ahnentafel positions ${compressRanges(
@@ -311,24 +324,34 @@ function indexesHtml(model, ctx) {
             places.get(place).add(e.n);
         }
     }
-    const group = (predicate) =>
-        [...places.entries()]
-            .filter(([place]) => predicate(countryOf(place)))
-            .sort((a, b) => a[0].localeCompare(b[0]))
-            .map(
-                ([place, numbers]) =>
-                    `<li>${esc(place)} &mdash; ${[...numbers]
-                        .sort((a, b) => a - b)
-                        .map(slotLink)
-                        .join(", ")}</li>`
-            )
-            .join("");
-    const home = group((country) => country === "United States");
-    const abroad = group((country) => country !== "United States");
+    // One heading per country (the last part of the place), in alphabetical order.
+    const countries = new Map();
+    for (const [place, numbers] of places) {
+        const country = countryOf(place);
+        if (!countries.has(country)) countries.set(country, []);
+        countries.get(country).push([place, numbers]);
+    }
+    const byCountry = [...countries.keys()].sort((a, b) => a.localeCompare(b));
+    const placeGroups = byCountry
+        .map((country) => {
+            const items = countries
+                .get(country)
+                .sort((a, b) => a[0].localeCompare(b[0]))
+                .map(
+                    ([place, numbers]) =>
+                        `<li>${esc(place)} &mdash; ${[...numbers]
+                            .sort((a, b) => a - b)
+                            .map(slotLink)
+                            .join(", ")}</li>`
+                )
+                .join("");
+            return `<h3>${esc(country)}</h3><ul>${items}</ul>`;
+        })
+        .join("");
 
     return `<section class="gr-index" id="gr-index-names"><h2>Index of Names</h2><ul>${names}</ul></section>
 <section class="gr-index" id="gr-index-places"><h2>Index of Locations</h2>
-${home ? `<h3>United States</h3><ul>${home}</ul>` : ""}${abroad ? `<h3>International</h3><ul>${abroad}</ul>` : ""}</section>`;
+${placeGroups}</section>`;
 }
 
 // The optional sections that mirror Tree Apps, in report order.
@@ -340,7 +363,7 @@ const APP_SECTIONS = [
 ];
 
 function contentsHtml(model) {
-    const generations = [...new Set(model.entries.map((e) => e.gen))];
+    const generations = [...listedGenerations(model).listed.keys()];
     const items = [
         `<li><a href="#gr-summary">Summary Findings</a></li>`,
         ...generations.map((g) => `<li><a href="#gr-gen${g}">Generation ${g}</a></li>`),
@@ -349,6 +372,47 @@ function contentsHtml(model) {
         `<li><a href="#gr-index-places">Index of Locations</a></li>`,
     ];
     return `<nav class="gr-contents" aria-label="Contents"><h2>Contents</h2><ul>${items.join("")}</ul></nav>`;
+}
+
+// The name for the title page: given names and surname at birth, without a prefix or suffix.
+// A starting person who is not listed is named by their surname at birth, which WikiTree gives even then.
+function titleName(root, fallback) {
+    const person = root?.person;
+    if (person) return [person.given, person.lastNameAtBirth].filter(Boolean).join(" ") || person.name;
+    return root?.surname || fallback;
+}
+
+// The generations that have somebody to list. One with only private or unavailable people would be a page holding
+// just a heading, so it is left out (the research note and summary still count the people).
+function listedGenerations(model) {
+    const generations = new Map();
+    for (const entry of model.entries) {
+        if (!generations.has(entry.gen)) generations.set(entry.gen, []);
+        generations.get(entry.gen).push(entry);
+    }
+    const listed = new Map(
+        [...generations].filter(([, list]) => list.some((e) => e.kind === "person" || e.kind === "duplicate"))
+    );
+    return { listed, omitted: [...generations.keys()].filter((gen) => !listed.has(gen)) };
+}
+
+function titlePageHtml(model, root, rootName, settings) {
+    const { earliestBirthYear: from, latestBirthYear: to } = model.stats;
+    const span = from && to ? (from === to ? ` - ${from}` : ` - ${from}\u2013${to}`) : "";
+    const count = `${model.generations} Generation${model.generations === 1 ? "" : "s"}`;
+    const created = settings.generatedOn ? `created ${esc(settings.generatedOn)} - ` : "";
+    return `<header class="gr-title">
+<div class="gr-title-main">
+<img class="gr-logo" src="${LOGO_URL}" alt="WikiTree">
+<p class="gr-rooted">Rooted in WikiTree:</p>
+<h1><span class="gr-for">Genealogical Report for</span> <strong>${esc(titleName(root, rootName))}</strong></h1>
+<h2 class="gr-span">${count}${span}</h2>
+</div>
+<footer class="gr-title-foot">
+<p>${created}compiled from <a href="${WIKITREE_URL}">WikiTree</a></p>
+<p class="gr-version"><em>app version ${esc(REPORT_VERSION)}</em></p>
+</footer>
+</header>`;
 }
 
 /**
@@ -375,11 +439,7 @@ export function renderReport(model, settings = {}) {
         e.showPortrait = showPortraits;
     });
 
-    const generations = new Map();
-    for (const entry of model.entries) {
-        if (!generations.has(entry.gen)) generations.set(entry.gen, []);
-        generations.get(entry.gen).push(entry);
-    }
+    const { listed: generations, omitted } = listedGenerations(model);
     const body = [...generations.entries()]
         .map(
             ([gen, list]) =>
@@ -394,15 +454,12 @@ export function renderReport(model, settings = {}) {
         .join("\n");
 
     return `<article class="gr-report">
-<header class="gr-title">
-<h1>Ancestors of ${esc(rootName)}</h1>
-<p>${model.generations} generation${model.generations === 1 ? "" : "s"}${settings.generatedOn ? ` &middot; created ${esc(settings.generatedOn)}` : ""} &middot; compiled from <a href="${WIKITREE_URL}">WikiTree</a> <small class="gr-version">&middot; report version ${esc(REPORT_VERSION)}</small></p>
-</header>
+${titlePageHtml(model, root, rootName, settings)}
 ${contentsHtml(model)}
 <section class="gr-howto"><h2>How to read this report</h2>
 <p>Ancestors are numbered with the <em>Ahnentafel</em> system. The subject is #1, the father is #2 and the mother #3. A father's number is double his child's, and a mother's is double plus one. Each ancestor's <em>Family</em> block lists their parents, spouses, siblings and children (where a profile has both listed and biological parents, the Biological / Adoptive buttons under the heading choose which line the report follows); relatives the report cannot show (private profiles, or living people if hidden) are counted but not named.</p>
 ${ctx.showStatus ? `<p>The badges show a profile's <em>Research Status</em> (set by WikiTree members; profiles with no status are not marked) and the <em>Relationship Status</em> of parent-child links and marriages. ${ctx.showConfident ? "A check mark means Confident, the normal case; the other statuses are named." : "A link is marked when it is Uncertain, Non-biological or Confirmed with DNA; an unmarked link is Confident."}</p>` : ""}
-${missingHtml(model)}
+${omittedHtml(model, omitted)}${missingHtml(model)}
 </section>
 ${summaryHtml(model, ctx)}
 ${body}

@@ -462,7 +462,13 @@ export function buildReportModel({ rootId, people, options, parentModes }) {
         if (isHiddenPerson(raw, context.privacy)) {
             // "living": we have the person but the reader asked to hide the living. "private": WikiTree gave no name.
             const named = Boolean(raw.FirstName || raw.LastNameAtBirth || raw.RealName);
-            return { ...base, kind: "hidden", reason: named ? "living" : "private", linkStatus: null };
+            return {
+                ...base,
+                kind: "hidden",
+                reason: named ? "living" : "private",
+                surname: raw.LastNameAtBirth || "",
+                linkStatus: null,
+            };
         }
         const chosen = parentsFor(raw, chooseParents(id));
         const listed = parentOptions(raw);
