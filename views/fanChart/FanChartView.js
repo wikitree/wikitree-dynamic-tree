@@ -75,7 +75,7 @@ import { PDFs } from "../shared/PDFs.js";
     const FullAppName = "Fan Chart tree app";
     const AboutPreamble =
         "The Fan Chart was originally created as a standalone WikiTree app.<br>The current Tree App version was created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "24 February 2026";
+    const AboutUpdateDate = "30 Sep 2026";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/fan180.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers =
@@ -732,6 +732,15 @@ import { PDFs } from "../shared/PDFs.js";
                     help: "https://www.wikitree.com/wiki/Space:Fan_Chart_app#BioSettings",
                     comment: "These options determine how Fan Chart handles Parents and Bio-Parents. ",
                 },
+                {
+                    name: "popup",
+                    label: '<img style="height:18px; cursor:pointer;" src="https://www.wikitree.com/images/icons/icon-connect.svg"> Pop-up',
+                    hideSelect: true,
+                    subsections: [{ name: "PopUpSettings", label: "Pop-Up Settings   " }],
+                    help: "https://www.wikitree.com/wiki/Space:Fan_Chart_app#PopUpSettings",
+                    comment: "These options determine how Fan Chart formats the Connections Pop-Up.",
+                    //<img style="height:24px; cursor:pointer;" src="https://www.wikitree.com/images/icons/icon-connect.svg">
+                },
             ],
             optionsGroups: [
                 {
@@ -1376,6 +1385,64 @@ import { PDFs } from "../shared/PDFs.js";
                         },
                     ],
                 },
+
+                {
+                    tab: "popup",
+                    subsection: "PopUpSettings",
+                    category: "popup",
+                    subcategory: "options",
+
+                    // popup_options_showOrangeArrows
+                    // popup_options_showConfidenceImages
+                    // popup_options_doAlternateColouring:
+
+                    options: [
+                        {
+                            optionName: "showOrangeArrows",
+                            // label: '<svg height="30" width="30" viewBox="20 -20 30 40"><polyline fill="orange" stroke="orange" points="25,-17,34,-5,28,-5,28,7,22,7,22,-5,16,-5,25,-17"></polyline></svg> Show Orange Arrows connecting one person to the next',
+                            label: "Show Orange Arrows connecting one person to the next",
+                            type: "checkbox",
+                            defaultValue: 1,
+                        },
+
+                        {
+                            optionName: "showConfidenceImages",
+                            // label: '<img height="14" src="https://www.wikitree.com/images/icons/icon-confident.svg"> Show Confidence Images (DNA icons) for connections between parents and children',
+                            label: "Show Confidence Images (DNA icons) for connections between parents and children",
+                            type: "checkbox",
+                            defaultValue: 0,
+                        },
+                        {
+                            optionName: "doAlternateColouring",
+                            // label: '<svg height="25" width="50" viewBox="-45 0 80 20"><rect rx="10" ry="10" width="30" height="10" x="-40" style="fill:lightgreen;stroke:black;stroke-width:1;opacity:1"></rect> - <rect rx="10" ry="10" width="30" height="10" style="fill:lightyellow;stroke:black;stroke-width:1;opacity:1"></rect></svg> Use Alternating Colours to visually group family clusters who are related biologically',
+                            label: "Use Alternating Colours to visually group family clusters who are related biologically",
+                            type: "checkbox",
+                            defaultValue: 0,
+                        },
+                        { optionName: "break1", type: "br" },
+                        {
+                            optionName: "embedProfileLinks",
+                            // label: '<svg height="25" width="50" viewBox="-45 0 80 20"><rect rx="10" ry="10" width="30" height="10" x="-40" style="fill:lightgreen;stroke:black;stroke-width:1;opacity:1"></rect> - <rect rx="10" ry="10" width="30" height="10" style="fill:lightyellow;stroke:black;stroke-width:1;opacity:1"></rect></svg> Use Alternating Colours to visually group family clusters who are related biologically',
+                            label: "Embed Profile Links in the Names in each bubble",
+                            type: "checkbox",
+                            defaultValue: 0,
+                        },
+                        {
+                            optionName: "showBothParents",
+                            // label: '<svg height="25" width="50" viewBox="-45 0 80 20"><rect rx="10" ry="10" width="30" height="10" x="-40" style="fill:lightgreen;stroke:black;stroke-width:1;opacity:1"></rect> - <rect rx="10" ry="10" width="30" height="10" style="fill:lightyellow;stroke:black;stroke-width:1;opacity:1"></rect></svg> Use Alternating Colours to visually group family clusters who are related biologically',
+                            label: "Show Both Parents in parent/child bubbles",
+                            type: "checkbox",
+                            defaultValue: 0,
+                        },
+                        {
+                            optionName: "showPathDescriptions",
+                            // label: '<svg height="25" width="50" viewBox="-45 0 80 20"><rect rx="10" ry="10" width="30" height="10" x="-40" style="fill:lightgreen;stroke:black;stroke-width:1;opacity:1"></rect> - <rect rx="10" ry="10" width="30" height="10" style="fill:lightyellow;stroke:black;stroke-width:1;opacity:1"></rect></svg> Use Alternating Colours to visually group family clusters who are related biologically',
+                            label: "Show Path Descriptions for each connection",
+                            type: "checkbox",
+                            defaultValue: 1,
+                        },
+                    ],
+                },
             ],
         });
 
@@ -1622,7 +1689,7 @@ import { PDFs } from "../shared/PDFs.js";
                         } else {
                             thisWedgeFillColour = thisWedgeStyleFill;
                         }
-                        console.log("Wedge fill colour:", thisWedgeFillColour);
+                        condLog("Wedge fill colour:", thisWedgeFillColour);
                     }
                     if (thisSVGpathD > "") {
                         let Acoords = thisSVGpathD
@@ -1990,14 +2057,23 @@ import { PDFs } from "../shared/PDFs.js";
                     }
                 }
                 // thisElement = document.getElementById(thisID);
+
                 if (
                     thisElement &&
                     thisElement.src > "" &&
                     document.location.host.indexOf("apps.wikitree.com") > -1 &&
                     thisElement.src.indexOf("www.wikitree.com") > -1 &&
-                    thisElement.parentNode.style.display != "none"
+                    thisElement.parentNode.style.display != "none" &&
+                    thisElement.style.display != "none"
                 ) {
                     //  let thisBaseString = theBaseString;
+
+                    console.log(
+                        "IF @ line:2003 - Adding image to ",
+                        thisElement,
+                        " PDF with base string: (TBD) and parentNode: ",
+                        thisElement.parentNode
+                    );
 
                     let thisBaseString = await PDFs.setupWaitForBase64Image({
                         width: thisElement.width,
@@ -2006,7 +2082,6 @@ import { PDFs } from "../shared/PDFs.js";
                         ahnNum: index,
                     });
 
-                    // console.log("IF - Adding image to ", thisElement.src, " PDF with base string:", thisBaseString);
                     PDFs.thisPDFimageArray.push([
                         thisBaseString,
                         // "/apps/clarke11007/images/icons/female.gif",
@@ -2023,7 +2098,18 @@ import { PDFs } from "../shared/PDFs.js";
 
                     thisY += (thisElement.height + 20) * thisYdy;
                     thisX += (thisElement.height + 20) * thisYdx;
-                } else if (thisElement && thisElement.src > "" && thisElement.parentNode.style.display != "none") {
+                } else if (
+                    thisElement &&
+                    thisElement.src > "" &&
+                    thisElement.style.display != "none" &&
+                    thisElement.parentNode.style.display != "none"
+                ) {
+                    console.log(
+                        "IF @ line:2029 - Adding image to ",
+                        thisElement,
+                        " PDF with base string: (TBD) and parentNode: ",
+                        thisElement.parentNode
+                    );
                     let thisBaseString = await PDFs.setupWaitForBase64Image({
                         width: thisElement.width,
                         height: thisElement.height,
@@ -2586,7 +2672,47 @@ import { PDFs } from "../shared/PDFs.js";
                 let stickerLegend = document.getElementById("stickerLegend");
                 let legendToggle = document.getElementById("legendASCII");
                 let innerLegend = document.getElementById("innerLegend");
+                let connectionPodDIV = document.getElementById("connectionPodDIV");
                 let BRbetweenLegendAndStickers = document.getElementById("BRbetweenLegendAndStickers");
+
+                if (connectionPodDIV && connectionPodDIV.style.display != "none") {
+                    // ORANGE ARROWS setting
+                    let hideShowOrangeArrowsCheckbox = document.getElementById("hideShowOrangeArrowsCheckbox");
+                    hideShowOrangeArrowsCheckbox.checked =
+                        FanChartView.currentSettings["popup_options_showOrangeArrows"];
+                    hideShowOrangeArrows();
+
+                    // CONFIDENCE IMAGES setting
+                    let hideShowConfidenceCheckbox = document.getElementById("hideShowConfidenceCheckbox");
+                    hideShowConfidenceCheckbox.checked =
+                        FanChartView.currentSettings["popup_options_showConfidenceImages"];
+                    hideShowConfidence();
+
+                    // ALTERNATE FAMILY COLOURS setting
+                    let hideShowAlternateFamilyColoursCheckbox = document.getElementById(
+                        "hideShowAlternateFamilyColoursCheckbox"
+                    );
+                    hideShowAlternateFamilyColoursCheckbox.checked =
+                        FanChartView.currentSettings["popup_options_doAlternateColouring"];
+                    hideShowAlternateFamilyColours();
+
+                    // EMBED LINKS setting
+                    let hideShowEmbedLinksCheckbox = document.getElementById("doEmbedProfileLinksCheckbox");
+                    hideShowEmbedLinksCheckbox.checked =
+                        FanChartView.currentSettings["popup_options_embedProfileLinks"];
+                    doEmbedProfileLinks();
+
+                    // SHOW BOTH PARENTS setting
+                    let hideShowBothParentsCheckbox = document.getElementById("doShowBothParentsCheckbox");
+                    hideShowBothParentsCheckbox.checked = FanChartView.currentSettings["popup_options_showBothParents"];
+                    doShowBothParents();
+
+                    // do the same for showPathDescriptions
+                    let hideShowPathDescriptionsCheckbox = document.getElementById("hideShowPathDescriptionsCheckbox");
+                    hideShowPathDescriptionsCheckbox.checked =
+                        FanChartView.currentSettings["popup_options_showPathDescriptions"];
+                    hideShowPathDescriptions();
+                }
 
                 // showBadges;
                 // badgeLabels;
@@ -4063,7 +4189,7 @@ import { PDFs } from "../shared/PDFs.js";
     function drawWedgesForFanChart(g) {
         let maxNum2DisplayNow = FanChartView.numGens2Display - 1 + 1 * (FanChartView.familyType == "Combo" ? 1.0 : 0);
         for (let genIndex = g ? FanChartView.maxNumGens : maxNum2DisplayNow; genIndex >= 0; genIndex--) {
-            console.log("Drawing Wedges for Generation ", { genIndex });
+            condLog("Drawing Wedges for Generation ", { genIndex });
             for (let index = 0; index < 2 ** genIndex; index++) {
                 let SVGcode = "";
                 if (genIndex <= 2) {
@@ -4145,7 +4271,7 @@ import { PDFs } from "../shared/PDFs.js";
 
         // HIDE all the unused Wedges in the outer rims that we don't need yet
         for (let genIndex = FanChartView.maxNumGens; genIndex > maxNum2DisplayNow; genIndex--) {
-            console.log("Hiding Wedges for Generation ", { genIndex });
+            condLog("Hiding Wedges for Generation ", { genIndex });
             for (let index = 0; index < 2 ** genIndex; index++) {
                 d3.select("#" + "wedge" + 2 ** genIndex + "n" + index).attrs({ display: "none" });
                 let dnaImgX = document.getElementById("imgDNA-x-" + genIndex + "i" + index + "inner");
@@ -7161,20 +7287,30 @@ import { PDFs } from "../shared/PDFs.js";
      * Show a popup for the person.
      */
     Tree.prototype.personPopup = function (person) {
-        // console.log("POP UP : person = ",person);
+        console.log("POP UP : person = ", person);
         // console.log({ firstFanChartPopUpPopped });
         // console.log("Utils.firstTreeAppPopUpPopped", Utils.firstTreeAppPopUpPopped);
         if (!Utils.firstTreeAppPopUpPopped) {
             $(document).off("keyup", Utils.closeTopPopup).on("keyup", Utils.closeTopPopup);
             Utils.firstTreeAppPopUpPopped = true;
         }
-        personPopup.popupHTML(person, {
-            type: "Ahn",
-            ahNum: FanChartView.myAhnentafel.listByPerson[person._data.Id],
-            primaryPerson: thePeopleList[FanChartView.myAhnentafel.list[1]],
-            myAhnentafel: FanChartView.myAhnentafel,
-            SettingsObj: Utils,
-        });
+        if (FanChartView.myAhnentafel.listByPerson[person._data.Id] == undefined) {
+            personPopup.popupHTML(person, {
+                type: "Ahn",
+                ahNum: FanChartView.bioAhnentafel.listByPerson[person._data.Id],
+                primaryPerson: thePeopleList[FanChartView.bioAhnentafel.list[1]],
+                myAhnentafel: FanChartView.bioAhnentafel,
+                SettingsObj: Utils,
+            });
+        } else {
+            personPopup.popupHTML(person, {
+                type: "Ahn",
+                ahNum: FanChartView.myAhnentafel.listByPerson[person._data.Id],
+                primaryPerson: thePeopleList[FanChartView.myAhnentafel.list[1]],
+                myAhnentafel: FanChartView.myAhnentafel,
+                SettingsObj: Utils,
+            });
+        }
         // console.log("FanChartView.personPopup");
     };
 
@@ -8412,7 +8548,8 @@ import { PDFs } from "../shared/PDFs.js";
         } else if (noMiddleInitialName.length < maxLength) {
             return thePrefix + noMiddleInitialName + theSuffix;
         } else {
-            return thePrefix + `${person._data.FirstName.substring(0, 1)}. ${person._data.LastNameAtBirth}` + theSuffix;
+            //console.log(                "WARNING: getShortName called with a name that is too long to display in full: ",                birthName,                person            );
+            return thePrefix + `${person._data.RealName.substring(0, 1)}. ${person._data.LastNameAtBirth}` + theSuffix;
         }
     }
 

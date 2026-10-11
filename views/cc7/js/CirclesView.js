@@ -932,12 +932,12 @@ export class CirclesView {
                     if (nextPeep.Id > 0 && CirclesView.notAlreadyInCodeLong(nextPeep.Id, thisPeepCodeLong)) {
                         CirclesView.updateFieldsInPersonCodesObject(
                             nextPeep.Id,
-                            thisPeepCode + "P" + /* make2Digit */ (i + 1),
-                            thisPeepCodeLong + "|" + "P" + /* make2Digit */ (i + 1) + "-" + nextPeep.Id
+                            thisPeepCode + "P" + make2Digit(i + 1),
+                            thisPeepCodeLong + "|" + "P" + make2Digit(i + 1) + "-" + nextPeep.Id
                         );
                         CirclesView.addConnectionsToThisPerson(
                             nextPeep.Id,
-                            thisPeepCode + "P" + /* make2Digit */ (i + 1),
+                            thisPeepCode + "P" + make2Digit(i + 1),
                             "Partner",
                             thisPeep.Id
                         );

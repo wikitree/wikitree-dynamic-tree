@@ -468,6 +468,92 @@ WikiTreeAPI.getWatchlist = async function (appId, limit, getPerson, getSpace, fi
 };
 
 /**
+ * getConnections
+ * 
+ * To get a list of Connections , we POST to the API's getConnections action.
+ * When we get a result back, we leave the result as an array of objects
+ * Note that postToAPI returns the Promise from JavaScript's fetch() call.
+ * That feeds our await here, which also returns a Promise, which gets resolved when the wait is over.
+ *
+ * So we can use this through our asynchronous actions with something like:
+ *
+ *   WikiTree.getConnections(appId, [keyFromID,keyToID], ["Id", "Name", "LastNameAtBirth", "Derived.BirthNamePrivate"], {}, 0 ).then(
+ *       function (connResults) {
+ *          if (connResults) {
+                // console.log("Found a connection result !", connResults);
+                if (connResults.path && connResults.path.length > 0) {
+                    console.log("The path found: " + connResults.path[0].BirthNamePrivate);
+                    for (let p = 1; p < connResults.path.length; p++) {
+                        let thisPerson = connResults.path[p];
+                        console.log(" -> " + thisPerson.BirthNamePrivate);
+                    }
+                } else {
+                    console.log("No connection path found !");
+                }
+            } else {
+                console.log("Need to know there is NO getConnections RESULT !");
+            }
+ *       }
+ *   );
+ *
+ * NOTE:  the "connResults" here that is the input to the .then function is the JSON from our API call, namely
+ * result[0], which will be this collection of objects.
+ *          status	    Error message if any, blank if successful.
+ *          userid1	    User ID of the first profile.
+ *          userid2	    User ID of the second profile.
+ *          relation	    The relation specified above. Default 0.
+ *          ignoreids	    User IDs that were ignored in the path calculation.
+ *          path	    See path below.
+ *          pathType	Will be the same as relation specified above, unless 11 is chosen. Default 0.
+ *          pathLength	Length of the path between the two profiles.
+ * 
+ *      path is an array of objects, each object representing a person in the path between the two profiles.
+ *          Each object in the path has the list of fields requested representing a person in the path.
+ *          Each object after the first element includes two more fields:
+ *              "pathType"     - defines the relationship between the current person and the previous one: 
+ *                              e.g. "child","parent","spouse","sibling"
+ *               "pathStatus" - defines the status of the path, 
+ *                              e.g. "30" for confirmed by DNA, "20" for confident, "5" for non-biological, "10" for uncertain, "0" for unknown / not set
+
+ *
+ * WARNING:  See note above about what you get if you don't use the .then() ....
+ *
+ * @param {*} appId An application id (any string). 'TA-' will be prepended to denotes it as a "Tree App"
+ * @param {*} IDs can be a single string, with a single ID or a set of comma separated IDs. OR it can be an array of IDs
+ * @param {*} fields an array or comma delimited string of fields to return for each profile (same as for getPerson or getProfile)
+ * @param {*} options an option object which can contain these key-value pairs
+ *                     - ignoreIds	Optional comma-separated list of User IDs to ignore.
+ *                     - nopath	    Set to 1 if you only want pathLength and not the full path.
+ * @param {*} relation a digit to specify the type of connection to return, e.g.
+ *          Option	Description
+            0	Shortest path
+            1	Shortest path excluding spouses
+            2	Shortest path through a common ancestor
+            3	Shortest path through a common descendant
+            4	Shortest path through fathers only
+            5	Shortest path through mothers only
+            6	Shortest path through yDNA
+            7	Shortest path through mtDNA
+            8	Shortest path through auDNA
+            11	Shortest path through ancestors (2) (if found), otherwise shortest path through all relations (0)
+ * @returns a Promise for the JSON in the returned API response
+ */
+WikiTreeAPI.getConnections = async function (appId, IDs, fields, options = {}, relation = 0) {
+    let getConnectionsParameters = {
+        appId: appId,
+        action: "getConnections",
+        keys: IDs.join(","),
+        relation: relation,
+        fields: typeof fields == "string" ? fields : fields.join(","),
+        resolveRedirect: 1,
+    };
+    console.log("getConnectionsParameters: ", getConnectionsParameters);
+
+    const result = await WikiTreeAPI.postToAPI(getConnectionsParameters);
+    return result[0];
+};
+
+/**
  * This is just a wrapper for JavaScript's fetch() call, sending along necessary options for the WikiTree API.
  *
  * @param {*} postData
