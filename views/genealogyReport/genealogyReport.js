@@ -282,10 +282,24 @@ ${aiPanelHtml()}
 
         const generatedOn = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
         this.reportEl.innerHTML = renderReport(model, { generatedOn });
-        this.statusEl.textContent = `Done: ${model.stats.uniqueAncestors} ancestors in ${model.generations} generations.`;
+        this.rootNotice = this.rootNoticeFor(model);
+        this.statusEl.textContent =
+            this.rootNotice || `Done: ${model.stats.uniqueAncestors} ancestors in ${model.generations} generations.`;
         this.container.querySelector(".gr-print").disabled = false;
         this.currentModel = model;
         return true;
+    }
+
+    // If WikiTree returned nothing for the starting profile, say what to check: it is usually the login or the
+    // Trusted List, and the report alone cannot tell which.
+    rootNoticeFor(model) {
+        const root = model.entries.find((entry) => entry.n === 1);
+        if (!root || root.kind !== "hidden" || root.reason !== "private") return "";
+        const user = window.wtViewRegistry?.session?.lm?.user;
+        const who = user?.isLoggedIn?.()
+            ? `You are logged in as ${user.name}. The profile may be private to you: ask its manager to add you to its Trusted List.`
+            : "You do not appear to be logged in. Log in to WikiTree in this browser and reload this page.";
+        return `WikiTree returned no details for ${this.rootKey}, so the report shows only a private entry. ${who}`;
     }
 
     reportFailed(error) {

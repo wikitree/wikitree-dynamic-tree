@@ -459,7 +459,11 @@ export function buildReportModel({ rootId, people, options, parentModes }) {
         // How sure the link is between this ancestor and the person below them on the line (kept on that person).
         base.linkStatus = n >= 2 ? parentLinkStatus(people[slots.get(Math.floor(n / 2))], id) : null;
         if (firstSlotOf.get(id) !== n) return { ...base, kind: "duplicate", firstSlot: firstSlotOf.get(id) };
-        if (isHiddenPerson(raw, context.privacy)) return { ...base, kind: "hidden", linkStatus: null };
+        if (isHiddenPerson(raw, context.privacy)) {
+            // "living": we have the person but the reader asked to hide the living. "private": WikiTree gave no name.
+            const named = Boolean(raw.FirstName || raw.LastNameAtBirth || raw.RealName);
+            return { ...base, kind: "hidden", reason: named ? "living" : "private", linkStatus: null };
+        }
         const chosen = parentsFor(raw, chooseParents(id));
         const listed = parentOptions(raw);
         const alternateIds = chosen.hasAlternate

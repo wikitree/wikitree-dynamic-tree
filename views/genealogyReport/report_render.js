@@ -218,7 +218,11 @@ function entryHtml(entry, ctx) {
         return `<section class="gr-entry gr-entry-ref" id="${id}"><h3>${entry.n}. ${esc(first?.person?.name || "Same person")}</h3><p>Same person as ${slotLink(entry.firstSlot)} (the family tree line comes back to the same ancestor here).</p></section>`;
     }
     if (entry.kind === "hidden") {
-        return `<section class="gr-entry gr-entry-private" id="${id}"><h3>${entry.n}. Private</h3><p>This profile is private, or is a living person who is hidden, so no details are shown.</p></section>`;
+        const why =
+            entry.reason === "living"
+                ? "This person is living, so no details are shown. Untick \u201cHide living people\u201d to show them."
+                : "WikiTree returned no details for this profile, so none are shown. It is private to the account used to ask.";
+        return `<section class="gr-entry gr-entry-private" id="${id}"><h3>${entry.n}. Private</h3><p>${why}</p></section>`;
     }
     if (entry.kind === "unavailable") {
         return `<section class="gr-entry gr-entry-private" id="${id}"><h3>${entry.n}. Profile not available</h3><p>This ancestor is named on the family tree but the profile could not be retrieved.</p></section>`;

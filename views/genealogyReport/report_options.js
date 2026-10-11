@@ -6,7 +6,7 @@ import { DATE_FORMATS, DEFAULT_DATE_STYLE, STATUS_FORMATS } from "./report_dates
 
 // Shown in the report so a reader (and anyone helping them) can tell which build is running: browsers keep old copies
 // of a view's files, and a half-updated page is easy to mistake for a bug.
-export const REPORT_VERSION = "2026.10.10-4";
+export const REPORT_VERSION = "2026.10.11-1";
 
 // Sent to the API as "TA-GenealogyReport" (WikiTreeAPI.postToAPI prepends "TA-").
 export const APP_ID = "GenealogyReport";
