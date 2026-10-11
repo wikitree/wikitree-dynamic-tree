@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>G2G comment: Genealogy Report update 2026.10.11-7</title>
+<style>
+  :root { --ink:#1d2417; --muted:#5d6657; --line:#d9ddd3; --bg:#f6f7f4; --panel:#fff; --brand:#3f7a1c; }
+  @media (prefers-color-scheme: dark) { :root { --ink:#e8ecdf; --muted:#a2ac98; --line:#343b2b; --bg:#14170f; --panel:#1e2318; --brand:#7fbf4d; } }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  .wrap { max-width:760px; margin:0 auto; padding:16px; }
+  button { background:var(--brand); color:#fff; border:0; border-radius:6px; padding:8px 14px; font:inherit; cursor:pointer; }
+  #state { margin-left:10px; color:var(--muted); font-size:14px; }
+  #post { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:4px 20px 12px; margin-top:12px; }
+  #post a { color:var(--brand); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p><button id="copy" type="button">Copy the comment (formatted)</button><span id="state" role="status"></span></p>
+  <p style="color:var(--muted);font-size:14px;margin:0">Post this as a comment on the main post (the white box below is the comment).</p>
+
+<div id="post">
+<p><strong>Update, version 2026.10.11-7.</strong> Thank you to everyone who has tested Genealogy Report. This update comes from a tester's careful notes on a profile with a long list of sources:</p>
+
+<ul>
+  <li><strong>"Sources" heading for every ancestor.</strong> Some ancestors had their numbered sources with no "Sources" heading above them. The report now puts its own heading above the sources for every ancestor who has any.</li>
+  <li><strong>"See also" after the sources.</strong> On a profile, a "See also" list (a Find a Grave memorial, for example) comes after the numbered citations. The report was showing it before them. It now follows the numbered sources, as on WikiTree.</li>
+  <li><strong>Fan Chart link.</strong> The report's fan chart shows exactly the generations you chose, but the Fan Chart app that the link opens always starts with five generations, and it has no setting to change that. The link now says so.</li>
+</ul>
+
+<p>The notes also showed that a tree with pedigree collapse (the same great-grandparents on both sides) reports correctly. The earlier updates for the title page, the links in the PDF and the Index of Locations (one heading for each country, in alphabetical order) are in this version too.</p>
+
+<p>One thing that is not mine to change: on some profiles a paragraph that is indented in the biography shows in the report as a bullet. The profile's own formatting does that (WikiTree turns an indented line into a list), so the report keeps it as it is.</p>
+
+<p>If you tried an earlier version, please hard-refresh the app. The version is shown at the foot of the title page. The <a href="https://www.wikitree.com/wiki/Space:Genealogy_Report_app">Space page</a> has the full list of what the report does. Next on my list: a download of the report as an HTML file, and then possibly an OpenDocument (.odt) export.</p>
+</div>
+</div>
+<script>
+  const post = document.getElementById('post'), state = document.getElementById('state');
+  document.getElementById('copy').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([post.innerHTML], { type: 'text/html' }),
+        'text/plain': new Blob([post.innerText], { type: 'text/plain' }),
+      })]);
+      state.textContent = 'Copied. Paste into the G2G comment box.';
+    } catch {
+      const r = document.createRange(); r.selectNodeContents(post);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      state.textContent = 'Selected. Press Ctrl/⌘+C to copy.';
+    }
+  });
+</script>
+</body>
+</html>
