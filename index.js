@@ -23,8 +23,9 @@ window.addEventListener("DOMContentLoaded", (event) => {
         WikiTreeAPI,
         (events = {
             onLoggedIn: (user) => {
-                document.querySelector("#wt-api-login").innerHTML =
-                    `Logged into Apps: ${user.name} (<a class="apiLogout" href="#">Logout</a>)`;
+                document.querySelector(
+                    "#wt-api-login"
+                ).innerHTML = `Logged into Apps: ${user.name} (<a class="apiLogout" href="#">Logout</a>)`;
             },
             onUnlogged: () => {
                 document.querySelector("#wt-api-login").innerHTML = `
