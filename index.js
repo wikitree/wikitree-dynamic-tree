@@ -11,14 +11,6 @@
 
 var wtViewRegistry;
 window.addEventListener("DOMContentLoaded", (event) => {
-    // The Name Cloud app was first called Surname Tree, and its address was view=surnametree. Links made then, and the last view a
-    // browser remembered, still open it.
-    if (/[#&]view=surnametree(?=&|$)/.test(location.hash)) {
-        history.replaceState(null, "", location.hash.replace(/([#&]view=)surnametree(?=&|$)/, "$1namecloud"));
-    }
-    if (WikiTreeAPI.cookie("viewTreeId") === "surnametree")
-        WikiTreeAPI.cookie("viewTreeId", "namecloud", { path: "/" });
-
     const loginManager = new LoginManager(
         WikiTreeAPI,
         (events = {
