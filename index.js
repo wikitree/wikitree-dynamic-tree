@@ -77,6 +77,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "heritage": new HeritageView(),
         "timelineTree": new TimelineTreeView(),
         "research": new ResearchView(),
+        "lineageMatrix": new LineageMatrixView(),
     };
 
     for (let key in views) {
