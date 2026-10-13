@@ -2,7 +2,7 @@
 Created By: Azure Robinson (Robinson-27225)
 */
 
-import { HEIGHT, WIDTH } from "./surname_tree_core.js";
+import { HEIGHT, WIDTH } from "./name_cloud_core.js";
 
 /** The size of the drawing: the tree's frame unless another is given (the banner's is much wider than it is tall). */
 const FULL_FRAME = Object.freeze({ w: WIDTH, h: HEIGHT });

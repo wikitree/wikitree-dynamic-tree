@@ -2,7 +2,7 @@
 Created By: Azure Robinson (Robinson-27225)
 */
 
-import { birthYear, fullName, lifeEvent, relationNote } from "./surname_tree_core.js";
+import { birthYear, fullName, lifeEvent, relationNote } from "./name_cloud_core.js";
 
 /** People shown in the list at first, and added by each press of "Show more". */
 export const PAGE_SIZE = 200;
@@ -10,7 +10,7 @@ export const PAGE_SIZE = 200;
 export function escapeHtml(value) {
     return String(value ?? "").replace(
         /[&<>"']/g,
-        (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch])
+        (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]
     );
 }
 
@@ -35,8 +35,8 @@ export function countText(word) {
 
 const lifeLine = (label, date, place) => {
     const event = lifeEvent(date, place);
-    return `<div class="sutree-life">${label} ${
-        event ? escapeHtml(event) : '<span class="sutree-unknown">not recorded</span>'
+    return `<div class="ncloud-life">${label} ${
+        event ? escapeHtml(event) : '<span class="ncloud-unknown">not recorded</span>'
     }</div>`;
 };
 
@@ -52,10 +52,10 @@ export function listHtml(word, shown = PAGE_SIZE) {
             const person = entry.person;
             const href = escapeHtml(profileHref(person));
             const note = relationNote(entry);
-            return `<li class="sutree-person">
-        <a class="sutree-name" href="${href}" data-index="${index}">${escapeHtml(fullName(person))}</a>
-        <a class="sutree-id" href="${href}" data-index="${index}">${escapeHtml(person.Name || person.Id)}</a>
-        ${note ? `<span class="sutree-tag">${note}</span>` : ""}
+            return `<li class="ncloud-person">
+        <a class="ncloud-name" href="${href}" data-index="${index}">${escapeHtml(fullName(person))}</a>
+        <a class="ncloud-id" href="${href}" data-index="${index}">${escapeHtml(person.Name || person.Id)}</a>
+        ${note ? `<span class="ncloud-tag">${note}</span>` : ""}
         ${lifeLine("Born:", person.BirthDate, person.BirthLocation)}
         ${lifeLine("Died:", person.DeathDate, person.DeathLocation)}
       </li>`;
@@ -65,9 +65,9 @@ export function listHtml(word, shown = PAGE_SIZE) {
     return {
         entries,
         html:
-            `<ol class="sutree-people">${rows}</ol>` +
+            `<ol class="ncloud-people">${rows}</ol>` +
             (more > 0
-                ? `<button type="button" class="sutree-more">Show ${Math.min(
+                ? `<button type="button" class="ncloud-more">Show ${Math.min(
                       PAGE_SIZE,
                       more
                   )} more (${more} not shown)</button>`
@@ -80,10 +80,10 @@ export function cardHtml(entry) {
     const person = entry.person;
     const href = escapeHtml(profileHref(person));
     const how = entry.adopt ? (entry.bio ? "Family by birth and by adoption" : "Family by adoption") : "";
-    return `<button type="button" class="sutree-card-close" aria-label="Close card">&times;</button>
-    ${how ? `<div class="sutree-card-rel">${how}</div>` : ""}
-    <b>${escapeHtml(fullName(person))}</b> <span class="sutree-card-id">(${escapeHtml(person.Name || person.Id)})</span>
+    return `<button type="button" class="ncloud-card-close" aria-label="Close card">&times;</button>
+    ${how ? `<div class="ncloud-card-rel">${how}</div>` : ""}
+    <b>${escapeHtml(fullName(person))}</b> <span class="ncloud-card-id">(${escapeHtml(person.Name || person.Id)})</span>
     ${lifeLine("Born:", person.BirthDate, person.BirthLocation)}
     ${lifeLine("Died:", person.DeathDate, person.DeathLocation)}
-    <div class="sutree-card-hint"><a href="${href}" target="_blank" rel="noopener noreferrer">Open the profile</a></div>`;
+    <div class="ncloud-card-hint"><a href="${href}" target="_blank" rel="noopener noreferrer">Open the profile</a></div>`;
 }

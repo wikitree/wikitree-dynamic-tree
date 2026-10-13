@@ -11,13 +11,20 @@
 
 var wtViewRegistry;
 window.addEventListener("DOMContentLoaded", (event) => {
+    // The Name Cloud app was first called Surname Tree, and its address was view=surnametree. Links made then, and the last view a
+    // browser remembered, still open it.
+    if (/[#&]view=surnametree(?=&|$)/.test(location.hash)) {
+        history.replaceState(null, "", location.hash.replace(/([#&]view=)surnametree(?=&|$)/, "$1namecloud"));
+    }
+    if (WikiTreeAPI.cookie("viewTreeId") === "surnametree")
+        WikiTreeAPI.cookie("viewTreeId", "namecloud", { path: "/" });
+
     const loginManager = new LoginManager(
         WikiTreeAPI,
         (events = {
             onLoggedIn: (user) => {
-                document.querySelector(
-                    "#wt-api-login"
-                ).innerHTML = `Logged into Apps: ${user.name} (<a class="apiLogout" href="#">Logout</a>)`;
+                document.querySelector("#wt-api-login").innerHTML =
+                    `Logged into Apps: ${user.name} (<a class="apiLogout" href="#">Logout</a>)`;
             },
             onUnlogged: () => {
                 document.querySelector("#wt-api-login").innerHTML = `
@@ -56,7 +63,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "fractal": new FractalView(),
         "ahnentafel": new AhnentafelView(),
         "surnames": new SurnamesView(),
-        "surnametree": new SurnameTreeView(),
+        "namecloud": new NameCloudView(),
         "webs": new WebsView(),
         "familygroup": new FamilyView(),
         "printer-friendly": new PrinterFriendlyView(WikiTreeAPI, 6),

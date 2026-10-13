@@ -2,10 +2,10 @@
 Created By: Azure Robinson (Robinson-27225)
 */
 
-import { entriesFromReach, idOf, markReach, nextFrontier, parentEdges, reachNearby } from "./surname_tree_core.js";
+import { entriesFromReach, idOf, markReach, nextFrontier, parentEdges, reachNearby } from "./name_cloud_core.js";
 
-// WikiTreeAPI is the global from WikiTreeAPI.js; its calls are tagged TA-surnameTree in the API log
-const APP_ID = "surnameTree";
+// WikiTreeAPI is the global from WikiTreeAPI.js; its calls are tagged TA-nameCloud in the API log
+const APP_ID = "nameCloud";
 
 /** What the lists and cards show about each person. */
 const PERSON_FIELDS = [

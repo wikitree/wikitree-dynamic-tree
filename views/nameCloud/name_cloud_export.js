@@ -2,8 +2,8 @@
 Created By: Azure Robinson (Robinson-27225)
 */
 
-import { WIDTH, frameOf } from "./surname_tree_core.js";
-import { drawTree } from "./surname_tree_draw.js";
+import { WIDTH, frameOf } from "./name_cloud_core.js";
+import { drawTree } from "./name_cloud_draw.js";
 
 export const FORMATS = [
     { id: "png", name: "PNG", mime: "image/png", extension: "png", sized: true },
@@ -52,7 +52,7 @@ export function widthFor(sizeId, customWidth, shape) {
 export const sizeLabel = (width, shape) =>
     `${width.toLocaleString()} × ${imageHeight(width, shape).toLocaleString()} pixels`;
 
-export const exportFileName = (key, format, width, prefix = "surname-tree") =>
+export const exportFileName = (key, format, width, prefix = "name-cloud") =>
     `${prefix}-${key}${formatById(format).sized ? `-${width}px` : ""}.${formatById(format).extension}`;
 
 const toBlob = (canvas, mime, quality) => new Promise((resolve) => canvas.toBlob(resolve, mime, quality));

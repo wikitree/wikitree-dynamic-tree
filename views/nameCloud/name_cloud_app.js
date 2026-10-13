@@ -26,8 +26,8 @@ import {
     unseenNote,
     unseenRows,
     seededRandom,
-} from "./surname_tree_core.js";
-import { fetchScope } from "./surname_tree_data.js";
+} from "./name_cloud_core.js";
+import { fetchScope } from "./name_cloud_data.js";
 import {
     BUILT_IN_PICTURES,
     DEFAULT_SENSITIVITY,
@@ -40,8 +40,8 @@ import {
     readImageUrl,
     shapeFromPixels,
     wordColour,
-} from "./surname_tree_image.js";
-import { inkOffsets, makeMeasure } from "./surname_tree_draw.js";
+} from "./name_cloud_image.js";
+import { inkOffsets, makeMeasure } from "./name_cloud_draw.js";
 import {
     DEFAULT_SIZE,
     defaultSizeFor,
@@ -56,11 +56,11 @@ import {
     renderPdf,
     sizeLabel,
     widthFor,
-} from "./surname_tree_export.js";
-import { PAGE_SIZE, cardHtml, countText, escapeHtml, listHtml } from "./surname_tree_list.js";
-import { attachZoom, renderTreeSvg } from "./surname_tree_svg.js";
+} from "./name_cloud_export.js";
+import { PAGE_SIZE, cardHtml, countText, escapeHtml, listHtml } from "./name_cloud_list.js";
+import { attachZoom, renderTreeSvg } from "./name_cloud_svg.js";
 
-// The Surname Tree app itself: a chart drawn in a container, with its controls, list and card. mountApp is given the
+// The Name Cloud app itself: a chart drawn in a container, with its controls, list and card. mountApp is given the
 // container, the person to start from (their number or WikiTree ID) and the starting options.
 
 /** Up to this many names that found no room are named in the note under the tree; more than that are listed in a popup. */
@@ -120,104 +120,104 @@ export function mountApp(container, key, options) {
     };
 
     const $app = $(`
-    <div class="sutree-app">
-      <div class="sutree-dialog">
-        <div class="sutree-controls">
-          <label>Tree of <select id="suTreeKind"></select></label>
-          <label>Look <select id="suTreeLook"></select></label>
+    <div class="ncloud-app">
+      <div class="ncloud-dialog">
+        <div class="ncloud-controls">
+          <label>Cloud of <select id="ncloudKind"></select></label>
+          <label>Look <select id="ncloudLook"></select></label>
           <label>Shape
-            <select id="suTreeShapeKind">
+            <select id="ncloudShapeKind">
               <option value="tree">Oak tree (drawn)</option>
               <option value="image">My picture</option>
               <option value="banner">Wide banner (profile background)</option>
             </select>
           </label>
-          <span id="suTreeBannerBox" class="sutree-bannerbox" hidden>
+          <span id="ncloudBannerBox" class="ncloud-bannerbox" hidden>
             <label>Words
-              <select id="suTreeBannerWords">
+              <select id="ncloudBannerWords">
                 <option value="canopy">Greens of the canopy</option>
                 <option value="one">One colour</option>
               </select>
             </label>
-            <input type="color" id="suTreeBannerWordColor" aria-label="Colour of the words" hidden>
-            <label>Background <input type="color" id="suTreeBannerBackground"></label>
+            <input type="color" id="ncloudBannerWordColor" aria-label="Colour of the words" hidden>
+            <label>Background <input type="color" id="ncloudBannerBackground"></label>
           </span>
-          <button type="button" id="suTreeChoose" title="Choose a picture to use as the shape" hidden>Choose picture…</button>
-          <label id="suTreeSenseLabel" hidden title="Raise it to cut more of the background away; lower it to keep more of the picture">
-            Cut-out <input type="range" id="suTreeSense" min="8" max="160" step="1">
+          <button type="button" id="ncloudChoose" title="Choose a picture to use as the shape" hidden>Choose picture…</button>
+          <label id="ncloudSenseLabel" hidden title="Raise it to cut more of the background away; lower it to keep more of the picture">
+            Cut-out <input type="range" id="ncloudSense" min="8" max="160" step="1">
           </label>
-          <label id="suTreeWhiteLabel" hidden title="Leave the white parts of the picture empty, so a white design shows as a gap">
-            <input type="checkbox" id="suTreeWhite"> Leave white empty
+          <label id="ncloudWhiteLabel" hidden title="Leave the white parts of the picture empty, so a white design shows as a gap">
+            <input type="checkbox" id="ncloudWhite"> Leave white empty
           </label>
-          <label id="suTreeWholeLabel" hidden title="Use all of the picture as the shape, as for a photograph, rather than cutting a background away">
-            <input type="checkbox" id="suTreeWhole"> Fill the whole picture
+          <label id="ncloudWholeLabel" hidden title="Use all of the picture as the shape, as for a photograph, rather than cutting a background away">
+            <input type="checkbox" id="ncloudWhole"> Fill the whole picture
           </label>
-          <input type="file" id="suTreeFile" accept="image/*" class="sutree-file" tabindex="-1" aria-hidden="true">
-          <label>Reach <select id="suTreeScope"></select></label>
-          <span id="suTreeQueryBox" class="sutree-querybox" hidden>
-            <input type="text" id="suTreeQuery" size="38" autocomplete="off" spellcheck="false">
-            <button type="button" id="suTreeGo">Draw</button>
+          <input type="file" id="ncloudFile" accept="image/*" class="ncloud-file" tabindex="-1" aria-hidden="true">
+          <label>Reach <select id="ncloudScope"></select></label>
+          <span id="ncloudQueryBox" class="ncloud-querybox" hidden>
+            <input type="text" id="ncloudQuery" size="38" autocomplete="off" spellcheck="false">
+            <button type="button" id="ncloudGo">Draw</button>
           </span>
-          <span class="sutree-stepper" title="Go further out, or come back in">
-            <button type="button" id="suTreeFewer" aria-label="One fewer">&minus;</button>
-            <span id="suTreeAmount" aria-live="polite"></span>
-            <button type="button" id="suTreeMore" aria-label="One more">+</button>
+          <span class="ncloud-stepper" title="Go further out, or come back in">
+            <button type="button" id="ncloudFewer" aria-label="One fewer">&minus;</button>
+            <span id="ncloudAmount" aria-live="polite"></span>
+            <button type="button" id="ncloudMore" aria-label="One more">+</button>
           </span>
-          <span class="sutree-show">
+          <span class="ncloud-show">
             <span>Show</span>
-            <label title="Parents by birth, and their parents"><input type="checkbox" id="suTreeBio"> Biological</label>
-            <label title="Adoptive, step and foster parents, and their families"><input type="checkbox" id="suTreeAdopt"> Adoptive</label>
+            <label title="Parents by birth, and their parents"><input type="checkbox" id="ncloudBio"> Biological</label>
+            <label title="Adoptive, step and foster parents, and their families"><input type="checkbox" id="ncloudAdopt"> Adoptive</label>
           </span>
-          <label><input type="checkbox" id="suTreeFill"> Fill the gaps</label>
-          <button type="button" id="suTreeShuffle">Shuffle</button>
-          <span class="sutree-spacer"></span>
-          <button type="button" id="suTreeZoomOut" title="Zoom out">Zoom &minus;</button>
-          <button type="button" id="suTreeZoomIn" title="Zoom in (or scroll)">Zoom +</button>
-          <button type="button" id="suTreeZoomReset" title="Show the whole tree">Reset</button>
-          <button type="button" id="suTreeCopy" title="Copy the picture to paste into a post or document">Copy image</button>
-          <button type="button" id="suTreeFull" title="Fill the screen">Full screen</button>
-          <button type="button" id="suTreeSaveAs" aria-expanded="false" aria-controls="suTreeSavePanel" title="Save a picture or PDF">Save as…</button>
+          <label><input type="checkbox" id="ncloudFill"> Fill the gaps</label>
+          <button type="button" id="ncloudShuffle">Shuffle</button>
+          <span class="ncloud-spacer"></span>
+          <button type="button" id="ncloudZoomOut" title="Zoom out">Zoom &minus;</button>
+          <button type="button" id="ncloudZoomIn" title="Zoom in (or scroll)">Zoom +</button>
+          <button type="button" id="ncloudZoomReset" title="Show the whole picture">Reset</button>
+          <button type="button" id="ncloudCopy" title="Copy the picture to paste into a post or document">Copy image</button>
+          <button type="button" id="ncloudFull" title="Fill the screen">Full screen</button>
+          <button type="button" id="ncloudSaveAs" aria-expanded="false" aria-controls="ncloudSavePanel" title="Save a picture or PDF">Save as…</button>
         </div>
-        <div class="sutree-save" id="suTreeSavePanel" hidden>
-          <fieldset class="sutree-formats">
+        <div class="ncloud-save" id="ncloudSavePanel" hidden>
+          <fieldset class="ncloud-formats">
             <legend>File type</legend>
           </fieldset>
-          <div id="suTreeSizeRow" class="sutree-save-row">
-            <label>What size would you like? <select id="suTreeSize"></select></label>
-            <label id="suTreeCustomLabel" hidden>Width <input type="number" id="suTreeCustom" step="100"> pixels</label>
+          <div id="ncloudSizeRow" class="ncloud-save-row">
+            <label>What size would you like? <select id="ncloudSize"></select></label>
+            <label id="ncloudCustomLabel" hidden>Width <input type="number" id="ncloudCustom" step="100"> pixels</label>
           </div>
-          <div id="suTreePaperRow" class="sutree-save-row" hidden>
-            <label>Paper <select id="suTreePaper"></select></label>
+          <div id="ncloudPaperRow" class="ncloud-save-row" hidden>
+            <label>Paper <select id="ncloudPaper"></select></label>
           </div>
-          <div class="sutree-save-row">
-            <span id="suTreeSizeNote" class="sutree-note"></span>
-            <span class="sutree-spacer"></span>
-            <button type="button" id="suTreeSaveCancel">Cancel</button>
-            <button type="button" id="suTreeSaveGo" class="sutree-primary">Save</button>
+          <div class="ncloud-save-row">
+            <span id="ncloudSizeNote" class="ncloud-note"></span>
+            <span class="ncloud-spacer"></span>
+            <button type="button" id="ncloudSaveCancel">Cancel</button>
+            <button type="button" id="ncloudSaveGo" class="ncloud-primary">Save</button>
           </div>
         </div>
-        <div class="sutree-main">
-          <div class="sutree-stage">
-            <svg id="suTreeSvg" xmlns="http://www.w3.org/2000/svg"></svg>
-            <div class="sutree-tip" id="suTreeTip" role="tooltip"></div>
+        <div class="ncloud-main">
+          <div class="ncloud-stage">
+            <svg id="ncloudSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+            <div class="ncloud-tip" id="ncloudTip" role="tooltip"></div>
           </div>
-          <aside class="sutree-list" id="suTreeList" aria-label="People with this surname" hidden>
-            <div class="sutree-list-head">
-              <span><strong id="suTreeListName"></strong> <span id="suTreeListCount"></span></span>
-              <button type="button" id="suTreeListClose" aria-label="Close the list">&times;</button>
+          <aside class="ncloud-list" id="ncloudList" aria-label="People with this surname" hidden>
+            <div class="ncloud-list-head">
+              <span><strong id="ncloudListName"></strong> <span id="ncloudListCount"></span></span>
+              <button type="button" id="ncloudListClose" aria-label="Close the list">&times;</button>
             </div>
-            <div class="sutree-list-body" id="suTreeListBody"></div>
+            <div class="ncloud-list-body" id="ncloudListBody"></div>
           </aside>
-          <div class="sutree-card" id="suTreeCard" role="dialog" aria-label="Profile card" hidden></div>
-          <div class="sutree-unseen" id="suTreeUnseen" role="dialog" aria-label="Names that did not fit" hidden>
-            <div class="sutree-unseen-head">
-              <strong id="suTreeUnseenTitle"></strong>
-              <button type="button" id="suTreeUnseenClose" aria-label="Close the list">&times;</button>
+          <div class="ncloud-card" id="ncloudCard" role="dialog" aria-label="Profile card" hidden></div>
+          <div class="ncloud-unseen" id="ncloudUnseen" role="dialog" aria-label="Names that did not fit" hidden>
+            <div class="ncloud-unseen-head">
+              <strong id="ncloudUnseenTitle"></strong>
+              <button type="button" id="ncloudUnseenClose" aria-label="Close the list">&times;</button>
             </div>
-            <div class="sutree-unseen-body" id="suTreeUnseenBody"></div>
+            <div class="ncloud-unseen-body" id="ncloudUnseenBody"></div>
           </div>
         </div>
-        <p class="sutree-status" id="suTreeStatus" role="status"></p>
+        <p class="ncloud-status" id="ncloudStatus" role="status"></p>
       </div>
     </div>`);
     const find = (selector) => $app.find(selector);
@@ -227,19 +227,19 @@ export function mountApp(container, key, options) {
             .val(l.id)
             .text(l.name)
             .prop("selected", l.id === state.look)
-            .appendTo(find("#suTreeLook"))
+            .appendTo(find("#ncloudLook"))
     );
-    find("#suTreeSense").attr({ min: MIN_SENSITIVITY, max: MAX_SENSITIVITY }).val(state.sensitivity);
+    find("#ncloudSense").attr({ min: MIN_SENSITIVITY, max: MAX_SENSITIVITY }).val(state.sensitivity);
     // the pictures that come with it go between the drawn oak and the member's own picture
     BUILT_IN_PICTURES.forEach((picture) =>
-        $("<option>").val(picture.id).text(picture.name).insertBefore(find("#suTreeShapeKind option[value=image]"))
+        $("<option>").val(picture.id).text(picture.name).insertBefore(find("#ncloudShapeKind option[value=image]"))
     );
     NAME_KINDS.forEach((k) =>
         $("<option>")
             .val(k.id)
             .text(k.name)
             .prop("selected", k.id === state.kind)
-            .appendTo(find("#suTreeKind"))
+            .appendTo(find("#ncloudKind"))
     );
     SCOPES.forEach((scope) =>
         $("<option>")
@@ -247,26 +247,26 @@ export function mountApp(container, key, options) {
             .text(scope.name)
             .attr("title", scope.hint)
             .prop("selected", scope.id === state.scope)
-            .appendTo(find("#suTreeScope"))
+            .appendTo(find("#ncloudScope"))
     );
-    find("#suTreeQuery").val(state.query);
-    find("#suTreeBio").prop("checked", state.biological);
-    find("#suTreeAdopt").prop("checked", state.adoptive);
-    find("#suTreeFill").prop("checked", state.fillGaps);
+    find("#ncloudQuery").val(state.query);
+    find("#ncloudBio").prop("checked", state.biological);
+    find("#ncloudAdopt").prop("checked", state.adoptive);
+    find("#ncloudFill").prop("checked", state.fillGaps);
     FORMATS.forEach((f) =>
         $("<label>")
             .append(
                 $("<input>")
-                    .attr({ type: "radio", name: "suTreeFormat", value: f.id })
+                    .attr({ type: "radio", name: "ncloudFormat", value: f.id })
                     .prop("checked", f.id === state.saveFormat)
             )
             .append(document.createTextNode(` ${f.name}`))
-            .appendTo(find(".sutree-formats"))
+            .appendTo(find(".ncloud-formats"))
     );
     /** The sizes offered for the shape now shown (the banner's are wider), keeping the choice when it still exists. */
     function fillSizes() {
         const sizes = sizesFor(state.shape);
-        const $size = find("#suTreeSize").empty();
+        const $size = find("#ncloudSize").empty();
         sizes.forEach((size) =>
             $("<option>")
                 .val(size.id)
@@ -285,24 +285,24 @@ export function mountApp(container, key, options) {
         $size.val(state.saveSize);
     }
     fillSizes();
-    find("#suTreeBannerBackground").val(state.bannerBackground);
-    find("#suTreeBannerWordColor").val(state.bannerWordColor);
-    find("#suTreeBannerWords").val(state.bannerWords);
-    find("#suTreeCustom").attr({ min: MIN_WIDTH, max: MAX_WIDTH }).val(state.customWidth);
+    find("#ncloudBannerBackground").val(state.bannerBackground);
+    find("#ncloudBannerWordColor").val(state.bannerWordColor);
+    find("#ncloudBannerWords").val(state.bannerWords);
+    find("#ncloudCustom").attr({ min: MIN_WIDTH, max: MAX_WIDTH }).val(state.customWidth);
     Object.entries(PAPERS).forEach(([id, paper]) =>
-        $("<option>").val(id).text(paper.name).appendTo(find("#suTreePaper"))
+        $("<option>").val(id).text(paper.name).appendTo(find("#ncloudPaper"))
     );
     $(container).empty().append($app);
 
-    const svg = find("#suTreeSvg")[0];
-    const tip = find("#suTreeTip")[0];
-    const card = find("#suTreeCard")[0];
+    const svg = find("#ncloudSvg")[0];
+    const tip = find("#ncloudTip")[0];
+    const card = find("#ncloudCard")[0];
     const zoom = attachZoom(svg, undefined, () => frameOf(state.shape));
     let wordGroups = new Map();
 
     const say = (text, isError = false) =>
-        find("#suTreeStatus").text(text).removeAttr("title").toggleClass("sutree-error", isError);
-    const actionButtons = "#suTreeCopy, #suTreeSaveAs, #suTreeShuffle, #suTreeZoomIn, #suTreeZoomOut, #suTreeZoomReset";
+        find("#ncloudStatus").text(text).removeAttr("title").toggleClass("ncloud-error", isError);
+    const actionButtons = "#ncloudCopy, #ncloudSaveAs, #ncloudShuffle, #ncloudZoomIn, #ncloudZoomOut, #ncloudZoomReset";
     const wordFor = (text) => state.words.find((w) => w.text === text);
 
     // ---- Escape closes the card, and leaves full screen
@@ -310,27 +310,27 @@ export function mountApp(container, key, options) {
         if (e.key !== "Escape") return;
         if (!unseen.hidden) closeUnseen();
         else if (!card.hidden) hideCard();
-        else if ($app.hasClass("sutree-full")) toggleFull();
+        else if ($app.hasClass("ncloud-full")) toggleFull();
     };
-    $(document).on("keydown.suTree", onKey);
+    $(document).on("keydown.ncloud", onKey);
     const toggleFull = () => {
-        const full = $app.toggleClass("sutree-full").hasClass("sutree-full");
-        find("#suTreeFull").text(full ? "Leave full screen" : "Full screen");
+        const full = $app.toggleClass("ncloud-full").hasClass("ncloud-full");
+        find("#ncloudFull").text(full ? "Leave full screen" : "Full screen");
     };
-    find("#suTreeFull").on("click", toggleFull);
+    find("#ncloudFull").on("click", toggleFull);
 
     // ---- the controls
     const scopeInfo = () => scopeById(state.scope);
     function syncControls() {
         const scope = scopeInfo();
         const amount = state.amount[scope.id];
-        find("#suTreeAmount").text(`${amount} ${amount === 1 ? scope.unit : scope.units}`);
-        find("#suTreeFewer").prop("disabled", amount <= scope.min);
-        find("#suTreeMore").prop("disabled", amount >= scope.max);
+        find("#ncloudAmount").text(`${amount} ${amount === 1 ? scope.unit : scope.units}`);
+        find("#ncloudFewer").prop("disabled", amount <= scope.min);
+        find("#ncloudMore").prop("disabled", amount >= scope.max);
         // a category or a search has no generations or degrees, and no biological or adoptive family
-        find(".sutree-stepper, .sutree-show").prop("hidden", !!scope.group);
-        find("#suTreeQueryBox").prop("hidden", !scope.group);
-        find("#suTreeQuery").attr("placeholder", scope.placeholder || "");
+        find(".ncloud-stepper, .ncloud-show").prop("hidden", !!scope.group);
+        find("#ncloudQueryBox").prop("hidden", !scope.group);
+        find("#ncloudQuery").attr("placeholder", scope.placeholder || "");
     }
     const typesText = () =>
         state.biological && state.adoptive
@@ -397,9 +397,9 @@ export function mountApp(container, key, options) {
                 // a photograph, with scenery to its edges, has no background to cut away: all of it is the shape
                 state.picture.whole = shape.plainShare < PLAIN_EDGE_SHARE;
                 if (state.picture.whole) shape = cut(true);
-                find("#suTreeWhole").prop("checked", state.picture.whole);
+                find("#ncloudWhole").prop("checked", state.picture.whole);
             }
-            find("#suTreeSense").prop("disabled", state.picture.whole === true); // nothing is cut away from a whole picture
+            find("#ncloudSense").prop("disabled", state.picture.whole === true); // nothing is cut away from a whole picture
             if (shape.coverage < MIN_COVERAGE) {
                 shape = null;
                 state.shapeNote =
@@ -455,10 +455,10 @@ export function mountApp(container, key, options) {
         );
         if (left.length > UNSEEN_LISTED) {
             state.unseen = left;
-            $("<button>", { "type": "button", "class": "sutree-linkbutton", "aria-haspopup": "dialog" })
+            $("<button>", { "type": "button", "class": "ncloud-linkbutton", "aria-haspopup": "dialog" })
                 .text("See the list")
                 .on("click", openUnseen)
-                .appendTo(find("#suTreeStatus").append(" "));
+                .appendTo(find("#ncloudStatus").append(" "));
         }
         if (state.selected) {
             if (wordFor(state.selected)) openList(state.selected, state.listShown);
@@ -490,7 +490,7 @@ export function mountApp(container, key, options) {
                 });
             } catch (e) {
                 if (request === state.request)
-                    say("WikiTree could not be reached, so the tree could not be drawn.", true);
+                    say("WikiTree could not be reached, so the word cloud could not be drawn.", true);
                 return;
             }
         }
@@ -503,13 +503,13 @@ export function mountApp(container, key, options) {
     }
 
     // the names are all in what has been loaded, so changing the kind of name only draws again
-    find("#suTreeKind").on("change", (e) => {
+    find("#ncloudKind").on("change", (e) => {
         state.kind = e.target.value;
         closeList(); // the old list was of another kind of name
         if (state.raw.entries.length) refresh();
     });
     const redraw = () => state.raw.entries.length && refresh();
-    find("#suTreeLook").on("change", (e) => {
+    find("#ncloudLook").on("change", (e) => {
         state.look = e.target.value;
         redraw();
     });
@@ -518,24 +518,24 @@ export function mountApp(container, key, options) {
     /** Show the controls that go with the shape: choosing a picture, how much of it to cut out, and whether white is left empty. */
     function setShapeKind(kind) {
         state.shapeKind = kind;
-        find("#suTreeShapeKind").val(kind);
+        find("#ncloudShapeKind").val(kind);
         const banner = kind === "banner";
-        find("#suTreeChoose").prop("hidden", kind !== "image");
-        find("#suTreeSenseLabel").prop("hidden", kind === "tree" || banner);
-        find("#suTreeWhiteLabel").prop("hidden", kind === "tree" || banner);
+        find("#ncloudChoose").prop("hidden", kind !== "image");
+        find("#ncloudSenseLabel").prop("hidden", kind === "tree" || banner);
+        find("#ncloudWhiteLabel").prop("hidden", kind === "tree" || banner);
         // the banner has its own colours; the look (shaded, flat, outlined) is for the trees
-        find("#suTreeBannerBox").prop("hidden", !banner);
-        find("#suTreeBannerWordColor").prop("hidden", state.bannerWords !== "one");
-        find("#suTreeLook").prop("disabled", banner);
-        find(".sutree-stage").toggleClass("sutree-banner", banner);
-        find("#suTreeWhite").prop("checked", state.leaveWhite);
-        find("#suTreeWholeLabel").prop("hidden", kind === "tree" || banner);
-        find("#suTreeWhole").prop("checked", !!(state.picture && state.picture.whole));
+        find("#ncloudBannerBox").prop("hidden", !banner);
+        find("#ncloudBannerWordColor").prop("hidden", state.bannerWords !== "one");
+        find("#ncloudLook").prop("disabled", banner);
+        find(".ncloud-stage").toggleClass("ncloud-banner", banner);
+        find("#ncloudWhite").prop("checked", state.leaveWhite);
+        find("#ncloudWholeLabel").prop("hidden", kind === "tree" || banner);
+        find("#ncloudWhole").prop("checked", !!(state.picture && state.picture.whole));
         if (kind === "image" && state.mine) {
-            find("#suTreeChoose").attr("title", `Using ${state.mine.name}. Choose another picture`);
+            find("#ncloudChoose").attr("title", `Using ${state.mine.name}. Choose another picture`);
         }
     }
-    const chooseFile = () => find("#suTreeFile")[0].click();
+    const chooseFile = () => find("#ncloudFile")[0].click();
 
     /**
      * "My picture" was chosen and there is no picture yet. The file chooser is opened at once where the browser allows it, but
@@ -543,8 +543,8 @@ export function mountApp(container, key, options) {
      * with a note saying to click it. Until a picture is chosen the tree stays as it was.
      */
     function askForPicture() {
-        find("#suTreeShapeKind").val("image");
-        find("#suTreeChoose").prop("hidden", false);
+        find("#ncloudShapeKind").val("image");
+        find("#ncloudChoose").prop("hidden", false);
         say("Click Choose picture… to pick a picture from your computer.");
         chooseFile();
     }
@@ -570,7 +570,7 @@ export function mountApp(container, key, options) {
         }
     }
 
-    find("#suTreeShapeKind").on("change", (e) => {
+    find("#ncloudShapeKind").on("change", (e) => {
         const choice = e.target.value;
         if (choice === "tree") {
             setShapeKind("tree");
@@ -589,22 +589,22 @@ export function mountApp(container, key, options) {
         }
         useBuiltIn(BUILT_IN_PICTURES.find((picture) => picture.id === choice));
     });
-    find("#suTreeChoose").on("click", chooseFile);
+    find("#ncloudChoose").on("click", chooseFile);
     // the banner's colours: the words (the canopy's greens, or one colour) and what is behind them
-    find("#suTreeBannerWords").on("change", (e) => {
+    find("#ncloudBannerWords").on("change", (e) => {
         state.bannerWords = e.target.value;
-        find("#suTreeBannerWordColor").prop("hidden", state.bannerWords !== "one");
+        find("#ncloudBannerWordColor").prop("hidden", state.bannerWords !== "one");
         redraw();
     });
-    find("#suTreeBannerWordColor").on("input change", (e) => {
+    find("#ncloudBannerWordColor").on("input change", (e) => {
         state.bannerWordColor = e.target.value;
         redraw();
     });
-    find("#suTreeBannerBackground").on("input change", (e) => {
+    find("#ncloudBannerBackground").on("input change", (e) => {
         state.bannerBackground = e.target.value;
         redraw();
     });
-    find("#suTreeFile").on("change", async (e) => {
+    find("#ncloudFile").on("change", async (e) => {
         const file = e.target.files && e.target.files[0];
         e.target.value = ""; // so the same picture can be chosen again
         if (!file) return setShapeKind(state.shapeKind);
@@ -621,33 +621,33 @@ export function mountApp(container, key, options) {
         }
     });
     // the file chooser was closed without a choice
-    find("#suTreeFile").on("cancel", () => setShapeKind(state.shapeKind));
-    find("#suTreeWhole").on("change", (e) => {
+    find("#ncloudFile").on("cancel", () => setShapeKind(state.shapeKind));
+    find("#ncloudWhole").on("change", (e) => {
         if (state.picture) state.picture.whole = e.target.checked;
         redraw();
     });
-    find("#suTreeWhite").on("change", (e) => {
+    find("#ncloudWhite").on("change", (e) => {
         state.leaveWhite = e.target.checked;
         redraw();
     });
-    find("#suTreeSense").on("change", (e) => {
+    find("#ncloudSense").on("change", (e) => {
         state.sensitivity = Number(e.target.value);
         redraw();
     });
 
-    find("#suTreeScope").on("change", (e) => {
+    find("#ncloudScope").on("change", (e) => {
         state.scope = e.target.value;
         load();
     });
     // a category or a search is drawn when the member presses Draw (or Enter), not at every key
     const draw = () => {
-        state.query = String(find("#suTreeQuery").val()).trim();
+        state.query = String(find("#ncloudQuery").val()).trim();
         if (state.query) state.seed = hashString(state.query);
         closeList();
         load();
     };
-    find("#suTreeGo").on("click", draw);
-    find("#suTreeQuery").on("keydown", (e) => {
+    find("#ncloudGo").on("click", draw);
+    find("#ncloudQuery").on("keydown", (e) => {
         if (e.key === "Enter") draw();
     });
     const step = (by) => {
@@ -655,14 +655,14 @@ export function mountApp(container, key, options) {
         state.amount[scope.id] = clampAmount(scope.id, state.amount[scope.id] + by);
         load();
     };
-    find("#suTreeFewer").on("click", () => step(-1));
-    find("#suTreeMore").on("click", () => step(1));
-    find("#suTreeBio, #suTreeAdopt").on("change", (e) => {
-        const biological = find("#suTreeBio").prop("checked");
-        const adoptive = find("#suTreeAdopt").prop("checked");
+    find("#ncloudFewer").on("click", () => step(-1));
+    find("#ncloudMore").on("click", () => step(1));
+    find("#ncloudBio, #ncloudAdopt").on("change", (e) => {
+        const biological = find("#ncloudBio").prop("checked");
+        const adoptive = find("#ncloudAdopt").prop("checked");
         if (!biological && !adoptive) {
             // there has to be someone to show: put back the one just taken off
-            const undo = e.target.id === "suTreeBio" ? "#suTreeBio" : "#suTreeAdopt";
+            const undo = e.target.id === "ncloudBio" ? "#ncloudBio" : "#ncloudAdopt";
             find(undo).prop("checked", true);
             return say("Keep at least one of Biological and Adoptive ticked.", true);
         }
@@ -670,17 +670,17 @@ export function mountApp(container, key, options) {
         state.adoptive = adoptive;
         refresh();
     });
-    find("#suTreeFill").on("change", (e) => {
+    find("#ncloudFill").on("change", (e) => {
         state.fillGaps = e.target.checked;
         if (state.words.length) refresh();
     });
-    find("#suTreeShuffle").on("click", () => {
+    find("#ncloudShuffle").on("click", () => {
         state.seed = (state.seed + 0x9e3779b9) >>> 0;
         refresh();
     });
-    find("#suTreeZoomIn").on("click", () => zoom.zoomIn());
-    find("#suTreeZoomOut").on("click", () => zoom.zoomOut());
-    find("#suTreeZoomReset").on("click", () => zoom.reset());
+    find("#ncloudZoomIn").on("click", () => zoom.zoomIn());
+    find("#ncloudZoomOut").on("click", () => zoom.zoomOut());
+    find("#ncloudZoomReset").on("click", () => zoom.reset());
 
     // ---- hovering a surname: how many profiles; clicking it: who they are
     let hot = "";
@@ -689,24 +689,24 @@ export function mountApp(container, key, options) {
         (wordGroups.get(hot) || []).forEach((g) => g.classList.remove("is-hot"));
         hot = surname;
         (wordGroups.get(hot) || []).forEach((g) => g.classList.add("is-hot"));
-        svg.classList.toggle("sutree-hovering", !!hot);
+        svg.classList.toggle("ncloud-hovering", !!hot);
     }
-    const surnameAt = (target) => target.closest && target.closest(".sutree-word")?.dataset.surname;
+    const surnameAt = (target) => target.closest && target.closest(".ncloud-word")?.dataset.surname;
 
     function showTip(event, surname) {
         const word = wordFor(surname);
         if (!word) return;
-        const stage = find(".sutree-stage")[0];
+        const stage = find(".ncloud-stage")[0];
         const rect = stage.getBoundingClientRect();
         // a name seen more than once has small copies that fill the gaps; say so, since it can look like a mistake
         const copies = (wordGroups.get(surname) || []).length;
         tip.innerHTML =
-            `<b></b> <span class="sutree-tip-count"></span><div class="sutree-tip-hint">Click to list them</div>` +
+            `<b></b> <span class="ncloud-tip-count"></span><div class="ncloud-tip-hint">Click to list them</div>` +
             (copies > 1
-                ? `<div class="sutree-tip-hint">This name is shown ${copies} times. The small copies fill the gaps; untick Fill the gaps to see each name once.</div>`
+                ? `<div class="ncloud-tip-hint">This name is shown ${copies} times. The small copies fill the gaps; untick Fill the gaps to see each name once.</div>`
                 : "");
         tip.querySelector("b").textContent = surname;
-        tip.querySelector(".sutree-tip-count").textContent = countText(word);
+        tip.querySelector(".ncloud-tip-count").textContent = countText(word);
         tip.style.left = `${Math.max(4, Math.min(event.clientX - rect.left + 14, rect.width - 260))}px`;
         tip.style.top = `${Math.max(4, Math.min(event.clientY - rect.top + 14, rect.height - 70))}px`;
         tip.style.opacity = "1";
@@ -739,7 +739,7 @@ export function mountApp(container, key, options) {
         }
     });
 
-    const list = find("#suTreeList")[0];
+    const list = find("#ncloudList")[0];
     /** List everyone with the surname: full name, born and died, WikiTree ID, each linking to the profile. */
     function openList(surname, shown = PAGE_SIZE) {
         const word = wordFor(surname);
@@ -752,9 +752,9 @@ export function mountApp(container, key, options) {
         (wordGroups.get(surname) || []).forEach((g) => g.classList.add("is-selected"));
         const built = listHtml(word, shown);
         state.listEntries = built.entries;
-        find("#suTreeListName").text(surname);
-        find("#suTreeListCount").text(countText(word));
-        find("#suTreeListBody").html(built.html);
+        find("#ncloudListName").text(surname);
+        find("#ncloudListCount").text(countText(word));
+        find("#ncloudListBody").html(built.html);
         list.hidden = false;
     }
     function closeList() {
@@ -763,10 +763,10 @@ export function mountApp(container, key, options) {
         list.hidden = true;
         hideCard();
     }
-    find("#suTreeListClose").on("click", closeList);
-    find("#suTreeListBody").on("click", ".sutree-more", () => openList(state.selected, state.listShown + PAGE_SIZE));
+    find("#ncloudListClose").on("click", closeList);
+    find("#ncloudListBody").on("click", ".ncloud-more", () => openList(state.selected, state.listShown + PAGE_SIZE));
     // A click on a name or ID shows the person's card; a click with Ctrl, Cmd or Shift, or a middle click, still goes to the profile.
-    find("#suTreeListBody").on("click", "a.sutree-name, a.sutree-id", (e) => {
+    find("#ncloudListBody").on("click", "a.ncloud-name, a.ncloud-id", (e) => {
         if (e.ctrlKey || e.metaKey || e.shiftKey || e.which === 2) return;
         e.preventDefault();
         const entry = state.listEntries[Number(e.currentTarget.dataset.index)];
@@ -777,42 +777,42 @@ export function mountApp(container, key, options) {
     function showCard(entry, anchor) {
         card.innerHTML = cardHtml(entry);
         card.hidden = false;
-        const main = find(".sutree-main")[0].getBoundingClientRect();
+        const main = find(".ncloud-main")[0].getBoundingClientRect();
         const link = anchor.getBoundingClientRect();
         const listBox = list.getBoundingClientRect();
         card.style.right = `${Math.max(8, main.right - listBox.left + 10)}px`;
         card.style.top = `${Math.max(8, Math.min(link.top - main.top - 10, main.height - card.offsetHeight - 8))}px`;
     }
     // ---- the names that did not fit, when there are more than a few: a list with how many profiles each has
-    const unseen = find("#suTreeUnseen")[0];
+    const unseen = find("#ncloudUnseen")[0];
     function openUnseen() {
         const kind = kindById(state.kind);
         const { rows, more } = unseenRows(state.words, state.unseen || []);
         hideCard();
-        find("#suTreeUnseenTitle").text(
+        find("#ncloudUnseenTitle").text(
             `${pluralize(state.unseen.length, `rarer ${kind.noun}`, `rarer ${kind.nouns}`)} did not fit`
         );
-        find("#suTreeUnseenBody").html(
-            `<p class="sutree-unseen-hint">There was no room left for these, even in small type. Click one to list its people.</p>` +
-                `<ul class="sutree-unseen-list">${rows
+        find("#ncloudUnseenBody").html(
+            `<p class="ncloud-unseen-hint">There was no room left for these, even in small type. Click one to list its people.</p>` +
+                `<ul class="ncloud-unseen-list">${rows
                     .map(
                         (row) =>
-                            `<li><button type="button" class="sutree-unseen-name" data-name="${escapeHtml(row.text)}">` +
+                            `<li><button type="button" class="ncloud-unseen-name" data-name="${escapeHtml(row.text)}">` +
                             `${escapeHtml(row.text)}</button> <span>${pluralize(row.count, "profile", "profiles")}</span></li>`
                     )
                     .join("")}</ul>` +
                 (more
-                    ? `<p class="sutree-unseen-hint">and ${more.toLocaleString()} more, each with fewer profiles.</p>`
+                    ? `<p class="ncloud-unseen-hint">and ${more.toLocaleString()} more, each with fewer profiles.</p>`
                     : "")
         );
         unseen.hidden = false;
-        find("#suTreeUnseenClose")[0].focus();
+        find("#ncloudUnseenClose")[0].focus();
     }
     function closeUnseen() {
         unseen.hidden = true;
     }
-    find("#suTreeUnseenClose").on("click", closeUnseen);
-    find("#suTreeUnseenBody").on("click", ".sutree-unseen-name", (e) => {
+    find("#ncloudUnseenClose").on("click", closeUnseen);
+    find("#ncloudUnseenBody").on("click", ".ncloud-unseen-name", (e) => {
         const name = e.currentTarget.dataset.name;
         closeUnseen();
         openList(name);
@@ -822,58 +822,58 @@ export function mountApp(container, key, options) {
         card.hidden = true;
         card.innerHTML = "";
     }
-    $(card).on("click", ".sutree-card-close", hideCard);
+    $(card).on("click", ".ncloud-card-close", hideCard);
 
     // ---- Save as: the file type, and for a picture the size
-    const $panel = find("#suTreeSavePanel");
+    const $panel = find("#ncloudSavePanel");
 
     /** Show only the questions that go with the chosen file type, and say how big the picture will be. */
     function syncSavePanel() {
         const format = formatById(state.saveFormat);
-        find("#suTreeSizeRow").prop("hidden", !format.sized);
-        find("#suTreeCustomLabel").prop("hidden", !format.sized || state.saveSize !== "custom");
-        find("#suTreePaperRow").prop("hidden", format.sized);
+        find("#ncloudSizeRow").prop("hidden", !format.sized);
+        find("#ncloudCustomLabel").prop("hidden", !format.sized || state.saveSize !== "custom");
+        find("#ncloudPaperRow").prop("hidden", format.sized);
         const width = widthFor(state.saveSize, state.customWidth, state.shape);
-        find("#suTreeSizeNote").text(
+        find("#ncloudSizeNote").text(
             !format.sized
-                ? "A single page with the tree under its title."
+                ? "A single page with the word cloud under its title."
                 : width
                   ? `The picture will be ${sizeLabel(width, state.shape)}.`
                   : `Enter a width from ${MIN_WIDTH} to ${MAX_WIDTH.toLocaleString()} pixels.`
         );
-        find("#suTreeSaveGo").prop("disabled", format.sized && !width);
+        find("#ncloudSaveGo").prop("disabled", format.sized && !width);
     }
     const closePanel = () => {
         $panel.prop("hidden", true);
-        find("#suTreeSaveAs").attr("aria-expanded", "false");
+        find("#ncloudSaveAs").attr("aria-expanded", "false");
     };
-    find("#suTreeSaveAs").on("click", () => {
+    find("#ncloudSaveAs").on("click", () => {
         const open = $panel.prop("hidden");
         $panel.prop("hidden", !open);
-        find("#suTreeSaveAs").attr("aria-expanded", String(open));
+        find("#ncloudSaveAs").attr("aria-expanded", String(open));
         if (open) syncSavePanel();
     });
-    find("#suTreeSaveCancel").on("click", closePanel);
-    $app.find('input[name="suTreeFormat"]').on("change", (e) => {
+    find("#ncloudSaveCancel").on("click", closePanel);
+    $app.find('input[name="ncloudFormat"]').on("change", (e) => {
         state.saveFormat = e.target.value;
         syncSavePanel();
     });
-    find("#suTreeSize").on("change", (e) => {
+    find("#ncloudSize").on("change", (e) => {
         state.saveSize = e.target.value;
         syncSavePanel();
     });
-    find("#suTreeCustom").on("input", (e) => {
+    find("#ncloudCustom").on("input", (e) => {
         state.customWidth = e.target.value;
         syncSavePanel();
     });
-    find("#suTreePaper").on("change", (e) => {
+    find("#ncloudPaper").on("change", (e) => {
         state.paper = e.target.value;
     });
-    find("#suTreeSaveGo").on("click", async () => {
+    find("#ncloudSaveGo").on("click", async () => {
         const format = formatById(state.saveFormat);
         const width = format.sized ? widthFor(state.saveSize, state.customWidth, state.shape) : 0;
         if (format.sized && !width) return syncSavePanel();
-        find("#suTreeSaveGo").prop("disabled", true);
+        find("#ncloudSaveGo").prop("disabled", true);
         say("Preparing the file...");
         let blob = null;
         try {
@@ -889,7 +889,7 @@ export function mountApp(container, key, options) {
         } catch (e) {
             blob = null;
         }
-        find("#suTreeSaveGo").prop("disabled", false);
+        find("#ncloudSaveGo").prop("disabled", false);
         if (!blob) {
             return say(
                 format.sized
@@ -902,7 +902,7 @@ export function mountApp(container, key, options) {
         closePanel();
         say(`Saved as ${format.name}.`);
     });
-    find("#suTreeCopy").on("click", async () => {
+    find("#ncloudCopy").on("click", async () => {
         try {
             const blob = await renderImage(
                 state.items,
@@ -921,7 +921,7 @@ export function mountApp(container, key, options) {
     return {
         destroy() {
             state.request++; // a load still under way is no longer wanted
-            $(document).off("keydown.suTree");
+            $(document).off("keydown.ncloud");
             $app.remove();
         },
     };

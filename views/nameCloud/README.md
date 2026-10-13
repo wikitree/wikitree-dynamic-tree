@@ -1,16 +1,16 @@
-# Surname Tree
+# Name Cloud
 
-A word cloud in the shape of a tree, made from the names of a person's family. The more people share a name, the bigger it
-is drawn. Hover a name to see how many profiles have it, click it to list them (full name, WikiTree ID, and born and died
+A word cloud of the names in a person's family, a category or a WikiTree+ search, in the shape of an oak, a heart or a picture
+of your own. The more people share a name, the bigger it is drawn. Hover a name to see how many profiles have it, click it to list them (full name, WikiTree ID, and born and died
 with places, each a link to the profile), and click a person in the list for a card. Zoom with the scroll wheel, move by
-dragging, or use the buttons. Each tree is different: its shape comes from the starting person, and **Shuffle** grows
+dragging, or use the buttons. Each oak is different: its shape comes from the starting person, and **Shuffle** grows
 another. **Save as** gives a picture (PNG or JPG; small, medium or large, small being the default) or a PDF.
 
 Created by Azure Robinson (Robinson-27225).
 
-## What the tree is made of
+## What the cloud is made of
 
-**Tree of**: surnames (at birth), first names, middle names, or both given names. A field with several first or middle names,
+**Cloud of**: surnames (at birth), first names, middle names, or both given names. A field with several first or middle names,
 such as "Mary Ann", is split at the spaces and each name is counted on its own (so a person with two first names is in both
 lists, but is one person in the total). "Mary-Ann", with no space, is one name. Initials and "Unknown" or "Private" are left out.
 
@@ -24,11 +24,11 @@ DER BERG. The words "y", "and", "und" and "et" between two surnames ("Garcia y L
 10 degrees, where parents, children, siblings and spouses each count as one degree). The **−** and **+** buttons add or
 take away generations or degrees.
 
-**A category** or **A WikiTree+ search**: instead of a person's family, the tree is made from everyone in a WikiTree category
+**A category** or **A WikiTree+ search**: instead of a person's family, the cloud is made from everyone in a WikiTree category
 (type its name, such as `Mayflower Passengers`, or paste the category's address) or everyone a
 [WikiTree+](https://plus.wikitree.com/) search finds (type the search, such as `Surname=Smith Location=Ohio Born=1850..1900`,
 or paste the address of a WikiTree+ search page). Press **Draw** (or Enter). WikiTree+ gives the profiles' numbers and WikiTree
-the people, so private profiles are left out; at most 5,000 are read, and the note under the tree says when there were more.
+the people, so private profiles are left out; at most 5,000 are read, and the note under the picture says when there were more.
 Biological and adoptive family do not apply, so those boxes go away. The profile in the Tree Apps box is not used for these,
 but is still needed to open the app.
 
@@ -78,13 +78,13 @@ them, so a short name can sit inside the O or the D of a long one. A name is tri
 left out, and at most 1,500 names are tried. With a very long list the biggest names are made smaller, so that more of the names
 fit, rather than leaving the rare ones out.
 
-**Names that did not fit.** Every name is tried again in any gap, in smaller type, before it is left out. The note under the tree
+**Names that did not fit.** Every name is tried again in any gap, in smaller type, before it is left out. The note under the picture
 says how many were left out: one to three are named in it, and for more there is a **See the list** link, which opens a list of
 them with how many profiles each has. Click one in the list to see its people.
 
 ## Options in the address
 
-The options can be given after the view, so a link opens the tree as set:
+The options can be given after the view, so a link opens the cloud as set:
 
 | Option        | Values                                                   | Default     |
 | ------------- | -------------------------------------------------------- | ----------- |
@@ -98,24 +98,26 @@ The options can be given after the view, so a link opens the tree as set:
 | `look`        | `shaded`, `flat`, `outlined`                             | `shaded`    |
 | `query`       | the category or search, for `scope=category` or `search` |             |
 
-For example: `#name=Example-42&view=surnametree&names=first&scope=cc7&degrees=5&adoptive=0`
+For example: `#name=Example-42&view=namecloud&names=first&scope=cc7&degrees=5&adoptive=0`
+
+This app was first called Surname Tree, and links made then (`view=surnametree`) still open it.
 
 ## Files
 
 | File                     | What it holds                                                                                         |
 | ------------------------ | ----------------------------------------------------------------------------------------------------- |
-| `surname_tree_view.js`   | The view the Tree Apps page uses: `meta()`, `init()`, `close()`, and the options in the address       |
-| `surname_tree_app.js`    | The app: its controls, hover, list, card and saving                                                   |
-| `surname_tree_core.js`   | Names, parent links, who is biological or adoptive, dates, the tree's shape, the word layout, colours |
-| `surname_tree_data.js`   | The API calls (`WikiTreeAPI.getPeople`) and the WikiTree+ search for a category or search             |
-| `surname_tree_svg.js`    | The SVG drawing, and wheel and drag zoom                                                              |
-| `surname_tree_zoom.js`   | Zoom and pan arithmetic                                                                               |
-| `surname_tree_image.js`  | A picture as the shape: cutting out its silhouette, and the colour of each word                       |
+| `name_cloud_view.js`   | The view the Tree Apps page uses: `meta()`, `init()`, `close()`, and the options in the address       |
+| `name_cloud_app.js`    | The app: its controls, hover, list, card and saving                                                   |
+| `name_cloud_core.js`   | Names, parent links, who is biological or adoptive, dates, the tree's shape, the word layout, colours |
+| `name_cloud_data.js`   | The API calls (`WikiTreeAPI.getPeople`) and the WikiTree+ search for a category or search             |
+| `name_cloud_svg.js`    | The SVG drawing, and wheel and drag zoom                                                              |
+| `name_cloud_zoom.js`   | Zoom and pan arithmetic                                                                               |
+| `name_cloud_image.js`  | A picture as the shape: cutting out its silhouette, and the colour of each word                       |
 | `images/`                | The WikiTree logo, the WikiTree heart and the oak picture that can be used as the shape               |
-| `surname_tree_list.js`   | The HTML for the list and the card                                                                    |
-| `surname_tree_draw.js`   | Canvas drawing and text measuring (for pictures)                                                      |
-| `surname_tree_export.js` | File types, sizes, drawing at a size, and the PDF writer (no library; one JPEG on one page)           |
-| `surname_tree.css`       | Styles (every class starts with `sutree-`)                                                            |
+| `name_cloud_list.js`   | The HTML for the list and the card                                                                    |
+| `name_cloud_draw.js`   | Canvas drawing and text measuring (for pictures)                                                      |
+| `name_cloud_export.js` | File types, sizes, drawing at a size, and the PDF writer (no library; one JPEG on one page)           |
+| `name_cloud.css`       | Styles (every class starts with `ncloud-`)                                                            |
 
 The code has no dependencies of its own beyond the page's jQuery and the `WikiTreeAPI` global.
 

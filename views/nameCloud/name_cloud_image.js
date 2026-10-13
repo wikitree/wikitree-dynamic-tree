@@ -2,7 +2,7 @@
 Created By: Azure Robinson (Robinson-27225)
 */
 
-import { CELL, HEIGHT, WIDTH, hslToHex } from "./surname_tree_core.js";
+import { CELL, HEIGHT, WIDTH, hslToHex } from "./name_cloud_core.js";
 
 // A picture used as the shape of the tree, as in word art: the words fill the picture's silhouette and each takes the colour
 // of the picture under it. The picture is read in the member's own browser and goes nowhere.

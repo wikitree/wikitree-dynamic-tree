@@ -20,7 +20,7 @@ import {
     colorFor,
     crownColors,
     frameOf,
-} from "./surname_tree_core.js";
+} from "./name_cloud_core.js";
 
 /** A tall, narrow, heavy face, like the capitals on a tree-shaped word cloud. Whatever is installed first is used. */
 export const TREE_FONT = '"Roboto Condensed", "Arial Narrow", Oswald, Impact, Haettenschweiler, sans-serif';

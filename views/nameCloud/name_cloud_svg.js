@@ -19,8 +19,8 @@ import {
     colorFor,
     crownColors,
     frameOf,
-} from "./surname_tree_core.js";
-import { TREE_FONT, trunkSpan } from "./surname_tree_draw.js";
+} from "./name_cloud_core.js";
+import { TREE_FONT, trunkSpan } from "./name_cloud_draw.js";
 import {
     BUTTON_FACTOR,
     IDENTITY,
@@ -30,7 +30,7 @@ import {
     viewScale,
     wheelFactor,
     zoomAbout,
-} from "./surname_tree_zoom.js";
+} from "./name_cloud_zoom.js";
 
 const NS = "http://www.w3.org/2000/svg";
 
@@ -59,7 +59,7 @@ function addShadedTree(defs, viewport, tree) {
     // trunk and limbs: shaded across from left to right
     const { left, right } = trunkSpan(tree);
     const bark = svgElement("linearGradient", {
-        id: "suTreeBark",
+        id: "ncloudBark",
         gradientUnits: "userSpaceOnUse",
         x1: round(left),
         y1: 0,
@@ -70,15 +70,15 @@ function addShadedTree(defs, viewport, tree) {
     bark.appendChild(svgElement("stop", { "offset": "1", "stop-color": COLORS.trunkDark }));
     defs.appendChild(bark);
     const trunkPath = circlesPath(tree.trunk);
-    viewport.appendChild(svgElement("path", { class: "sutree-trunk", fill: "url(#suTreeBark)", d: trunkPath }));
+    viewport.appendChild(svgElement("path", { class: "ncloud-trunk", fill: "url(#ncloudBark)", d: trunkPath }));
 
     // ridges of bark up the trunk, kept inside it
-    const trunkClip = svgElement("clipPath", { id: "suTreeTrunkClip" });
+    const trunkClip = svgElement("clipPath", { id: "ncloudTrunkClip" });
     trunkClip.appendChild(svgElement("path", { d: trunkPath }));
     defs.appendChild(trunkClip);
     viewport.appendChild(
         svgElement("path", {
-            "class": "sutree-bark",
+            "class": "ncloud-bark",
             "d": barkLines(tree)
                 .map((line) => line.map(([x, y], i) => `${i ? "L" : "M"}${round(x)} ${round(y)}`).join(""))
                 .join(""),
@@ -88,13 +88,13 @@ function addShadedTree(defs, viewport, tree) {
             "stroke-linecap": "round",
             "stroke-linejoin": "round",
             "opacity": BARK_OPACITY,
-            "clip-path": "url(#suTreeTrunkClip)",
+            "clip-path": "url(#ncloudTrunkClip)",
             "pointer-events": "none",
         })
     );
 
     // the ground the trunk stands in: a soft patch that fades out at its edges
-    const ground = svgElement("radialGradient", { id: "suTreeGround" });
+    const ground = svgElement("radialGradient", { id: "ncloudGround" });
     ground.appendChild(
         svgElement("stop", { "offset": "0", "stop-color": COLORS.groundCentre, "stop-opacity": GROUND_OPACITY })
     );
@@ -102,12 +102,12 @@ function addShadedTree(defs, viewport, tree) {
     defs.appendChild(ground);
     viewport.appendChild(
         svgElement("ellipse", {
-            "class": "sutree-ground",
+            "class": "ncloud-ground",
             "cx": GROUND.x,
             "cy": GROUND.y,
             "rx": GROUND.rx,
             "ry": GROUND.ry,
-            "fill": "url(#suTreeGround)",
+            "fill": "url(#ncloudGround)",
             "pointer-events": "none",
         })
     );
@@ -115,7 +115,7 @@ function addShadedTree(defs, viewport, tree) {
     // the shadow the leaves cast, so the crown stands out from the trunk behind it
     viewport.appendChild(
         svgElement("path", {
-            "class": "sutree-shadow",
+            "class": "ncloud-shadow",
             "d": circlesPath(tree.crown),
             "transform": `translate(${CROWN_SHADOW_OFFSET[0]} ${CROWN_SHADOW_OFFSET[1]})`,
             "fill": COLORS.crownShadow,
@@ -130,7 +130,7 @@ function addShadedTree(defs, viewport, tree) {
         const fx = round(lobe.x + LIGHT.dx * lobe.r);
         const fy = round(lobe.y + LIGHT.dy * lobe.r);
         const gradient = svgElement("radialGradient", {
-            id: `suTreeLeaf${i}`,
+            id: `ncloudLeaf${i}`,
             gradientUnits: "userSpaceOnUse",
             cx: fx,
             cy: fy,
@@ -143,28 +143,28 @@ function addShadedTree(defs, viewport, tree) {
         defs.appendChild(gradient);
         viewport.appendChild(
             svgElement("circle", {
-                class: "sutree-crown",
+                class: "ncloud-crown",
                 cx: round(lobe.x),
                 cy: round(lobe.y),
                 r: round(lobe.r),
-                fill: `url(#suTreeLeaf${i})`,
+                fill: `url(#ncloudLeaf${i})`,
             })
         );
     });
 
     // the limbs show faintly through the leaves, as branches do in a real tree
-    const clip = svgElement("clipPath", { id: "suTreeCrownClip" });
+    const clip = svgElement("clipPath", { id: "ncloudCrownClip" });
     tree.crown.forEach((lobe) =>
         clip.appendChild(svgElement("circle", { cx: round(lobe.x), cy: round(lobe.y), r: round(lobe.r) }))
     );
     defs.appendChild(clip);
     viewport.appendChild(
         svgElement("path", {
-            "class": "sutree-inner",
+            "class": "ncloud-inner",
             "d": trunkPath,
             "fill": COLORS.trunkInner,
             "opacity": INNER_BRANCH_OPACITY,
-            "clip-path": "url(#suTreeCrownClip)",
+            "clip-path": "url(#ncloudCrownClip)",
             "pointer-events": "none",
         })
     );
@@ -174,14 +174,14 @@ function addShadedTree(defs, viewport, tree) {
 function addFlatTree(viewport, tree) {
     viewport.appendChild(
         svgElement("path", {
-            class: "sutree-trunk",
+            class: "ncloud-trunk",
             fill: COLORS.trunkFlat,
             d: circlesPath(tree.trunk),
         })
     );
     viewport.appendChild(
         svgElement("path", {
-            class: "sutree-crown",
+            class: "ncloud-crown",
             fill: COLORS.crownFlat,
             d: circlesPath(tree.crown),
         })
@@ -195,7 +195,7 @@ function addOutlinedTree(defs, viewport, tree) {
     // of the whole shape is outlined and not every circle that it is made of.
     viewport.appendChild(
         svgElement("path", {
-            "class": "sutree-trunk-outline",
+            "class": "ncloud-trunk-outline",
             "d": trunkPath,
             "fill": COLORS.trunkOutline,
             "stroke": COLORS.trunkOutline,
@@ -203,14 +203,14 @@ function addOutlinedTree(defs, viewport, tree) {
             "stroke-linejoin": "round",
         })
     );
-    viewport.appendChild(svgElement("path", { class: "sutree-trunk", fill: COLORS.trunkOutlined, d: trunkPath }));
+    viewport.appendChild(svgElement("path", { class: "ncloud-trunk", fill: COLORS.trunkOutlined, d: trunkPath }));
 
-    const trunkClip = svgElement("clipPath", { id: "suTreeTrunkClip" });
+    const trunkClip = svgElement("clipPath", { id: "ncloudTrunkClip" });
     trunkClip.appendChild(svgElement("path", { d: trunkPath }));
     defs.appendChild(trunkClip);
     viewport.appendChild(
         svgElement("path", {
-            "class": "sutree-bark",
+            "class": "ncloud-bark",
             "d": barkLines(tree)
                 .map((line) => line.map(([x, y], i) => `${i ? "L" : "M"}${round(x)} ${round(y)}`).join(""))
                 .join(""),
@@ -220,7 +220,7 @@ function addOutlinedTree(defs, viewport, tree) {
             "stroke-linecap": "round",
             "stroke-linejoin": "round",
             "opacity": 0.55,
-            "clip-path": "url(#suTreeTrunkClip)",
+            "clip-path": "url(#ncloudTrunkClip)",
             "pointer-events": "none",
         })
     );
@@ -230,7 +230,7 @@ function addOutlinedTree(defs, viewport, tree) {
         const fx = round(lobe.x + LIGHT.dx * lobe.r);
         const fy = round(lobe.y + LIGHT.dy * lobe.r);
         const gradient = svgElement("radialGradient", {
-            id: `suTreePuff${i}`,
+            id: `ncloudPuff${i}`,
             gradientUnits: "userSpaceOnUse",
             cx: fx,
             cy: fy,
@@ -243,11 +243,11 @@ function addOutlinedTree(defs, viewport, tree) {
         defs.appendChild(gradient);
         viewport.appendChild(
             svgElement("circle", {
-                "class": "sutree-crown",
+                "class": "ncloud-crown",
                 "cx": round(lobe.x),
                 "cy": round(lobe.y),
                 "r": round(lobe.r),
-                "fill": `url(#suTreePuff${i})`,
+                "fill": `url(#ncloudPuff${i})`,
                 "stroke": COLORS.outline,
                 "stroke-width": 3.5,
             })
@@ -259,7 +259,7 @@ function addOutlinedTree(defs, viewport, tree) {
 function addBannerBackground(viewport, shape) {
     viewport.appendChild(
         svgElement("rect", {
-            class: "sutree-banner-bg",
+            class: "ncloud-banner-bg",
             x: 0,
             y: 0,
             width: shape.bounds.w,
@@ -273,7 +273,7 @@ function addBannerBackground(viewport, shape) {
 function addBackdrop(viewport, shape) {
     if (!shape.picture) return;
     const image = svgElement("image", {
-        "class": "sutree-backdrop",
+        "class": "ncloud-backdrop",
         "x": 0,
         "y": 0,
         "width": WIDTH,
@@ -288,7 +288,7 @@ function addBackdrop(viewport, shape) {
 /**
  * Draw the tree as SVG so the words can be hovered, clicked and zoomed as they are. Returns the group that zoom moves and
  * a map from each surname to its words (a name can appear many times, once big and then small to fill gaps).
- * Each word is a <g class="sutree-word" data-surname="..."> turned to its angle, holding an invisible box, which makes
+ * Each word is a <g class="ncloud-word" data-surname="..."> turned to its angle, holding an invisible box, which makes
  * tiny words easy to hit, and the text.
  */
 export function renderTreeSvg(svg, items, tree = buildTree(1)) {
@@ -298,16 +298,16 @@ export function renderTreeSvg(svg, items, tree = buildTree(1)) {
     svg.setAttribute("xmlns", NS);
     svg.setAttribute("font-family", TREE_FONT);
     svg.setAttribute("role", "group");
-    svg.setAttribute("aria-label", "A tree made of names");
+    svg.setAttribute("aria-label", "A word cloud of names");
 
     const defs = svgElement("defs");
     svg.appendChild(defs);
     // Everything is clipped to the drawing's own frame. Without this, the part of the trunk's foot that is below the ground
     // shows when the page gives the picture a taller box than its shape (the SVG then shows what lies outside its frame).
-    const frame = svgElement("clipPath", { id: "suTreeFrame" });
+    const frame = svgElement("clipPath", { id: "ncloudFrame" });
     frame.appendChild(svgElement("rect", { x: 0, y: 0, width: frameBox.w, height: frameBox.h }));
     defs.appendChild(frame);
-    const viewport = svgElement("g", { "class": "sutree-viewport", "clip-path": "url(#suTreeFrame)" });
+    const viewport = svgElement("g", { "class": "ncloud-viewport", "clip-path": "url(#ncloudFrame)" });
     svg.appendChild(viewport);
 
     // What goes behind the words: the picture the member chose, or an oak, shaded or flat.
@@ -322,7 +322,7 @@ export function renderTreeSvg(svg, items, tree = buildTree(1)) {
     items.forEach((item) => {
         const first = !words.has(item.text);
         const group = svgElement("g", {
-            "class": "sutree-word",
+            "class": "ncloud-word",
             "data-surname": item.text,
             "transform": `translate(${round(item.x)} ${round(item.y)}) rotate(${round(item.angle)})`,
         });
@@ -369,7 +369,7 @@ export function attachZoom(svg, onChange = () => {}, frameNow = () => undefined)
     let t = IDENTITY;
     let dragged = false;
     // the drawing is replaced whenever the tree is laid out again, so the group to move is looked up each time
-    const show = () => svg.querySelector(".sutree-viewport")?.setAttribute("transform", transformText(t));
+    const show = () => svg.querySelector(".ncloud-viewport")?.setAttribute("transform", transformText(t));
     const apply = (next) => {
         t = next;
         show();

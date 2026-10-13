@@ -2,7 +2,7 @@
 Created By: Azure Robinson (Robinson-27225)
 */
 
-// The pure parts of the Surname Tree feature: counting surnames, the shape of the tree, and the word cloud layout.
+// The pure parts of the Name Cloud feature: counting surnames, the shape of the tree, and the word cloud layout.
 // Nothing here touches the page, so it can be tested on its own. Sizes are in "logical pixels" on a WIDTH x HEIGHT canvas.
 
 export const WIDTH = 1000;
@@ -35,32 +35,32 @@ export const NAME_KINDS = [
         name: "Surnames",
         noun: "surname",
         nouns: "surnames",
-        title: "Surname Tree",
-        file: "surname-tree",
+        title: "Surname Cloud",
+        file: "surname-cloud",
     },
     {
         id: "first",
         name: "First names",
         noun: "first name",
         nouns: "first names",
-        title: "First Name Tree",
-        file: "first-name-tree",
+        title: "First Name Cloud",
+        file: "first-name-cloud",
     },
     {
         id: "middle",
         name: "Middle names",
         noun: "middle name",
         nouns: "middle names",
-        title: "Middle Name Tree",
-        file: "middle-name-tree",
+        title: "Middle Name Cloud",
+        file: "middle-name-cloud",
     },
     {
         id: "given",
         name: "First and middle names",
         noun: "given name",
         nouns: "given names",
-        title: "Given Name Tree",
-        file: "given-name-tree",
+        title: "Given Name Cloud",
+        file: "given-name-cloud",
     },
 ];
 
@@ -526,6 +526,23 @@ function bezier(p0, p1, p2, p3, t) {
  * A limb as a chain of circles along a curve, thick at the start and tapering to the tip. Circles overlap enough to
  * look like a smooth tapered stroke, and the whole limb is the union of its circles.
  */
+/**
+ * The four points of a limb's curve from `from` to `to`: it leaves at `leave` degrees above level and comes in at `arrive` degrees
+ * above level, both towards the side the tip is on. With the leaving angle lower than the arriving one, the limb bends upward
+ * in a single smooth sweep, like a real branch, and never hooks back on itself.
+ */
+function bend(from, to, leave, arrive) {
+    const sign = to[0] >= from[0] ? 1 : -1;
+    const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
+    const rad = (degrees) => (degrees * Math.PI) / 180;
+    return [
+        from,
+        [from[0] + sign * Math.cos(rad(leave)) * length * 0.38, from[1] - Math.sin(rad(leave)) * length * 0.38],
+        [to[0] - sign * Math.cos(rad(arrive)) * length * 0.32, to[1] + Math.sin(rad(arrive)) * length * 0.32],
+        to,
+    ];
+}
+
 function limb(p0, p1, p2, p3, startRadius, endRadius, taper = 1) {
     const circles = [];
     let t = 0;
@@ -804,7 +821,8 @@ export function buildTree(seed = 1) {
 
     // Side limbs leave the upper trunk one after another, alternating left and right as leaves do on a twig. The lowest is the
     // longest and runs nearly level, as an oak's heavy lower limbs do (it grows reaction wood on its underside to hold itself
-    // up); the ones above are shorter. Each bends upward at its end, towards the light.
+    // up); the ones above are shorter and leave at a steeper angle. Each bends upward as it goes, towards the light, in one smooth
+    // curve that never doubles back, and thins towards its tip. A limb keeps to its own side of the tree, so none cross.
     const lower = lobes.filter((c) => c.y + c.r > lowest - 240);
     const limbCount = Math.min(lower.length, random() < 0.4 ? 4 : 3);
     const used = new Set();
@@ -813,49 +831,38 @@ export function buildTree(seed = 1) {
         // where it leaves the trunk: the lowest first, each one higher up
         const along = lerp(0.58, 0.97, limbCount === 1 ? 0 : i / (limbCount - 1));
         const start = spine[Math.round(along * (spine.length - 1))];
-        // its target: of the clumps on its side, the one that reaches furthest out; failing that, any that is left
-        const free = lower.filter((c) => !used.has(c));
-        const onSide = free
-            .filter((c) => (c.x - trunkAxis) * side > 0)
+        // its target: of the clumps on its side, the one that reaches furthest out; none if there is not one (it would cross)
+        const onSide = lower
+            .filter((c) => !used.has(c) && (c.x - trunkAxis) * side > 0)
             .sort((a, b) => Math.abs(b.x - trunkAxis) - Math.abs(a.x - trunkAxis));
-        const target = (
-            onSide.length ? onSide : free.sort((a, b) => Math.abs(b.x - trunkAxis) - Math.abs(a.x - trunkAxis))
-        )[0];
+        const target = onSide[0];
+        if (!target) continue;
         used.add(target);
         // the tip is well inside the clump, so the limb is hidden in the leaves where it ends
-        const tip = [target.x + between(-0.3, 0.3) * target.r, target.y + between(-0.2, 0.35) * target.r];
-        const dx = tip[0] - start.x;
+        const tip = [target.x + between(-0.3, 0.3) * target.r, target.y + between(-0.2, 0.3) * target.r];
         const thisLimb = limb(
-            [start.x, start.y],
-            [start.x + dx * between(0.4, 0.55), start.y + between(-30, 5)], // going out nearly level
-            [tip[0] - dx * between(0.1, 0.25), tip[1] + between(45, 100)], // and coming up into the tip
-            tip,
-            Math.min(start.r * 0.7, between(32, 42)),
-            between(8, 12),
-            between(0.6, 1)
+            ...bend([start.x, start.y], tip, i === 0 ? between(12, 24) : between(32, 52), between(60, 78)),
+            Math.min(start.r * 0.62, between(26, 34)),
+            between(5, 8),
+            between(0.7, 1)
         );
         trunk.push(...thisLimb);
         tips.push({ x: tip[0], y: tip[1] });
         limbs.push({ side, start: { x: start.x, y: start.y }, tip: { x: tip[0], y: tip[1] } });
-        // a branch off most limbs, forking away and growing up into the leaves
+        // a branch off most limbs, forking away from it on the outer side and growing up into a clump of leaves there
         if (random() < 0.85) {
-            const at = thisLimb[Math.floor(thisLimb.length * between(0.35, 0.7))];
-            const near = lobes.filter((c) => Math.hypot(c.x - at.x, c.y - at.y) < 360 && c !== target);
-            if (near.length) {
-                const goal = near[Math.floor(random() * near.length)];
-                const end = [goal.x + between(-0.35, 0.35) * goal.r, goal.y + between(-0.35, 0.35) * goal.r];
-                const away = end[0] > at.x ? 1 : -1;
-                trunk.push(
-                    ...limb(
-                        [at.x, at.y],
-                        [at.x + away * between(5, 25), at.y - between(20, 60)],
-                        [end[0] - away * between(10, 40), end[1] + between(20, 60)],
-                        end,
-                        at.r * 0.75,
-                        5,
-                        0.9
-                    )
-                );
+            const at = thisLimb[Math.floor(thisLimb.length * between(0.45, 0.7))];
+            const goals = lobes.filter(
+                (c) =>
+                    c !== target &&
+                    c.y < at.y - 30 &&
+                    (c.x - at.x) * side > 0 && // outward: it does not cross back over the limb or the trunk
+                    Math.hypot(c.x - at.x, c.y - at.y) < 340
+            );
+            if (goals.length) {
+                const goal = goals[Math.floor(random() * goals.length)];
+                const end = [goal.x + between(-0.3, 0.3) * goal.r, goal.y + between(-0.2, 0.3) * goal.r];
+                trunk.push(...limb(...bend([at.x, at.y], end, between(30, 48), between(52, 68)), at.r * 0.62, 4, 0.8));
                 tips.push({ x: end[0], y: end[1] });
             }
         }
@@ -1095,11 +1102,11 @@ export function wordCells(item) {
  *
  * words:   [{ text, count }], most common first
  * measure: (text, fontSize) => width in logical pixels
- * masks:   from buildMasks(tree), or made from a picture (see surname_tree_image.js)
+ * masks:   from buildMasks(tree), or made from a picture (see name_cloud_image.js)
  * look:    "shaded" or "flat" (see LOOKS): how tightly the words are packed and how small they may become
  * fonts:    { maxFont, minFont } for the biggest and the rarest names, where the shape is not as tall as the tree (the banner)
  * ink:      (text, size, angle, pad) => the cells the letters themselves cover, as boxOffsets gives for a box (see inkOffsets in
- *           surname_tree_draw.js). Where given, a placed name takes up only its letters' room, so smaller names can go in the
+ *           name_cloud_draw.js). Where given, a placed name takes up only its letters' room, so smaller names can go in the
  *           middles of its O, D and so on. Without it a name takes up its whole box.
  * Returns [{ text, count, region: "crown" | "trunk", x, y, size, angle, w, h, rank }] where x, y is the middle of the
  * word, angle its turn in degrees, and w, h the size of its box before turning.
