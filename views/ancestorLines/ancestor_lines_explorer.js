@@ -729,25 +729,30 @@ export class AncestorLinesExplorer {
             `maxNrPeople: ${maxNrPeople}, nrUniqueProfiles: ${nrUniqueProfiles}, nrDuplicates: ${nrDuplicates}, nrPosOccupiedByDupes: ${nrPosOccupiedByDupes}, nrProfiledPositions: ${nrProfiledPositions}`
         );
 
-        const commonReport = `Out of ${maxNrPeople.toLocaleString()} possible direct ancestors in ${gen} generations, ${nrProfiledPositions.toLocaleString()} (${(
-            (nrProfiledPositions / maxNrPeople) *
-            100
-        ).toFixed(2)}%) ${nrProfiledPositions > 1 ? "have WikiTree profiles" : "has a WikiTree profile"}`;
+        function percentage(a, b) {
+            const percentage = (a / b) * 100;
+            const decimals = percentage === 0 ? 2 : Math.max(2, Math.ceil(-Math.log10(percentage)));
+            return percentage.toFixed(decimals);
+        }
+
+        const commonReport = `Out of ${maxNrPeople.toLocaleString()} possible direct ancestors in ${gen} generations, ${nrProfiledPositions.toLocaleString()} (${percentage(
+            nrProfiledPositions,
+            maxNrPeople
+        )}%) ${nrProfiledPositions > 1 ? "have WikiTree profiles" : "has a WikiTree profile"}`;
         const duplicateReport =
             nrDuplicates == 0
                 ? ", with no pedigree collapse."
-                : `. Due to pedigree collapse, these ${nrProfiledPositions} positions with profiles are filled by ${nrUniqueProfiles.toLocaleString()} (${(
-                      (nrUniqueProfiles / nrProfiledPositions) *
-                      100
-                  ).toFixed(2)}%) individual${nrUniqueProfiles > 1 ? "s" : ""}, ${nrDuplicates.toLocaleString()} (${(
-                      (nrDuplicates / nrUniqueProfiles) *
-                      100
-                  ).toFixed(2)}%) of whom ${nrDuplicates > 1 ? "occur" : "occurs"} more than once in the tree. ${
+                : `. Due to pedigree collapse, these ${nrProfiledPositions} positions with profiles are filled by ${nrUniqueProfiles.toLocaleString()} (${percentage(
+                      nrUniqueProfiles,
+                      nrProfiledPositions
+                  )}%) individual${nrUniqueProfiles > 1 ? "s" : ""}, ${nrDuplicates.toLocaleString()} (${percentage(
+                      nrDuplicates,
+                      nrUniqueProfiles
+                  )}%) of whom ${nrDuplicates > 1 ? "occur" : "occurs"} more than once in the tree. ${
                       nrDuplicates > 1 ? `These ${nrDuplicates} occupy` : `This profile occupies`
-                  } ${nrPosOccupiedByDupes.toLocaleString()} (${((nrPosOccupiedByDupes / maxNrPeople) * 100).toFixed(
-                      2
-                  )}%) of the positions in the tree (${((nrPosOccupiedByDupes / nrProfiledPositions) * 100).toFixed(
-                      2
+                  } ${nrPosOccupiedByDupes.toLocaleString()} (${percentage(nrPosOccupiedByDupes, maxNrPeople)}%) of the positions in the tree (${percentage(
+                      nrPosOccupiedByDupes,
+                      nrProfiledPositions
                   )}% of the positions with profiles).`;
 
         $("#aleFieldset .report").remove();

@@ -8,8 +8,10 @@ export class StatsView {
         if (["missing-links", "complete"].includes($("#cc7Subset").val())) {
             $("#cc7Subset").val("all").prop("selected", true).trigger("change");
         }
-        $("#cc7Subset option[value='missing-links']").prop("disabled", true);
-        $("#cc7Subset option[value='complete']").prop("disabled", true);
+        $("#cc7Subset option")
+            .filter("[value='missing-links'], [value='complete']")
+            .prop("disabled", true)
+            .trigger("change.select2");
         const subset = $("#cc7Subset").val();
         const gender = $("#cc7Gender").val();
         let subsetWord = CC7Utils.subsetWords();
@@ -423,9 +425,8 @@ export class StatsView {
                 } else {
                     row.insertCell(2).innerHTML = `${stats.profileCounts[generation]}`;
                 }
-                row.insertCell(
-                    3
-                ).innerHTML = `${stats.birthYears[generation].length}/${stats.profileCounts[generation]}`;
+                row.insertCell(3).innerHTML =
+                    `${stats.birthYears[generation].length}/${stats.profileCounts[generation]}`;
                 row.insertCell(4).innerHTML = stats.earliestBirthYears[generation];
                 row.insertCell(5).innerHTML = stats.latestBirthYears[generation];
                 row.insertCell(6).innerHTML = stats.avgBirthYears[generation];

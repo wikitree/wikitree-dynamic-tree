@@ -1,0 +1,483 @@
+/* Styles for the Name Cloud feature. Every class starts with ncloud so Highlight WBE Features picks it up. */
+
+/* the app sits in the Tree Apps page's view area; Full screen makes it fill the window */
+.ncloud-app {
+  box-sizing: border-box;
+  height: max(34rem, min(88vh, 62rem));
+  border: 1px solid #d8d8d0;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #393a3c;
+  font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  overflow: hidden;
+}
+.ncloud-app.ncloud-full {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+}
+.ncloud-dialog {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.ncloud-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  padding: 0.7rem 1.2rem;
+}
+.ncloud-controls label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+}
+.ncloud-controls button {
+  font: inherit;
+  cursor: pointer;
+  padding: 0.25em 0.9em;
+  border: 1px solid #25422d;
+  border-radius: 0.4em;
+  background: #fff;
+  color: #25422d;
+}
+.ncloud-controls button:hover:not(:disabled) {
+  background: #e4ebe5;
+}
+.ncloud-controls button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.ncloud-controls .ncloud-primary {
+  background: #25422d;
+  color: #fff;
+}
+.ncloud-controls .ncloud-primary:hover:not(:disabled) {
+  background: #35603f;
+}
+.ncloud-spacer {
+  flex: 1;
+}
+.ncloud-main {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  border-top: 1px solid #e3e3dc;
+}
+.ncloud-stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  background: #fff;
+}
+.ncloud-stage svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  user-select: none;
+}
+.ncloud-stage svg:active {
+  cursor: grabbing;
+}
+.ncloud-word {
+  cursor: pointer;
+  transition: opacity 0.12s;
+}
+.ncloud-word:focus {
+  outline: none;
+}
+.ncloud-word:focus-visible text {
+  stroke: #f8a820;
+  stroke-width: 1.5px;
+  paint-order: stroke;
+}
+/* hovering a surname dims the rest, so every copy of it stands out */
+.ncloud-hovering .ncloud-word:not(.is-hot) {
+  opacity: 0.3;
+}
+.ncloud-word.is-hot text,
+.ncloud-word.is-selected text {
+  stroke: #f8a820;
+  stroke-width: 2px;
+  paint-order: stroke;
+}
+
+/* the hover note and the profile card are cream, like the fan chart's */
+.ncloud-tip,
+.ncloud-card {
+  position: absolute;
+  background: #fffaf0;
+  color: #2b2b2b;
+  border: 1px solid #e3d9c3;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  box-shadow: 0 6px 20px rgba(60, 45, 20, 0.18);
+}
+.ncloud-tip {
+  max-width: 17rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s;
+  z-index: 2;
+}
+.ncloud-tip b,
+.ncloud-card b {
+  font-size: 0.85rem;
+  color: inherit;
+}
+.ncloud-tip-hint,
+.ncloud-card-hint {
+  margin-top: 4px;
+  color: #7a7266;
+  font-size: 0.72rem;
+}
+.ncloud-card {
+  z-index: 3;
+  width: 17rem;
+  max-height: 70%;
+  overflow-y: auto;
+  box-shadow: 0 0 0 2px #8fbf5a, 0 6px 20px rgba(60, 45, 20, 0.22);
+}
+.ncloud-card[hidden] {
+  display: none;
+}
+.ncloud-card a,
+.ncloud-card a:link,
+.ncloud-card a:visited {
+  color: #2e6b1f !important;
+  text-decoration: underline;
+}
+.ncloud-card-rel {
+  color: #1f5f8b;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ncloud-card-id {
+  color: #7a7266;
+}
+.ncloud-card-close {
+  float: right;
+  margin: -4px -4px 0 6px;
+  padding: 0 0.3rem;
+  border: 0;
+  background: none;
+  font-size: 1.2rem;
+  line-height: 1;
+  color: #7a7266;
+  cursor: pointer;
+}
+
+/* the list of people with a surname */
+.ncloud-list {
+  display: flex;
+  flex-direction: column;
+  width: min(24rem, 42%);
+  border-left: 1px solid #e3e3dc;
+  background: #fbfbf8;
+}
+.ncloud-list[hidden] {
+  display: none;
+}
+.ncloud-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.8rem;
+  border-bottom: 1px solid #e3e3dc;
+  font-size: 0.85rem;
+}
+.ncloud-list-head strong {
+  font-size: 1rem;
+  color: #25422d;
+}
+.ncloud-list-head button {
+  border: 0;
+  background: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: #25422d;
+  cursor: pointer;
+}
+.ncloud-list-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.3rem 0.8rem 0.8rem;
+}
+.ncloud-people {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ncloud-person {
+  margin: 0;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid #ecece5;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+.ncloud-name {
+  font-weight: bold;
+}
+.ncloud-id {
+  margin-left: 0.4rem;
+  color: #6b6b64;
+  font-size: 0.75rem;
+}
+.ncloud-tag {
+  margin-left: 0.4rem;
+  padding: 0 0.4em;
+  border-radius: 0.8em;
+  background: #e4ebe5;
+  color: #25422d;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.ncloud-life {
+  color: #4b4b46;
+  font-size: 0.78rem;
+}
+.ncloud-unknown {
+  color: #9a9a92;
+}
+.ncloud-more {
+  display: block;
+  margin: 0.7rem auto 0;
+  padding: 0.25em 0.9em;
+  border: 1px solid #25422d;
+  border-radius: 0.4em;
+  background: #fff;
+  color: #25422d;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* the reach controls */
+.ncloud-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.ncloud-stepper > span {
+  min-width: 6.2rem;
+  text-align: center;
+  font-weight: bold;
+}
+.ncloud-stepper button {
+  width: 1.9rem;
+  padding: 0.25em 0;
+  text-align: center;
+}
+.ncloud-show {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+.ncloud-show > span {
+  font-weight: bold;
+}
+
+.ncloud-status {
+  margin: 0;
+  padding: 0.6rem 1.2rem 0.9rem;
+  color: #5a5a5a;
+  font-size: 0.85rem;
+}
+.ncloud-status.ncloud-error {
+  color: #b3261e;
+}
+
+.ncloud-save {
+  margin: 0 1.2rem 0.6rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid #d8d8d0;
+  border-radius: 0.4rem;
+  background: #f8f8f4;
+}
+.ncloud-save[hidden],
+.ncloud-save [hidden] {
+  display: none;
+}
+.ncloud-formats {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  margin: 0 0 0.6rem;
+  padding: 0;
+  border: 0;
+}
+.ncloud-formats legend {
+  float: left;
+  width: auto;
+  margin: 0 1.2rem 0 0;
+  padding: 0;
+  border: 0;
+  font-size: inherit;
+  font-weight: bold;
+}
+.ncloud-formats label,
+.ncloud-save-row label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+}
+.ncloud-save-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-top: 0.5rem;
+}
+.ncloud-save-row input[type="number"] {
+  width: 6rem;
+}
+.ncloud-note {
+  color: #5a5a5a;
+  font-size: 0.85rem;
+}
+.ncloud-save button {
+  font: inherit;
+  cursor: pointer;
+  padding: 0.25em 0.9em;
+  border: 1px solid #25422d;
+  border-radius: 0.4em;
+  background: #fff;
+  color: #25422d;
+}
+.ncloud-save button.ncloud-primary {
+  background: #25422d;
+  color: #fff;
+}
+.ncloud-save button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* the file input is kept on the page, out of sight, because Safari will not open a chooser from an input that is not displayed */
+.ncloud-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* the names that did not fit: a cream box like the card, over the lower left of the tree */
+.ncloud-unseen {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 3;
+  width: 16rem;
+  max-height: 60%;
+  display: flex;
+  flex-direction: column;
+  background: #fffaf0;
+  color: #2b2b2b;
+  border: 1px solid #e3d9c3;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  box-shadow:
+    0 0 0 2px #8fbf5a,
+    0 6px 20px rgba(60, 45, 20, 0.22);
+}
+.ncloud-unseen[hidden] {
+  display: none;
+}
+.ncloud-unseen-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 6px 10px;
+  border-bottom: 1px solid #e3d9c3;
+}
+.ncloud-unseen-head button {
+  border: 0;
+  background: none;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: #25422d;
+  cursor: pointer;
+}
+.ncloud-unseen-body {
+  overflow-y: auto;
+  padding: 4px 10px 8px;
+}
+.ncloud-unseen-hint {
+  margin: 4px 0;
+  color: #7a7266;
+  font-size: 0.72rem;
+}
+.ncloud-unseen-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ncloud-unseen-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 1px 0;
+}
+.ncloud-unseen-name,
+.ncloud-linkbutton {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: #25590d;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.ncloud-unseen-name {
+  font-weight: bold;
+  text-align: left;
+}
+
+/* the wide banner: the stage is as tall as the banner, not the tree */
+.ncloud-stage.ncloud-banner {
+  flex: 0 1 auto;
+  width: 100%;
+  align-self: flex-start;
+}
+.ncloud-stage.ncloud-banner svg {
+  height: auto;
+  aspect-ratio: 1000 / 156;
+}
+.ncloud-bannerbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.ncloud-bannerbox input[type="color"] {
+  width: 2.2rem;
+  height: 1.7rem;
+  padding: 0;
+  border: 1px solid #c9c9c0;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+
+/* a hidden control stays hidden whatever display the page's own styles give it */
+.ncloud-app [hidden] {
+  display: none !important;
+}

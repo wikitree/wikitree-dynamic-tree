@@ -1,0 +1,20 @@
+[
+  [
+    1,
+    {
+      "Name": "Root-1",
+      "LongNamePrivate": "Robin Root",
+      "Gender": "Male",
+      "Mother": 2,
+      "BioFather": 3,
+      "BioMother": 4,
+      "DataStatus": { "Mother": "5" },
+      "Meta": { "Degrees": 0 }
+    }
+  ],
+  [2, { "Name": "Aunt-2", "LongNamePrivate": "Alice Aunt", "Gender": "Female", "Father": 5, "Mother": 6, "DataStatus": {}, "Meta": {} }],
+  [3, { "Name": "Father-3", "LongNamePrivate": "Frank Father", "Gender": "Male", "DataStatus": {}, "Meta": {} }],
+  [4, { "Name": "Mother-4", "LongNamePrivate": "Mary Mother", "Gender": "Female", "Father": 5, "Mother": 6, "DataStatus": {}, "Meta": {} }],
+  [5, { "Name": "Grandfather-5", "LongNamePrivate": "George Grandfather", "Gender": "Male", "DataStatus": {}, "Meta": {} }],
+  [6, { "Name": "Grandmother-6", "LongNamePrivate": "Grace Grandmother", "Gender": "Female", "DataStatus": {}, "Meta": {} }]
+]
