@@ -224,16 +224,21 @@ window.ViewRegistry = class ViewRegistry {
 
         const basicFields = ["Id", "Name", "FirstName", "LastName", "Derived.BirthName", "Derived.BirthNamePrivate"];
 
-        try {
-            WikiTreeAPI.postToAPI({
-                appId: "ViewRegistry",
-                action: "getPerson",
-                key: wtID,
-                fields: basicFields.join(),
-            }).then((data) => this.onPersonDataReceived(view, data, filteredParams));
-        } finally {
-            viewLoader.classList.add("hidden");
-        }
+        WikiTreeAPI.postToAPI({
+            appId: "ViewRegistry",
+            action: "getPerson",
+            key: wtID,
+            fields: basicFields.join(),
+        })
+            .then((data) => this.onPersonDataReceived(view, data, filteredParams))
+            .catch((error) => {
+                console.error("Unable to load the selected WikiTree profile:", error);
+                this.hideInfoPanel();
+                this.showError(
+                    `Unable to load the WikiTree profile. Check your WikiTree Apps login and network connection, then try again. ${error.message}`
+                );
+            })
+            .finally(() => viewLoader.classList.add("hidden"));
     }
 
     // After the initial getPerson from the onSubmit() launch returns, this method is called.

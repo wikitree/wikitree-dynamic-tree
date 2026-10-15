@@ -19,6 +19,8 @@ The index page sets up a basic control container where the user can provide a st
 
 Once there is a starting profile id (either provided via the input form or taken from the API login) and a view is selected, the view is drawn in a container.
 
+For local development, run `python3 scripts/dev_server.py` from the repository root and open `http://127.0.0.1:8000/`. This serves the app and proxies WikiTree API and Photon requests through the local server because those services do not permit browser requests from localhost origins. The API proxy keeps the WikiTree API session in the local server process; use the app login after opening the local page when accessing non-public profiles.
+
 A view starting from a different person can be displayed by entering a new WikiTree ID in the form and clicking "GO".
 
 A different view can be displayed by selecting the view from the Tree App pulldown menu and clicking "GO".
@@ -60,6 +62,10 @@ Style elements for the scaffolding and the dynamic-tree nodes.
 ## Views
 
 If you wouuld like to contribute see [documentation](docs/contributing.md) and the [tutorial](docs/tutorial.md).
+
+### Migration Map Tool
+
+The Migration Map Tool is available as a native view in the Tree App selector. It loads ancestor birth-place data from the WikiTree API, then uses the external Photon geocoding service to plot locations on the included map backgrounds. Uncached place lookups run with a small concurrency limit, and results are cached in the browser to speed later loads. Two-letter US state abbreviations in birthplace values are expanded to their full state name and United States before geocoding to avoid ambiguous matches outside the US. Historical US colony/province labels are normalized to their present-day state (for example, Virginia Colony to Virginia, United States). Use the regional map buttons (World, Atlantic, US & Canada, and Europe), paternal/maternal and ancestor-line filters, and the birth-year slider or Play/Pause controls to explore the family migration. Cross-region migration trails continue to the edge of the current map, even when one birthplace is outside the selected region. Scroll or pinch to zoom, drag to pan, and use the map controls to reset the view. Geocoding uses the most specific available location (often a town or county; a state/region when the profile only gives that). Accuracy depends on Photon and the completeness/ambiguity of WikiTree place names; historical place-name matching can vary and unresolved places remain in the ancestor list. Apps login is required for non-public profiles.
 
 ## Example
 
