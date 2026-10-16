@@ -526,7 +526,7 @@
             #ccwebs-view .ccw-table th { background: #eee; cursor: pointer; user-select: none; white-space: nowrap; }
             #ccwebs-view .ccw-table td.num { text-align: right; }
             #ccwebs-view details { margin-top: 6px; }
-            #ccwebs-view .g2g-title { font-size: larger; color: orange; background-color: black; }
+            #ccwebs-view .g2g-title { font-size: larger; color: orange !important; background-color: black; }
         `;
         document.head.appendChild(style);
     }
