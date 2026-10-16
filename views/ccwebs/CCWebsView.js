@@ -498,6 +498,7 @@
             #ccwebs-view .ccw-form label.ccw-inline { display: inline; margin: 0 4px 0 12px; }
             #ccwebs-view .ccw-form input[type="number"] { width: 4.5em; }
             #ccwebs-view .ccw-form select { display: block; max-width: 700px; width: 100%; }
+            #ccwebs-view .ccw-help { float: right; font-weight: bold; }
             #ccwebs-view .ccw-hint, #ccwebs-view .hint { color: #777; font-size: .85em; }
             #ccwebs-view .ccw-status { margin: 10px 0; color: #555; }
             #ccwebs-view .ccw-error { color: #b00; }
@@ -555,6 +556,7 @@
             const selectedId = document.querySelector("#wt-id-text")?.value || String(personId);
             this.container.innerHTML = `
                 <section id="ccwebs-view">
+                    <div class="ccw-help"><a href="${WIKITREE}/wiki/Space:Connection_Checkers_Web_app" target="_blank" rel="noopener noreferrer">Help</a></div>
                     <div class="ccw-form">
                         <label for="ccw-game-select">Choose Connection Checkers game (or other option)</label>
                         <select id="ccw-game-select"><option value="current">Show this week's Connection Checkers game profiles</option></select>
@@ -925,6 +927,11 @@
                 body += `<div class="ccw-result"><h2>${n}x. ${esc(name)} <span class="hint">${esc(id)} &middot; no connection</span></h2><div class="ccw-diagram"><svg width="${BW + 20}" height="${BH + 20}" viewBox="0 0 ${BW + 20} ${BH + 20}">${boxSvg(person, 10, 10, "lightgreen", "")}</svg></div><div class="ccw-summary">No connection has been found between <b>${esc(primaryName)}</b> and <b>${esc(name)}</b>.</div></div>`;
                 index++;
             };
+            const addUnviewableTab = (n, id) => {
+                tabs += `<button type="button" data-index="${index}" class="bad" title="${esc(id)} (not viewable)">${n}x</button>`;
+                body += `<div class="ccw-result"><h2>${n}x. ${esc(id)} <span class="hint">not viewable</span></h2><div class="ccw-error">The Profile for ${esc(id)} is not viewable.<br>(probably due to Privacy level / Living Person)</div></div>`;
+                index++;
+            };
             const addTab = (label, id, result, heading) => {
                 const path = result.path || [];
                 const valid = !result.status && path.length > 1;
@@ -943,6 +950,10 @@
             const bItems = [];
             ids.forEach((id, profileIndex) => {
                 const shortest = results[profileIndex] || {};
+                if (/not viewable/i.test(shortest.status || "")) {
+                    addUnviewableTab(profileIndex + 1, id);
+                    return;
+                }
                 if (/no connection/i.test(shortest.status || "")) {
                     addUnconnectedTab(profileIndex + 1, id);
                     return;
