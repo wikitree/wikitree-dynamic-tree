@@ -556,6 +556,26 @@ import { Utils } from "../shared/Utils.js";
                             ],
                             defaultValue: "Arial",
                         },
+                        { optionName: "sect1", comment: "Browser Slow Down Warning:", type: "br" },
+                        {
+                            optionName: "warnInitial",
+                            type: "number",
+                            label: "Initial Warning Threshold (# of people to be drawn)",
+                            defaultValue: 1000,
+                            comment: "* Initial value resets Current when browser refreshed or new person loaded",
+                        },
+                        {
+                            optionName: "warnCurrent",
+                            type: "number",
+                            label: "Current Warning Threshold (# of people)",
+                            defaultValue: 1000,
+                        },
+                        {
+                            optionName: "warnOff",
+                            type: "checkbox",
+                            label: "Do not show Slow Down Warning pop up",
+                            defaultValue: false,
+                        },
                     ],
                 },
 
@@ -1010,6 +1030,7 @@ import { Utils } from "../shared/Utils.js";
                 WTapps_Utils.setCookie("wtapps_webs", JSON.stringify(WebsView.currentSettings), {
                     expires: 365,
                 });
+                WebsView.bigDrawSettingsSaved();
                 repeatAncestorTracker = new Object();
                 repeatAncestorCounter = [0];
                 numRepeatAncestors = 0;
@@ -1358,6 +1379,7 @@ import { Utils } from "../shared/Utils.js";
         if (theCookieString) {
             WebsView.updateCurrentSettingsBasedOnCookieValues(theCookieString);
         }
+        WebsView.resetBigDrawThreshold();
 
         // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         // let SVG4MRCAoption1 = document.getElementById("line_options_singleMRCA_SVG1");
@@ -2975,7 +2997,138 @@ import { Utils } from "../shared/Utils.js";
         WebsView.logLines();
     };
 
+    // Warn before drawing a chart with a very large number of people
+    const BIG_DRAW_DEFAULT = 1000;
+    let bigDrawCurrent = null; // the Current Warning Threshold (rises as the user accepts bigger charts)
+    let bigDrawLastInitial = null;
+    let lastGoodDraw = null;
+    let skipBigDrawCheck = false;
+
+    function bigDrawInitial() {
+        const v = parseInt(WebsView.currentSettings["general_options_warnInitial"], 10);
+        return v > 0 ? v : BIG_DRAW_DEFAULT;
+    }
+
+    function bigDrawWarningOff() {
+        return WebsView.currentSettings["general_options_warnOff"] === true;
+    }
+
+    function setBigDrawCurrent(v) {
+        bigDrawCurrent = v;
+        WebsView.currentSettings["general_options_warnCurrent"] = String(v);
+        const el = document.getElementById("general_options_warnCurrent");
+        if (el) el.value = v;
+    }
+
+    // Current threshold goes back to the Initial one (browser refresh / new person loaded)
+    WebsView.resetBigDrawThreshold = function () {
+        bigDrawLastInitial = bigDrawInitial();
+        setBigDrawCurrent(bigDrawLastInitial);
+    };
+
+    // Called after the Settings are saved: pick up any edits to the thresholds
+    WebsView.bigDrawSettingsSaved = function () {
+        const initial = bigDrawInitial();
+        const typedCurrent = parseInt(WebsView.currentSettings["general_options_warnCurrent"], 10);
+        if (initial != bigDrawLastInitial) {
+            bigDrawLastInitial = initial;
+            setBigDrawCurrent(initial);
+        } else if (typedCurrent > 0) {
+            setBigDrawCurrent(typedCurrent);
+        } else {
+            setBigDrawCurrent(bigDrawCurrent || initial);
+        }
+    };
+
+    function saveBigDrawSetting(key, value) {
+        WebsView.currentSettings[key] = value;
+        const el = document.getElementById(key);
+        if (el) el.checked = value;
+        WTapps_Utils.setCookie("wtapps_webs", JSON.stringify(WebsView.currentSettings), { expires: 365 });
+    }
+
+    // Returns true if the draw can go ahead now; otherwise shows a popup and calls proceed() if the user continues
+    function confirmBigDraw(count, proceed) {
+        if (skipBigDrawCheck) {
+            skipBigDrawCheck = false;
+            return true;
+        }
+        if (bigDrawWarningOff() || count <= (bigDrawCurrent || bigDrawInitial())) {
+            return true;
+        }
+        clearMessageBelowButtonBar();
+        const old = document.getElementById("bigDrawWarning");
+        if (old) old.remove();
+        const box = document.createElement("div");
+        box.id = "bigDrawWarning";
+        box.style.cssText =
+            "position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:100000;display:flex;align-items:center;justify-content:center;";
+        box.innerHTML =
+            "<div style='background:#fffbe0;border:2px solid #e0b800;border-radius:8px;padding:18px 22px;max-width:480px;font-size:15px;box-shadow:0 4px 18px rgba(0,0,0,0.4);'>" +
+            "<p><b>This chart will show " +
+            count.toLocaleString() +
+            " people.</b></p>" +
+            "<p>Drawing this many people may take a long time, and could make your browser slow down or freeze.</p>" +
+            "<p style='margin:10px 0 2px;'><label><input type=radio name=bigDrawOpt value=again checked> Show this message again if there is a higher person count</label></p>" +
+            "<p style='margin:2px 0 14px;'><label><input type=radio name=bigDrawOpt value=never> Do not show this message again, regardless of person count</label></p>" +
+            "<p style='text-align:right;margin:0;'><button class='btn btn-secondary btn-sm' id=bigDrawCancel>Cancel</button> " +
+            "<button class='btn btn-primary btn-sm' id=bigDrawContinue>Draw anyway</button></p></div>";
+        document.body.appendChild(box);
+        const choice = () => box.querySelector("input[name=bigDrawOpt]:checked").value;
+        document.getElementById("bigDrawContinue").onclick = function () {
+            if (choice() == "never") saveBigDrawSetting("general_options_warnOff", true);
+            setBigDrawCurrent(Math.max(bigDrawCurrent || 0, count));
+            box.remove();
+            proceed();
+        };
+        document.getElementById("bigDrawCancel").onclick = function () {
+            if (choice() == "never") saveBigDrawSetting("general_options_warnOff", true);
+            box.remove();
+            // put things back the way they were
+            if (lastGoodDraw) {
+                skipBigDrawCheck = true;
+                WebsView.viewMode = lastGoodDraw.viewMode;
+                WebsView.numGens2Display = lastGoodDraw.numGens2Display;
+                // changeFamilyType also rebuilds the Ahnentafels and redraws
+                WebsView.familyType = lastGoodDraw.familyType;
+                WebsView.changeFamilyType(lastGoodDraw.familyType);
+            }
+        };
+        return false;
+    }
+
+    const DRAWING_MESSAGES = {
+        Full: "Drawing the FULL Ancestor Pedigree Tree",
+        Unique: "Drawing the UNIQUE Ancestors Web",
+        Repeats: "Drawing the REPEAT Ancestors Web",
+        Indi: "Drawing the SINGLE Ancestor Multi-Path Web",
+        Common: "Drawing the COMMON Ancestors Web",
+        Singles: "Drawing the SINGLES Ancestors Web",
+    };
+    let lastDrawnViewKey = null;
+
+    // Changing the view mode or Family type can take a while to draw, so show a message first (unless the
+    // "loading generations" message is up, which takes precedence) and give the browser a chance to paint it
     WebsView.redraw = function () {
+        const viewKey = WebsView.viewMode + "|" + WebsView.familyType;
+        if (lastDrawnViewKey === null || viewKey == lastDrawnViewKey || WebsView.preloadMsgShown) {
+            redrawNow();
+            return;
+        }
+        flashWarningMessageBelowButtonBar(
+            (DRAWING_MESSAGES[WebsView.viewMode] || "Drawing the chart") + " - please wait ..."
+        );
+        setTimeout(function () {
+            try {
+                redrawNow();
+            } finally {
+                if (!WebsView.preloadMsgShown) clearMessageBelowButtonBar();
+            }
+        }, 50);
+    };
+
+    function redrawNow() {
+        lastDrawnViewKey = WebsView.viewMode + "|" + WebsView.familyType;
         console.log("WebsView.multiViewPrimaries = ", WebsView.multiViewPrimaries);
         console.log("WebsView.redraw");
         // condLog("Now theAncestors = ", WebsView.theAncestors);
@@ -3231,7 +3384,7 @@ import { Utils } from "../shared/Utils.js";
         recalcAndDisplayNumGens();
         // redoWedgesForFanChart();
         WebsView.myAncestorTree.draw();
-    };
+    }
 
     /**
      * Load and display a person
@@ -3242,6 +3395,7 @@ import { Utils } from "../shared/Utils.js";
         self._load(id).then(function (person) {
             WebsView.primePerson = person;
             WebsView.listOfPrimePersons = [person._data.Id];
+            WebsView.resetBigDrawThreshold();
             // every new load starts with the Primary/Adoptive family tree
             WebsView.familyType = "A1";
             const famSelect = document.getElementById("FamilyTypeSelector");
@@ -3942,54 +4096,65 @@ import { Utils } from "../shared/Utils.js";
                     }
                 }
             }
-            // Calculate the new NODE positions (skooch together / adjust if needed for repeat ancestors)
-            calculateNodePositions(nodes);
-            if (["Indi", "Repeats", "Singles", "Common"].includes(WebsView.viewMode)) {
-                layoutWebColumns(nodes, WebsView.viewMode);
-                applyNudges(nodes, WebsView.viewMode);
+            const finishDraw = () => {
+                lastGoodDraw = {
+                    viewMode: WebsView.viewMode,
+                    familyType: WebsView.familyType,
+                    numGens2Display: WebsView.numGens2Display,
+                };
+                // Calculate the new NODE positions (skooch together / adjust if needed for repeat ancestors)
+                calculateNodePositions(nodes);
+                if (["Indi", "Repeats", "Singles", "Common"].includes(WebsView.viewMode)) {
+                    layoutWebColumns(nodes, WebsView.viewMode);
+                    applyNudges(nodes, WebsView.viewMode);
+                }
+
+                // Draw the lines connecting the new NODEs
+                condLog("calling drawLines from prototype.draw() ");
+                WebsView.drawLines(nodes);
+                WebsView.logLines;
+
+                // Finally - draw the Nodes themselves!
+                condLog("calling drawNodes from prototype.draw() ");
+                this.drawNodes(nodes);
+                WebsView.logLines;
+
+                // Update the Summary Message based on how many repeat ancestors there are, etc..
+                if (WebsView.viewMode == "Singles" || WebsView.viewMode == "Common") {
+                    condLog("Summary Msg Area Calc: ", WebsView.listOfLegitCommonAncestors);
+                    const setLegitIDs = new Set(WebsView.listOfLegitCommonIDs);
+                    const numLegitCommonAncestors = setLegitIDs.size;
+                    showSummaryMessage(
+                        "At " +
+                            WebsView.internalToDisplayGens(WebsView.numGens2Display, WebsView.familyType) +
+                            " generations, " +
+                            primaryPeopleFirstNames() +
+                            " have " +
+                            numLegitCommonAncestors +
+                            " common ancestor" +
+                            (numLegitCommonAncestors != 1 ? "s" : "") +
+                            "."
+                    );
+                } else {
+                    showSummaryMessage(
+                        "At " +
+                            WebsView.internalToDisplayGens(WebsView.numGens2Display, WebsView.familyType) +
+                            " generations, " +
+                            primaryPersonFirstName() +
+                            " has " +
+                            WebsView.listOfRepeatAncestors.length +
+                            " repeat ancestor" +
+                            (WebsView.listOfRepeatAncestors.length != 1 ? "s" : "") +
+                            "."
+                    );
+                }
+
+                WebsView.updateFontsIfNeeded();
+            };
+            if (!confirmBigDraw(nodes.length, finishDraw)) {
+                return this;
             }
-
-            // Draw the lines connecting the new NODEs
-            condLog("calling drawLines from prototype.draw() ");
-            WebsView.drawLines(nodes);
-            WebsView.logLines;
-
-            // Finally - draw the Nodes themselves!
-            condLog("calling drawNodes from prototype.draw() ");
-            this.drawNodes(nodes);
-            WebsView.logLines;
-
-            // Update the Summary Message based on how many repeat ancestors there are, etc..
-            if (WebsView.viewMode == "Singles" || WebsView.viewMode == "Common") {
-                condLog("Summary Msg Area Calc: ", WebsView.listOfLegitCommonAncestors);
-                const setLegitIDs = new Set(WebsView.listOfLegitCommonIDs);
-                const numLegitCommonAncestors = setLegitIDs.size;
-                showSummaryMessage(
-                    "At " +
-                        WebsView.internalToDisplayGens(WebsView.numGens2Display, WebsView.familyType) +
-                        " generations, " +
-                        primaryPeopleFirstNames() +
-                        " have " +
-                        numLegitCommonAncestors +
-                        " common ancestor" +
-                        (numLegitCommonAncestors != 1 ? "s" : "") +
-                        "."
-                );
-            } else {
-                showSummaryMessage(
-                    "At " +
-                        WebsView.internalToDisplayGens(WebsView.numGens2Display, WebsView.familyType) +
-                        " generations, " +
-                        primaryPersonFirstName() +
-                        " has " +
-                        WebsView.listOfRepeatAncestors.length +
-                        " repeat ancestor" +
-                        (WebsView.listOfRepeatAncestors.length != 1 ? "s" : "") +
-                        "."
-                );
-            }
-
-            WebsView.updateFontsIfNeeded();
+            finishDraw();
         } else {
             throw new Error("Missing root");
         }
@@ -7292,6 +7457,7 @@ import { Utils } from "../shared/Utils.js";
     // NEW FUNCTIONS HERE to DEAL WITH MULTIPLE ROOT PEOPLE
 
     function loadNewPrimaryPerson(newPrimeID, passNum = 1) {
+        WebsView.resetBigDrawThreshold();
         let loadingTD = document.getElementById("loadingTD");
 
         condLog("Need to load a NEW PRIMARY ", newPrimeID, WebsView.numGensRetrieved + " generations");
