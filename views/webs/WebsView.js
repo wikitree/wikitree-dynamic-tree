@@ -83,7 +83,7 @@ import { Utils } from "../shared/Utils.js";
     const FullAppName = "Ancestor Webs tree app";
     const AboutPreamble =
         "The Spider Webs app, originally created as a standalone WikiTree app, is the basis for this app.<br>The current Tree App version was renamed and created for HacktoberFest 2022<br/>and is maintained by the original author plus other WikiTree developers.";
-    const AboutUpdateDate = "30 Sep 2026";
+    const AboutUpdateDate = "30 Oct 2026";
     const AboutAppIcon = `<img height=20px src="https://apps.wikitree.com/apps/clarke11007/pix/ancWebs.png" />`;
     const AboutOriginalAuthor = "<A target=_blank href=https://www.wikitree.com/wiki/Clarke-11007>Greg Clarke</A>";
     const AboutAdditionalProgrammers = ""; //        "<A target=_blank href=https://www.wikitree.com/wiki/Duke-5773>Jonathan Duke</A>";
@@ -299,6 +299,11 @@ import { Utils } from "../shared/Utils.js";
     /** Static variable to hold the y Direction variable (+1 for going downwards, -1 for going upwards) from Central person to Ancestors    **/
     WebsView.yDir = -1;
 
+    /** Path style for the Multi-Path views. The "jagged" option is retired (its Settings radio is commented out), so
+     *  the default "smooth" linear vertical path is always used. Any code that only runs for "jagged" is currently
+     *  unreachable - see the comments on the checks of WebsView.multiPathFormat. **/
+    WebsView.multiPathFormat = "smooth";
+
     /** Static variable to hold the current MODE  (Full / Unique / Repeats / Indi / MultiUnique / MultiIndi )     **/
     WebsView.viewMode = "Full";
 
@@ -320,7 +325,7 @@ import { Utils } from "../shared/Utils.js";
     WebsView.numGens2Display = 5;
     WebsView.lastNumGens = 5;
     WebsView.numGensRetrieved = 5;
-    WebsView.maxNumGens = 16;
+    WebsView.maxNumGens = 18;
     WebsView.maxNumPrimes = 3; // maximum # of Primary Persons - i.e. - limit on # of people to add to compare Common Ancestors with each other
     WebsView.workingMaxNumGens = 4;
 
@@ -355,7 +360,7 @@ import { Utils } from "../shared/Utils.js";
     // Track which Common Ancestor to descend from in SINGLES view (multiple primaries)
     WebsView.commonAncestorNum = 0;
     // Track which Primaries to use in COMMON and SINGLES view to reach Common Ancestor(s)  (multiple primaries)
-    WebsView.multiViewPrimaries = "12";
+    WebsView.multiViewPrimaries = "01";
 
     /** Object in which to store the CURRENT settings (to be updated after clicking on SAVE CHANGES (all Tabs) inside Settings <DIV> ) */
     WebsView.currentSettings = {};
@@ -551,6 +556,26 @@ import { Utils } from "../shared/Utils.js";
                             ],
                             defaultValue: "Arial",
                         },
+                        { optionName: "sect1", comment: "Browser Slow Down Warning:", type: "br" },
+                        {
+                            optionName: "warnInitial",
+                            type: "number",
+                            label: "Initial Warning Threshold (# of people to be drawn)",
+                            defaultValue: 1000,
+                            comment: "* Initial value resets Current when browser refreshed or new person loaded",
+                        },
+                        {
+                            optionName: "warnCurrent",
+                            type: "number",
+                            label: "Current Warning Threshold (# of people)",
+                            defaultValue: 1000,
+                        },
+                        {
+                            optionName: "warnOff",
+                            type: "checkbox",
+                            label: "Do not show Slow Down Warning pop up",
+                            defaultValue: false,
+                        },
                     ],
                 },
 
@@ -585,8 +610,16 @@ import { Utils } from "../shared/Utils.js";
                                 },
                                 { value: "br" },
                                 { value: "FnameLname", text: "Full Name (First Name + LNAB)" },
+                                { value: "br" },
+                                { value: "FnameLnameLife", text: "Full Name + Lifespan" },
                             ],
                             defaultValue: "FML",
+                        },
+                        {
+                            optionName: "showFullHighlights",
+                            label: "Show Full Name and Lifespan for Repeat / Common Ancestors",
+                            type: "checkbox",
+                            defaultValue: true,
                         },
 
                         { optionName: "sect2", comment: "Single Ancestor Views:", type: "br" },
@@ -607,6 +640,8 @@ import { Utils } from "../shared/Utils.js";
                                 { value: "FLname", text: "Short Name (First Name + LNAB, first initial if needed)" },
                                 { value: "br" },
                                 { value: "FnameLname", text: "Full Name (First Name + LNAB)" },
+                                { value: "br" },
+                                { value: "FnameLnameLife", text: "Full Name + Lifespan" },
                             ],
                             defaultValue: "FnameLname",
                         },
@@ -720,17 +755,34 @@ import { Utils } from "../shared/Utils.js";
                     category: "path",
                     subcategory: "options",
                     options: [
+                        // The "jagged" path option is retired for now: the smooth linear vertical path is always used
+                        // (see WebsView.multiPathFormat). Uncomment to offer the choice again.
+                        // {
+                        //     optionName: "multiPathFormat",
+                        //     type: "radio",
+                        //     label: "",
+                        //     values: [
+                        //         { value: "jagged", text: "use jagged path, excerpt from Full Pedigree Tree route" },
+                        //         { value: "br" },
+                        //         { value: "smooth", text: "use smooth linear vertical path" },
+                        //         { value: "br" },
+                        //     ],
+                        //     defaultValue: "smooth",
+                        // },
                         {
-                            optionName: "multiPathFormat",
+                            optionName: "sect2",
+                            comment: "Vertical positioning (SINGLE and REPEAT views):",
+                            type: "br",
+                        },
+                        {
+                            optionName: "verticalPosition",
                             type: "radio",
                             label: "",
                             values: [
-                                { value: "jagged", text: "use jagged path, excerpt from Full Pedigree Tree route" },
-                                { value: "br" },
-                                { value: "smooth", text: "use smooth linear vertical path" },
-                                { value: "br" },
+                                { value: "gen", text: "position vertically by generation" },
+                                { value: "birth", text: "position vertically by birth year" },
                             ],
-                            defaultValue: "smooth",
+                            defaultValue: "gen",
                         },
 
                         // {
@@ -766,11 +818,11 @@ import { Utils } from "../shared/Utils.js";
             "</td>" +
             '<td width="5%">&nbsp;</td>' +
             '<td width="30%" align="center">' +
-            ' <A style="cursor:pointer;"  title="Decrease # of generations displayed" onclick="WebsView.numGens2Display -=1; WebsView.redraw();">' +
+            ' <A style="cursor:pointer;"  title="Decrease # of generations displayed" onclick="WebsView.stepGens(-1); WebsView.redraw();">' +
             SVGbtnDOWN +
             "</A> " +
-            "[ <span id=numGensInBBar>5</span> generations ]" +
-            ' <A style="cursor:pointer;" title="Increase # of generations displayed" onclick="WebsView.numGens2Display +=1; WebsView.redraw();">' +
+            "[ <span id=numGensInBBar>4</span> generations ]" +
+            ' <A style="cursor:pointer;" title="Increase # of generations displayed" onclick="WebsView.stepGens(1); WebsView.redraw();">' +
             SVGbtnUP +
             "</A> " +
             "</td>" +
@@ -780,9 +832,9 @@ import { Utils } from "../shared/Utils.js";
             "</A> &nbsp; " +
             '  <A id="menuBarOptionCommon" title="Display COMMON Ancestors Web for multiple Primaries" style="cursor:pointer;" onclick="WebsView.comingSoon(2);">COMMON</A> |  <A id="menuBarOptionSingles" title="Display SINGLES Ancestor-in-Common Web to multiple Primaries" style="cursor:pointer;" onclick="WebsView.comingSoon(3);">SINGLES</A> ' +
             "&nbsp;&nbsp;&nbsp;&nbsp;" +
-            '<A style="cursor:pointer;" title="Change Zoom level - 3 settings" onclick="WebsView.reZoom();">' +
-            SVGbtnRESIZE2 +
-            "</A>&nbsp;&nbsp;&nbsp;&nbsp;" +
+            /* '<A style="cursor:pointer;" title="Change Zoom level - 3 settings" onclick="WebsView.reZoom();">' + */
+            /* SVGbtnRESIZE2 +
+            "</A>&nbsp;&nbsp;&nbsp;&nbsp;" + */
             "  <font size=+2>" +
             ' <A style="cursor:pointer;" title="Adjust Settings"  onclick="WebsView.toggleSettings();"><font size=+2>' +
             SVGbtnSETTINGS +
@@ -843,7 +895,17 @@ import { Utils } from "../shared/Utils.js";
         infoPanel.parentNode.classList.add("stickyDIV");
         infoPanel.parentNode.style.padding = "0px";
 
-        infoPanel.innerHTML = btnBarHTML + aboutHTML + settingsHTML + popupDIV;
+        const viewToolsHTML =
+            '<div id="webs-view-tools" style="display:flex; flex-wrap:wrap; gap:16px; align-items:center; margin:6px 0;">' +
+            '<span><button type="button" class="btn btn-secondary btn-sm" data-zoom="out" title="Zoom out" aria-label="Zoom out">&minus;</button> ' +
+            '<button type="button" class="btn btn-secondary btn-sm" data-zoom="in" title="Zoom in" aria-label="Zoom in">+</button> ' +
+            '<button type="button" class="btn btn-secondary btn-sm" data-zoom="fit" title="Fit the diagram to the window">Fit</button> ' +
+            '<button type="button" class="btn btn-secondary btn-sm" data-zoom="reset" title="Actual size">100%</button></span>' +
+            '<span id="nudgeResetSpan" style="display:none;"><button type="button" class="btn btn-secondary btn-sm" id="nudgeResetBtn" title="Put every person back in their standard position">Reset moved people</button></span>' +
+            '<span>Save: <button type="button" class="btn btn-secondary btn-sm" data-format="png">PNG</button> ' +
+            '<button type="button" class="btn btn-secondary btn-sm" data-format="svg">SVG</button> ' +
+            '<button type="button" class="btn btn-secondary btn-sm" data-format="pdf">PDF</button></span></div>';
+        infoPanel.innerHTML = btnBarHTML + aboutHTML + settingsHTML + popupDIV + viewToolsHTML;
         container.innerHTML = "";
 
         $("#popupDIV").draggable();
@@ -968,6 +1030,7 @@ import { Utils } from "../shared/Utils.js";
                 WTapps_Utils.setCookie("wtapps_webs", JSON.stringify(WebsView.currentSettings), {
                     expires: 365,
                 });
+                WebsView.bigDrawSettingsSaved();
                 repeatAncestorTracker = new Object();
                 repeatAncestorCounter = [0];
                 numRepeatAncestors = 0;
@@ -1184,6 +1247,79 @@ import { Utils } from "../shared/Utils.js";
         svg.call(zoom);
         svg.call(zoom.transform, d3.zoomIdentity.scale(1).translate(width / 2, height / 2));
 
+        // Zoom and Save-as-image buttons (just above the view container)
+        const svgNode = svg.node();
+        const MARGIN_Y = 50;
+        // Size the SVG so the whole diagram fits at this scale (50px above and below), centred horizontally
+        const sizeToDiagram = (scale) => {
+            svgNode.removeAttribute("viewBox");
+            const box = g.node().getBBox();
+            if (!box.width || !box.height) return;
+            const holder = svgNode.parentNode;
+            if (holder && holder.clientWidth) svgNode.setAttribute("width", holder.clientWidth);
+            const frameWidth = svgNode.clientWidth || width;
+            svgNode.setAttribute("height", Math.ceil(box.height * scale + 2 * MARGIN_Y));
+            const tx = frameWidth / 2 - scale * (box.x + box.width / 2);
+            const ty = MARGIN_Y - scale * box.y;
+            svg.call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+        };
+        // Fit the whole diagram in the frame width, placed MARGIN_Y from the top of the container
+        const fitToFrame = () => {
+            svgNode.removeAttribute("viewBox");
+            const box = g.node().getBBox();
+            if (!box.width || !box.height) return;
+            const holder = svgNode.parentNode;
+            if (holder && holder.clientWidth) svgNode.setAttribute("width", holder.clientWidth);
+            const frameWidth = svgNode.clientWidth || width;
+            const scale = Math.min(
+                (frameWidth * 0.95) / box.width,
+                Math.max(300, window.innerHeight - 2 * MARGIN_Y - 100) / box.height,
+                2
+            );
+            svgNode.setAttribute("height", Math.ceil(box.height * scale + 2 * MARGIN_Y));
+            const tx = frameWidth / 2 - scale * (box.x + box.width / 2);
+            const ty = MARGIN_Y - scale * box.y;
+            svg.call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+            const container = document.getElementById("view-container");
+            if (container) container.scrollTop = 0;
+            // Only scroll if the top of the diagram is out of view; keep the toolbar visible above it
+            const tools = document.getElementById("webs-view-tools");
+            const rect = svgNode.getBoundingClientRect();
+            if (rect.top < 0 || rect.top > window.innerHeight - 100) {
+                (tools || svgNode).scrollIntoView({ block: "start" });
+            }
+        };
+        // Whenever the diagram is (re)drawn, start at 120% with the SVG tall enough to hold it
+        let resizeTimer = null;
+        new MutationObserver(() => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                const scale = WebsView.keepZoomNext ? d3.zoomTransform(svgNode).k : 1.2;
+                WebsView.keepZoomNext = false;
+                sizeToDiagram(scale);
+            }, 200);
+        }).observe(g.node(), { childList: true, subtree: true });
+        document.querySelectorAll("#webs-view-tools button[data-zoom]").forEach((button) =>
+            button.addEventListener("click", () => {
+                const action = button.dataset.zoom;
+                const current = d3.zoomTransform(svgNode).k;
+                if (action === "in") sizeToDiagram(Math.min(2, current * 1.25));
+                else if (action === "out") sizeToDiagram(Math.max(0.1, current * 0.8));
+                else if (action === "fit") fitToFrame();
+                else sizeToDiagram(1);
+            })
+        );
+        document.getElementById("nudgeResetBtn").addEventListener("click", () => {
+            WebsView.nudges = {};
+            WebsView.keepZoomNext = true;
+            WebsView.redraw();
+        });
+        document
+            .querySelectorAll("#webs-view-tools button[data-format]")
+            .forEach((button) =>
+                button.addEventListener("click", () => saveDiagramImage(svgNode, g.node(), button.dataset.format))
+            );
+
         // condLog("creating SVG object and setting up ancestor tree object")
         // Setup controllers for the ancestor tree which will be displayed as the Ancestor Webs
         self.ancestorTree = new AncestorTree(g);
@@ -1243,6 +1379,7 @@ import { Utils } from "../shared/Utils.js";
         if (theCookieString) {
             WebsView.updateCurrentSettingsBasedOnCookieValues(theCookieString);
         }
+        WebsView.resetBigDrawThreshold();
 
         // SOME minor tweaking needed in the COLOURS tab of the Settings object since some drop-downs are contingent upon which original option was chosen
         // let SVG4MRCAoption1 = document.getElementById("line_options_singleMRCA_SVG1");
@@ -1344,6 +1481,90 @@ import { Utils } from "../shared/Utils.js";
         }
     };
 
+    // Connectors for the COMMON and SINGLES views: from each child up to their parents, using the positions set by layoutWebColumns.
+    // A couple gets a marriage line with the stem dropping from its middle, like SINGLE / SINGLES.
+    function drawCommonLines(theNodes, xMult, strokeWidthStyle) {
+        const repeats = WebsView.viewMode == "Repeats";
+        // REPEAT shows one Primary Person; only the nodes kept for the web are drawn, and rows convert back from newY
+        const usable = repeats
+            ? theNodes.filter((n) => n.useThis == true && (!n.p || n.p == WebsView.currentPrimeNum))
+            : theNodes;
+        const rowOf = (q) => (repeats && q.newY > 0 ? 1 + 2 * q.newY - WebsView.repeatsStartAtGenNum : q.newY);
+        const yPos = (q) => WebsView.yDir * vertSpacing * rowOf(q) + (q.shiftYpx || 0);
+        const byKey = {};
+        usable.forEach((n) => (byKey[n.p + ":" + n.ahnNum] = n));
+        const done = new Set();
+        let html = "";
+        const line = (pts, clr) =>
+            (html += `<polyline display="block" points="${pts.join(" ")}" style="fill:none;${strokeWidthStyle} stroke:${clr}" />`);
+        usable.forEach((n) => {
+            if (n.ahnNum == 1 && WebsView.familyType == "Combo" && !byKey[n.p + ":2"] && !byKey[n.p + ":3"]) {
+                // Combo: the Primary Person's four parents (Ahnentafel 4-7) each get a line up from the Primary
+                const px = xMult * n.newX;
+                const py = yPos(n);
+                [4, 5, 6, 7].forEach((num) => {
+                    const q = byKey[n.p + ":" + num];
+                    if (!q) return;
+                    line([px + "," + py, xMult * q.newX + "," + yPos(q)], num < 6 ? "LightSkyBlue" : "HotPink");
+                });
+                return;
+            }
+            if (n.ahnNum == 1) {
+                // the Primary Person gets a direct (diagonal) line to each parent
+                const px = xMult * n.newX;
+                const py = yPos(n);
+                [2, 3].forEach((num) => {
+                    const q = byKey[n.p + ":" + num];
+                    if (q) line([px + "," + py, xMult * q.newX + "," + yPos(q)], num == 2 ? "LightSkyBlue" : "HotPink");
+                });
+                return;
+            }
+            const pa = byKey[n.p + ":" + 2 * n.ahnNum];
+            const ma = byKey[n.p + ":" + (2 * n.ahnNum + 1)];
+            if (!pa && !ma) return;
+            const id = n.person._data.Id;
+            const paId = pa && pa.person._data.Id;
+            const maId = ma && ma.person._data.Id;
+            const sig = id + ">" + (paId || "") + "|" + (maId || "");
+            if (done.has(sig)) return;
+            done.add(sig);
+            const x = xMult * n.newX;
+            const yOf = yPos;
+            const y = yOf(n);
+            const bothHighlighted = pa && ma && isHighlightedPerson(pa.person) && isHighlightedPerson(ma.person);
+            if (repeats && pa && ma && !bothHighlighted) {
+                // parents who are not a highlighted couple each get their own line up from the child
+                [pa, ma].forEach((q) =>
+                    line([x + "," + y, xMult * q.newX + "," + yOf(q)], q === pa ? "LightSkyBlue" : "HotPink")
+                );
+            } else if (pa && ma) {
+                const xPa = xMult * pa.newX;
+                const xMa = xMult * ma.newX;
+                let stemX = (xPa + xMa) / 2;
+                if (isHighlightedPerson(pa.person) && isHighlightedPerson(ma.person)) {
+                    const wPa = highlightedBoxWidth(pa.person, false);
+                    const wMa = highlightedBoxWidth(ma.person, false);
+                    stemX = xPa < xMa ? (xPa + wPa / 2 + (xMa - wMa / 2)) / 2 : (xMa + wMa / 2 + (xPa - wPa / 2)) / 2;
+                }
+                const yPa = yOf(pa);
+                const yMa = yOf(ma);
+                // the horizontal run sits a few pixels below the parents' boxes so a little white space shows under them
+                const yMid = Math.max(yPa, yMa) < y ? Math.min((Math.max(yPa, yMa) + y) / 2 + 8, y - 6) : y - 20;
+                const clr = acceptableDarkLineClr(LineColourArray[id % LineColourArray.length] || "Purple");
+                line([xPa + "," + yPa, xMa + "," + yMa], clr);
+                line([x + "," + y, x + "," + yMid, stemX + "," + yMid, stemX + "," + (yPa + yMa) / 2], clr);
+            } else {
+                const q = pa || ma;
+                const xq = xMult * q.newX;
+                const yq = yOf(q);
+                const yMid = (y + yq) / 2;
+                const clr = pa ? "LightSkyBlue" : "HotPink";
+                line([x + "," + y, x + "," + yMid, xq + "," + yMid, xq + "," + yq], clr);
+            }
+        });
+        document.getElementById("svgG").innerHTML = html;
+    }
+
     WebsView.drawLines = function (theNodes) {
         condLog("FUNCTION: drawLines() : DRAWING LINES stuff should go here", WebsView.listOfPrimePersons);
         condLog({ theNodes });
@@ -1371,7 +1592,12 @@ import { Utils } from "../shared/Utils.js";
 
         if (nameSettings == "FName") {
             theXmultiplier = 3;
-        } else if (nameSettings == "FName" || nameSettings == "FLname" || nameSettings == "FnameLname") {
+        } else if (
+            nameSettings == "FName" ||
+            nameSettings == "FLname" ||
+            nameSettings == "FnameLname" ||
+            nameSettings == "FnameLnameLife"
+        ) {
             theXmultiplier = 4;
         } else if (nameSettings == "FML") {
             theXmultiplier = 1.25;
@@ -1383,6 +1609,15 @@ import { Utils } from "../shared/Utils.js";
 
         const theSVGg = document.getElementById("svgG");
         theSVGg.innerHTML = "";
+
+        // COMMON and SINGLES draw their own connectors from the laid out positions (see drawCommonLines)
+        if (
+            ["Common", "Singles", "Repeats"].includes(WebsView.viewMode) ||
+            (WebsView.viewMode == "Indi" && WebsView.familyType == "Combo")
+        ) {
+            drawCommonLines(theNodes, theXmultiplier, strokeWidthStyle);
+            return;
+        }
 
         // FOR ALL VIEW MODES !!!!
         for (let pp = 0; pp < WebsView.listOfPrimePersons.length; pp++) {
@@ -1687,7 +1922,7 @@ import { Utils } from "../shared/Utils.js";
                         // condLog("newX --> X  = ",X);
                     }
 
-                    let Y = WebsView.yDir * vertSpacing * genNumForDisplay;
+                    let Y = WebsView.yDir * vertSpacing * genNumForDisplay + ((theNode && theNode.shiftYpx) || 0);
 
                     let dX2 = (((numSpotsNextGen - 1) / numSpotsNextGen) * vertSpacing * numSpotsMaxGen) / 2;
                     let dX4 = vertSpacing * 2 ** (WebsView.numGens2Display - 2 - thisGenNum);
@@ -1879,6 +2114,23 @@ import { Utils } from "../shared/Utils.js";
                                     "fill:none;" + strokeWidthStyle + " stroke:" + theLineClr
                                 );
 
+                                // The stem should drop from the middle of the marriage line, i.e. the middle of the gap between the two boxes
+                                let stemX = (theXmultiplier * (Xpa + Xma)) / 2;
+                                if (
+                                    theNodePa &&
+                                    theNodeMa &&
+                                    isHighlightedPerson(theNodePa.person) &&
+                                    isHighlightedPerson(theNodeMa.person)
+                                ) {
+                                    const xPa = theXmultiplier * Xpa;
+                                    const xMa = theXmultiplier * Xma;
+                                    const wPa = highlightedBoxWidth(theNodePa.person, false);
+                                    const wMa = highlightedBoxWidth(theNodeMa.person, false);
+                                    stemX =
+                                        xPa < xMa
+                                            ? (xPa + wPa / 2 + (xMa - wMa / 2)) / 2
+                                            : (xMa + wMa / 2 + (xPa - wPa / 2)) / 2;
+                                }
                                 elementPa.setAttribute(
                                     "points",
                                     theXmultiplier * X +
@@ -1889,19 +2141,19 @@ import { Utils } from "../shared/Utils.js";
                                         "," +
                                         (Y - 20) +
                                         " " +
-                                        (theXmultiplier * (Xpa + Xma)) / 2 +
+                                        stemX +
                                         "," +
                                         (Y - 20) +
                                         " " +
-                                        (theXmultiplier * (Xpa + Xma)) / 2 +
+                                        stemX +
                                         "," +
                                         (Ypa + Yma) / 2
                                 );
 
                                 connectorsArray.push({
                                     genNum: genNumForDisplay,
-                                    a: Math.min(theXmultiplier * X, (theXmultiplier * (Xpa + Xma)) / 2 + 1 / 2),
-                                    b: Math.max(theXmultiplier * X, (theXmultiplier * (Xpa + Xma)) / 2 - 1 / 2),
+                                    a: Math.min(theXmultiplier * X, stemX + 1 / 2),
+                                    b: Math.max(theXmultiplier * X, stemX - 1 / 2),
                                     y1: Y,
                                     y2: (Ypa + Yma) / 2,
                                     dir: X - (Xpa + Xma) / 2,
@@ -1918,7 +2170,8 @@ import { Utils } from "../shared/Utils.js";
                                         "," +
                                         Y +
                                         " " +
-                                        theXmultiplier * (X - 3) +
+                                        theXmultiplier * X -
+                                        3 +
                                         "," +
                                         (Y - 20) +
                                         " " +
@@ -2004,7 +2257,8 @@ import { Utils } from "../shared/Utils.js";
                                     "," +
                                     Y +
                                     " " +
-                                    theXmultiplier * (X + 3) +
+                                    theXmultiplier * X +
+                                    3 +
                                     "," +
                                     (Y - 20) +
                                     " " +
@@ -2028,6 +2282,20 @@ import { Utils } from "../shared/Utils.js";
                                 theLineClr: theLineClr,
                             });
                         }
+                    }
+                    // Lines into the top couple's marriage line: up from the child, across, then up the marriage line (an upside-down T)
+                    if (WebsView.viewMode == "Indi" || WebsView.viewMode == "Singles") {
+                        [
+                            [elementPa, theNodePa, Xpa, Ypa],
+                            [elementMa, theNodeMa, Xma, Yma],
+                        ].forEach(([el, nd, x2, y2]) => {
+                            if (el && nd && el.isConnected && el.getAttribute("display") == "block") {
+                                if (topCoParent(nd.person)) {
+                                    const midY = y2 - WebsView.yDir * 34;
+                                    el.setAttribute("points", `${X},${Y} ${X},${midY} ${x2},${midY} ${x2},${y2}`);
+                                }
+                            }
+                        });
                     }
                     // elementMa.setAttribute("y1", Y);
                     // elementMa.setAttribute("x2", Xma);
@@ -2147,7 +2415,11 @@ import { Utils } from "../shared/Utils.js";
 
         // HIDE ALL THE OTHER LINES WE DON'T NEED (because they are too high / too many generations above us)
         for (let pp = 0; pp < WebsView.listOfPrimePersons.length; pp++) {
-            for (let index = 2 ** (WebsView.numGens2Display - 1); index < 2 ** (WebsView.maxNumGens - 1); index++) {
+            for (
+                let index = 2 ** (WebsView.numGens2Display - 1);
+                index < 2 ** Math.min(WebsView.maxNumGens - 1, WebsView.numGensRetrieved);
+                index++
+            ) {
                 const elementPa = document.getElementById("lineForPerson" + index + "p" + pp + "Pa");
                 if (elementPa) {
                     // elementPa.setAttribute("display", "none");
@@ -2161,8 +2433,40 @@ import { Utils } from "../shared/Utils.js";
             }
         }
 
+        WebsView.drawComboBioLabels();
         condLog("done DRAWING LINES");
         WebsView.logLines();
+    };
+
+    // In Combo view, label the lines from the Primary Person to the biological parents
+    WebsView.drawComboBioLabels = function () {
+        const svgG = document.getElementById("svgG");
+        if (!svgG) return;
+        svgG.querySelectorAll(".comboBioLabel").forEach((e) => e.remove());
+        if (WebsView.familyType != "Combo" || !["Full", "Unique", "Repeats"].includes(WebsView.viewMode)) return;
+        const pp = WebsView.currentPrimeNum;
+        [
+            ["lineForPerson2p" + pp + "Pa", "Biological Father"],
+            ["lineForPerson3p" + pp + "Ma", "Biological Mother"],
+        ].forEach(([id, text]) => {
+            const line = document.getElementById(id);
+            if (!line || line.getAttribute("display") == "none") return;
+            const pts = (line.getAttribute("points") || "")
+                .trim()
+                .split(/\s+/)
+                .map((p) => p.split(",").map(Number));
+            if (pts.length < 2 || pts.some((p) => p.some(isNaN))) return;
+            const a = pts[0];
+            const b = pts[pts.length - 1];
+            const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            t.setAttribute("class", "comboBioLabel");
+            t.setAttribute("x", a[0] + (b[0] - a[0]) * 0.5);
+            t.setAttribute("y", a[1] + (b[1] - a[1]) * 0.5);
+            t.setAttribute("text-anchor", "middle");
+            t.setAttribute("style", "font-size:12px; fill:#333; paint-order:stroke; stroke:white; stroke-width:3px;");
+            t.textContent = text;
+            svgG.appendChild(t);
+        });
     };
 
     WebsView.comingSoon = function (num) {
@@ -2215,7 +2519,7 @@ import { Utils } from "../shared/Utils.js";
     function recalcAndDisplayNumGens() {
         if (WebsView.numGens2Display < 1) {
             WebsView.numGens2Display = 1;
-            showTemporaryMessageBelowButtonBar("1 is the minimum number of generations you can display.");
+            showTemporaryMessageBelowButtonBar("0 is the minimum number of generations you can display.");
         } else if (WebsView.numGens2Display > WebsView.workingMaxNumGens) {
             WebsView.numGens2Display = WebsView.workingMaxNumGens;
             if (WebsView.workingMaxNumGens < WebsView.maxNumGens) {
@@ -2224,18 +2528,27 @@ import { Utils } from "../shared/Utils.js";
                 );
             } else {
                 showTemporaryMessageBelowButtonBar(
-                    WebsView.maxNumGens + " is the maximum number of generations you can display."
+                    WebsView.internalToDisplayGens(WebsView.maxNumGens, WebsView.familyType) +
+                        " is the maximum number of generations you can display."
                 );
             }
         }
 
         var numGensSpan = document.querySelector("#numGensInBBar");
-        numGensSpan.textContent = WebsView.numGens2Display;
+        numGensSpan.textContent = WebsView.internalToDisplayGens(WebsView.numGens2Display, WebsView.familyType);
         // condLog("numGensSpan:", numGensSpan);
-        if (WebsView.numGens2Display > WebsView.numGensRetrieved) {
+        if (WebsView.numGens2Display > WebsView.numGensRetrieved && WebsView.preloading) {
+            // the background load is still fetching these generations - say so, and don't start a second request
+            WebsView.preloadMsgShown = true;
+            flashWarningMessageBelowButtonBar("Additional generations loading ... please wait");
+        } else if (WebsView.numGens2Display > WebsView.numGensRetrieved) {
             loadAncestorsAtLevel(WebsView.numGens2Display);
             WebsView.numGensRetrieved = WebsView.numGens2Display;
         } else {
+            if (WebsView.preloadMsgShown) {
+                WebsView.preloadMsgShown = false;
+                clearMessageBelowButtonBar();
+            }
             condLog(
                 "Did NOT NEED TO go to loadAncestorsAt Level",
                 WebsView.numGens2Display,
@@ -2245,151 +2558,191 @@ import { Utils } from "../shared/Utils.js";
         }
     }
 
-    /*  OK - HERE'S THE SCOOP
-         - IF NEWLEVEL < 10, (AND WE ACTUALLY NEED TO LOAD NEWLEVEL)
-         --> USE PRIMENUM , GETPEOPLE, ANCESTORS=NEWLEVEL, MINGENERATION=NEWLEVEL
+    const WEBS_API_FIELDS = [
+        "Id",
+        "Derived.BirthName",
+        "Derived.BirthNamePrivate",
+        "FirstName",
+        "MiddleInitial",
+        "LastNameAtBirth",
+        "LastNameCurrent",
+        "BirthDate",
+        "BirthLocation",
+        "DeathDate",
+        "DeathLocation",
+        "Mother",
+        "Father",
+        "BioMother",
+        "BioFather",
+        "Children",
+        "Parents",
+        "Spouses",
+        "Siblings",
+        "Photo",
+        "Name",
+        "Gender",
+        "Privacy",
+        "BirthDecade",
+        "RealName",
+        "DataStatus",
+    ];
 
-         ELSE - IF - NEWLEVEL >= 10 (AND WE NEED IT ..)
-         -- FIND ALL PEEPS @ LEVEL 9
-         --> USE GETPEOPLE USING LEVEL9PEEPSLIST , ANCESTORS = NEWLEVEL - 9; MINGENERATION=NEWLEVEL - 9
-
-
-         ADD LOGIC TO REDO QUERY IF NEEDEED BECAUSE OF 1000 LIMIT
-
-    // END OF SCOOP
-   */
-
-    function loadAncestorsAtLevel(newLevel, startingNum = 0) {
-        condLog("Need to load MORE peeps from Generation ", newLevel, "numGensRetrieved", WebsView.numGensRetrieved);
-        // let theListOfIDs = WebsView.myAhnentafel.listOfAncestorsToBeLoadedForLevel(newLevel);
-        let theListOfIDs = [WebsView.myAhnentafel.list[1]];
-        let loadingTD = document.getElementById("loadingTD");
-        if (newLevel > 8) {
-            theListOfIDs = WebsView.myAhnentafel.listOfAncestorsAtLevel(6);
-        }
-
-        // WebsView.myAhnentafel.listOfAncestorsAtLevel(newLevel);
-
-        if (WebsView.listOfAhnentafels.length > 1) {
-            for (let aa = 0; aa < WebsView.listOfAhnentafels.length; aa++) {
-                if (aa == WebsView.currentPrimeNum) {
-                    // do nothing - the list of IDs is already in theListOfIDs
-                } else {
-                    const thisAhnentafel = WebsView.listOfAhnentafels[aa];
-                    if (newLevel > 8) {
-                        let thisList = thisAhnentafel.listOfAncestorsAtLevel(6);
-                        theListOfIDs = theListOfIDs.concat(thisList);
-                    } else {
-                        theListOfIDs.push(thisAhnentafel.list[1]);
-                    }
-                }
+    // getPeople, following the API's paging: when the status says "Maximum number of profiles (N) reached.",
+    // ask again with start advanced by N, and merge all the pages into one result [status, resultsByKey, people]
+    async function getPeoplePaged(keys, options) {
+        let start = options.start || 0;
+        let merged = null;
+        for (let page = 0; page < 30; page++) {
+            const result = await WikiTreeAPI.getPeople(APP_ID, keys, WEBS_API_FIELDS, { ...options, start: start });
+            if (!result) break;
+            if (!merged) {
+                merged = [result[0], result[1], Object.assign({}, result[2])];
+            } else {
+                merged[0] = result[0];
+                Object.assign(merged[2], result[2]);
             }
-            // theListOfIDs.sort();
+            const m = /Maximum number of profiles \((\d+)\)/.exec(result[0] || "");
+            if (!m) break;
+            start += Number(m[1]);
         }
-        // let prevItem = "";
-        // for (let li = theListOfIDs.length - 1; li >= 0 ; li--) {
-        //     const thisItem = theListOfIDs[li];
-        //     if (thisItem == prevItem) {
-        //         theListOfIDs.splice(li, 1);
-        //     } else {
-        //         prevItem = thisItem;
-        //     }
-        // }
-        let theOptions = {
-            ancestors: newLevel,
-            minGeneration: newLevel,
-            start: startingNum,
-        };
-        if (newLevel > 8) {
-            theOptions = {
-                ancestors: newLevel - 6,
-                minGeneration: newLevel - 6,
-                start: startingNum,
-                // limit: theListOfIDs.length * (2 ** (newLevel - 6))
-            };
-        }
-
-        condLog("theListOfIDs", theListOfIDs, "theOptions:", theOptions);
-        if (theListOfIDs.length == 0) {
-            condLog("WARNING WARNING - DANGER DANGER WILL ROBINSONS: theListOfIDs.length == 0");
-            clearMessageBelowButtonBar();
-            WebsView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
-            WebsView.numGensRetrieved++;
-            WebsView.workingMaxNumGens = Math.min(WebsView.maxNumGens, WebsView.numGensRetrieved + 1);
-            condLog("IF list.length == 0, Need to adjust WebsView.workingMaxNumGens -> ", WebsView.workingMaxNumGens);
-        } else {
-            condLog("Need to start call to GetPeople", theOptions, theListOfIDs.length + " peeps");
-            loadingTD.innerHTML = "loading";
-            WikiTreeAPI.getPeople(
-                APP_ID,
-                theListOfIDs,
-                [
-                    "Id",
-                    "Derived.BirthName",
-                    "Derived.BirthNamePrivate",
-                    "FirstName",
-                    "MiddleInitial",
-                    "LastNameAtBirth",
-                    "LastNameCurrent",
-                    "BirthDate",
-                    "BirthLocation",
-                    "DeathDate",
-                    "DeathLocation",
-                    "Mother",
-                    "Father",
-                    "BioMother",
-                    "BioFather",
-                    "Children",
-                    "Parents",
-                    "Spouses",
-                    "Siblings",
-                    "Photo",
-                    "Name",
-                    "Gender",
-                    "Privacy",
-                    "Photo",
-                    "BirthDecade",
-                    "RealName",
-                    "DataStatus",
-                ],
-                theOptions
-            ).then(function (result) {
-                if (result) {
-                    WebsView.theAncestors = result[2];
-
-                    condLog("theAncestors:", WebsView.theAncestors, Object.keys(result).length);
-                    // condLog("person with which to drawTree:", person);
-                    let numPeepsAdded = 0;
-                    for (const index in WebsView.theAncestors) {
-                        numPeepsAdded++;
-                        thePeopleList.add(WebsView.theAncestors[index]);
-                    }
-                    // console.log("ADDED ", numPeepsAdded, "PEEPS added inside loadAncestorsAtLevel", newLevel);
-                    // console.log(result[0]);//.status, result[0].status.startsWith("Maximum number of profiles"));
-
-                    WebsView.myAhnentafel.update(); // update the AhnenTafel with the latest ancestors
-
-                    if (numPeepsAdded >= 1000) {
-                        // we have likely hit our limit - or - been right bang on  - but who would know, so we'll have to assume we need to do this again!
-                        loadAncestorsAtLevel(newLevel, startingNum + numPeepsAdded);
-                    } else {
-                        WebsView.workingMaxNumGens = Math.min(WebsView.maxNumGens, WebsView.numGensRetrieved + 1);
-                        condLog(
-                            "IF .THEN ... Need to adjust WebsView.workingMaxNumGens -> ",
-                            WebsView.workingMaxNumGens
-                        );
-                        clearMessageBelowButtonBar();
-                        loadingTD.innerHTML = "&nbsp;";
-                    }
-                } else {
-                    condLog("Need to know there is NO RESULT !");
-                }
-            });
-        }
+        return merged;
     }
 
+    // The Ids of every Primary Person (the current one first)
+    function allPrimaryRootIds() {
+        const ids = [];
+        const add = (id) => {
+            if (id && !ids.includes(id)) ids.push(id);
+        };
+        add(WebsView.myAhnentafel.list[1]);
+        WebsView.listOfAhnentafels.forEach((a, i) => {
+            if (i != WebsView.currentPrimeNum) add(a.list[1]);
+        });
+        return ids;
+    }
+
+    // Load generations fromLevel..toLevel of ancestors for every Primary Person, adding them to thePeopleList
+    function loadAncestorGens(fromLevel, toLevel) {
+        const ids = allPrimaryRootIds();
+        if (ids.length == 0) return Promise.resolve(0);
+        const options = { ancestors: Math.min(25, toLevel), minGeneration: fromLevel };
+        condLog("Loading generations", fromLevel, "to", toLevel, "for", ids);
+        return getPeoplePaged(ids, options).then(function (result) {
+            let numAdded = 0;
+            if (result) {
+                WebsView.theAncestors = result[2];
+                for (const index in result[2]) {
+                    numAdded++;
+                    thePeopleList.add(result[2][index]);
+                }
+            }
+            return numAdded;
+        });
+    }
+
+    // The family type to build Ahnentafels with ("" = Primary family)
+    function currentFamType() {
+        return WebsView.familyType == "Bio" || WebsView.familyType == "Combo" ? WebsView.familyType : "";
+    }
+
+    // Rebuild the working Ahnentafel of every Primary Person for the selected Family type (so COMMON and SINGLES follow it)
+    WebsView.syncAhnentafelsToFamilyType = function () {
+        const famType = currentFamType();
+        WebsView.listOfPrimePersons.forEach((id, i) => {
+            const person = WebsView.PeopleList[id];
+            if (person && WebsView.listOfAhnentafels[i]) WebsView.listOfAhnentafels[i].update(person, famType);
+        });
+        if (WebsView.myAhnentafel && WebsView.listOfAhnentafels.indexOf(WebsView.myAhnentafel) < 0) {
+            WebsView.myAhnentafel.update(undefined, famType);
+        }
+    };
+
+    // Rebuild every Ahnentafel (all Primary Persons, all family types) after more ancestors have been added to thePeopleList
+    function refreshAllAhnentafels() {
+        const famType = currentFamType();
+        WebsView.myAhnentafel.update(undefined, famType);
+        WebsView.listOfPrimePersons.forEach((id, i) => {
+            const person = WebsView.PeopleList[id];
+            if (!person) return;
+            if (WebsView.listOfAhnentafels[i]) WebsView.listOfAhnentafels[i].update(person, famType);
+            if (WebsView.listOfA1Ahnentafels[i]) WebsView.listOfA1Ahnentafels[i].update(person);
+            if (WebsView.listOfBioAhnentafels[i]) WebsView.listOfBioAhnentafels[i].update(person, "Bio");
+            if (WebsView.listOfComboAhnentafels[i]) WebsView.listOfComboAhnentafels[i].update(person, "Combo");
+        });
+    }
+
+    function loadAncestorsAtLevel(newLevel) {
+        condLog("Need to load MORE peeps from Generation ", newLevel, "numGensRetrieved", WebsView.numGensRetrieved);
+        const loadingTD = document.getElementById("loadingTD");
+        if (loadingTD) loadingTD.innerHTML = "loading";
+        loadAncestorGens(newLevel, newLevel).then(function () {
+            refreshAllAhnentafels();
+            WebsView.workingMaxNumGens = Math.min(WebsView.maxNumGens, WebsView.numGensRetrieved + 1);
+            clearMessageBelowButtonBar();
+            if (loadingTD) loadingTD.innerHTML = "&nbsp;";
+            WebsView.keepZoomNext = true;
+            WebsView.redraw();
+        });
+    }
+
+    // After the quick first load, quietly fetch generations up to PRELOAD_GENS in one go (for all Primary Persons),
+    // so that repeats and common ancestors are ready; anything deeper is loaded when asked for.
+    const PRELOAD_GENS = 10;
+    WebsView.preloadToken = 0;
+    WebsView.preloading = false;
+    function startAncestorPreload() {
+        const token = ++WebsView.preloadToken;
+        const from = WebsView.numGensRetrieved + 1;
+        if (from > PRELOAD_GENS) {
+            WebsView.preloading = false;
+            return;
+        }
+        WebsView.preloading = true;
+        WebsView.workingMaxNumGens = Math.min(WebsView.maxNumGens, PRELOAD_GENS + 1);
+        const loadingTD = document.getElementById("loadingTD");
+        if (loadingTD) loadingTD.innerHTML = "loading";
+        loadAncestorGens(from, PRELOAD_GENS)
+            .catch(function (e) {
+                console.log("Preload failed", e);
+            })
+            .then(function () {
+                if (token != WebsView.preloadToken) return; // superseded (e.g. a Primary Person was added meanwhile)
+                WebsView.preloading = false;
+                refreshAllAhnentafels();
+                WebsView.numGensRetrieved = Math.max(WebsView.numGensRetrieved, PRELOAD_GENS);
+                WebsView.workingMaxNumGens = Math.min(WebsView.maxNumGens, WebsView.numGensRetrieved + 1);
+                if (loadingTD) loadingTD.innerHTML = "&nbsp;";
+                if (WebsView.preloadMsgShown) {
+                    WebsView.preloadMsgShown = false;
+                    clearMessageBelowButtonBar();
+                }
+                WebsView.keepZoomNext = true;
+                WebsView.redraw();
+            });
+    }
+    WebsView.stopAncestorPreload = function () {
+        WebsView.preloadToken++;
+        WebsView.preloading = false;
+        WebsView.preloadMsgShown = false;
+    };
+
+    // Displayed generations: 0 = Primary only; 1 = Primary + parents (Combo: + all four parents)
+    WebsView.internalToDisplayGens = function (internal, type) {
+        return internal <= 1 ? 0 : Math.max(0, internal - (type == "Combo" ? 2 : 1));
+    };
+    WebsView.displayToInternalGens = function (display, type) {
+        return display <= 0 ? 1 : display + (type == "Combo" ? 2 : 1);
+    };
+    WebsView.stepGens = function (dir) {
+        let d = WebsView.internalToDisplayGens(WebsView.numGens2Display, WebsView.familyType) + dir;
+        WebsView.numGens2Display = WebsView.displayToInternalGens(Math.max(-1, d), WebsView.familyType);
+        if (d < 0) WebsView.numGens2Display = 0;
+    };
+
     WebsView.changeFamilyType = function (newType) {
+        const shownGens = WebsView.internalToDisplayGens(WebsView.numGens2Display, WebsView.familyType);
         WebsView.familyType = newType;
+        WebsView.numGens2Display = Math.min(WebsView.displayToInternalGens(shownGens, newType), WebsView.maxNumGens);
         console.log("CHANGE THE FAMILY TYPE HERE!", newType);
         let newPersonNum = 0;
         //  if (rootPersonSelector) {
@@ -2421,6 +2774,7 @@ import { Utils } from "../shared/Utils.js";
         } else if (newType == "Combo") {
             WebsView.myAhnentafel.update(thePerson, "Combo");
         }
+        WebsView.syncAhnentafelsToFamilyType();
         // WebsView.myAncestorTree.draw();
         WebsView.redraw();
     };
@@ -2643,9 +2997,140 @@ import { Utils } from "../shared/Utils.js";
         WebsView.logLines();
     };
 
+    // Warn before drawing a chart with a very large number of people
+    const BIG_DRAW_DEFAULT = 1000;
+    let bigDrawCurrent = null; // the Current Warning Threshold (rises as the user accepts bigger charts)
+    let bigDrawLastInitial = null;
+    let lastGoodDraw = null;
+    let skipBigDrawCheck = false;
+
+    function bigDrawInitial() {
+        const v = parseInt(WebsView.currentSettings["general_options_warnInitial"], 10);
+        return v > 0 ? v : BIG_DRAW_DEFAULT;
+    }
+
+    function bigDrawWarningOff() {
+        return WebsView.currentSettings["general_options_warnOff"] === true;
+    }
+
+    function setBigDrawCurrent(v) {
+        bigDrawCurrent = v;
+        WebsView.currentSettings["general_options_warnCurrent"] = String(v);
+        const el = document.getElementById("general_options_warnCurrent");
+        if (el) el.value = v;
+    }
+
+    // Current threshold goes back to the Initial one (browser refresh / new person loaded)
+    WebsView.resetBigDrawThreshold = function () {
+        bigDrawLastInitial = bigDrawInitial();
+        setBigDrawCurrent(bigDrawLastInitial);
+    };
+
+    // Called after the Settings are saved: pick up any edits to the thresholds
+    WebsView.bigDrawSettingsSaved = function () {
+        const initial = bigDrawInitial();
+        const typedCurrent = parseInt(WebsView.currentSettings["general_options_warnCurrent"], 10);
+        if (initial != bigDrawLastInitial) {
+            bigDrawLastInitial = initial;
+            setBigDrawCurrent(initial);
+        } else if (typedCurrent > 0) {
+            setBigDrawCurrent(typedCurrent);
+        } else {
+            setBigDrawCurrent(bigDrawCurrent || initial);
+        }
+    };
+
+    function saveBigDrawSetting(key, value) {
+        WebsView.currentSettings[key] = value;
+        const el = document.getElementById(key);
+        if (el) el.checked = value;
+        WTapps_Utils.setCookie("wtapps_webs", JSON.stringify(WebsView.currentSettings), { expires: 365 });
+    }
+
+    // Returns true if the draw can go ahead now; otherwise shows a popup and calls proceed() if the user continues
+    function confirmBigDraw(count, proceed) {
+        if (skipBigDrawCheck) {
+            skipBigDrawCheck = false;
+            return true;
+        }
+        if (bigDrawWarningOff() || count <= (bigDrawCurrent || bigDrawInitial())) {
+            return true;
+        }
+        clearMessageBelowButtonBar();
+        const old = document.getElementById("bigDrawWarning");
+        if (old) old.remove();
+        const box = document.createElement("div");
+        box.id = "bigDrawWarning";
+        box.style.cssText =
+            "position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:100000;display:flex;align-items:center;justify-content:center;";
+        box.innerHTML =
+            "<div style='background:#fffbe0;border:2px solid #e0b800;border-radius:8px;padding:18px 22px;max-width:480px;font-size:15px;box-shadow:0 4px 18px rgba(0,0,0,0.4);'>" +
+            "<p><b>This chart will show " +
+            count.toLocaleString() +
+            " people.</b></p>" +
+            "<p>Drawing this many people may take a long time, and could make your browser slow down or freeze.</p>" +
+            "<p style='margin:10px 0 2px;'><label><input type=radio name=bigDrawOpt value=again checked> Show this message again if there is a higher person count</label></p>" +
+            "<p style='margin:2px 0 14px;'><label><input type=radio name=bigDrawOpt value=never> Do not show this message again, regardless of person count</label></p>" +
+            "<p style='text-align:right;margin:0;'><button class='btn btn-secondary btn-sm' id=bigDrawCancel>Cancel</button> " +
+            "<button class='btn btn-primary btn-sm' id=bigDrawContinue>Draw anyway</button></p></div>";
+        document.body.appendChild(box);
+        const choice = () => box.querySelector("input[name=bigDrawOpt]:checked").value;
+        document.getElementById("bigDrawContinue").onclick = function () {
+            if (choice() == "never") saveBigDrawSetting("general_options_warnOff", true);
+            setBigDrawCurrent(Math.max(bigDrawCurrent || 0, count));
+            box.remove();
+            proceed();
+        };
+        document.getElementById("bigDrawCancel").onclick = function () {
+            if (choice() == "never") saveBigDrawSetting("general_options_warnOff", true);
+            box.remove();
+            // put things back the way they were
+            if (lastGoodDraw) {
+                skipBigDrawCheck = true;
+                WebsView.viewMode = lastGoodDraw.viewMode;
+                WebsView.numGens2Display = lastGoodDraw.numGens2Display;
+                // changeFamilyType also rebuilds the Ahnentafels and redraws
+                WebsView.familyType = lastGoodDraw.familyType;
+                WebsView.changeFamilyType(lastGoodDraw.familyType);
+            }
+        };
+        return false;
+    }
+
+    const DRAWING_MESSAGES = {
+        Full: "Drawing the FULL Ancestor Pedigree Tree",
+        Unique: "Drawing the UNIQUE Ancestors Web",
+        Repeats: "Drawing the REPEAT Ancestors Web",
+        Indi: "Drawing the SINGLE Ancestor Multi-Path Web",
+        Common: "Drawing the COMMON Ancestors Web",
+        Singles: "Drawing the SINGLES Ancestors Web",
+    };
+    let lastDrawnViewKey = null;
+
+    // Changing the view mode or Family type can take a while to draw, so show a message first (unless the
+    // "loading generations" message is up, which takes precedence) and give the browser a chance to paint it
     WebsView.redraw = function () {
-        condLog("WebsView.multiViewPrimaries = ", WebsView.multiViewPrimaries);
-        condLog("WebsView.redraw");
+        const viewKey = WebsView.viewMode + "|" + WebsView.familyType;
+        if (lastDrawnViewKey === null || viewKey == lastDrawnViewKey || WebsView.preloadMsgShown) {
+            redrawNow();
+            return;
+        }
+        flashWarningMessageBelowButtonBar(
+            (DRAWING_MESSAGES[WebsView.viewMode] || "Drawing the chart") + " - please wait ..."
+        );
+        setTimeout(function () {
+            try {
+                redrawNow();
+            } finally {
+                if (!WebsView.preloadMsgShown) clearMessageBelowButtonBar();
+            }
+        }, 50);
+    };
+
+    function redrawNow() {
+        lastDrawnViewKey = WebsView.viewMode + "|" + WebsView.familyType;
+        console.log("WebsView.multiViewPrimaries = ", WebsView.multiViewPrimaries);
+        console.log("WebsView.redraw");
         // condLog("Now theAncestors = ", WebsView.theAncestors);
         // thePeopleList.listAll();
         // if (WebsView.viewMode == 0) {
@@ -2715,6 +3200,9 @@ import { Utils } from "../shared/Utils.js";
         } else if (WebsView.familyType == "Combo") {
             WebsView.myAhnentafel.update(WebsView.primePerson, "Combo");
         }
+        if (WebsView.listOfAhnentafels.length > 1) {
+            WebsView.syncAhnentafelsToFamilyType(); // COMMON / SINGLES compare every Primary using the selected Family type
+        }
 
         let rootPersonSelector =
             "<select id=rootPersonSelector  style='cursor:pointer;' onchange='WebsView.changePrimePerson();' class=selectSimpleDropDown id=rootPersonSelector>";
@@ -2753,6 +3241,10 @@ import { Utils } from "../shared/Utils.js";
                     allNames += " & ";
                 }
                 allNames += WebsView.PeopleList[WebsView.listOfPrimePersons[n]].getDisplayName();
+                WebsView.listOfAhnentafels[n].update(
+                    WebsView.PeopleList[WebsView.listOfPrimePersons[n]],
+                    currentFamType()
+                );
             }
 
             let allNamesSelector = allNames;
@@ -2892,7 +3384,7 @@ import { Utils } from "../shared/Utils.js";
         recalcAndDisplayNumGens();
         // redoWedgesForFanChart();
         WebsView.myAncestorTree.draw();
-    };
+    }
 
     /**
      * Load and display a person
@@ -2903,6 +3395,11 @@ import { Utils } from "../shared/Utils.js";
         self._load(id).then(function (person) {
             WebsView.primePerson = person;
             WebsView.listOfPrimePersons = [person._data.Id];
+            WebsView.resetBigDrawThreshold();
+            // every new load starts with the Primary/Adoptive family tree
+            WebsView.familyType = "A1";
+            const famSelect = document.getElementById("FamilyTypeSelector");
+            if (famSelect) famSelect.value = "A1";
             // condLog("WebsView.prototype.load : self._load(id) ");
             person._data.AhnNum = 1;
             thePeopleList.add(person);
@@ -2989,6 +3486,12 @@ import { Utils } from "../shared/Utils.js";
                 // PUT everyone into the Ahnentafel order ... which will include the private TBD! peeps if any
                 WebsView.myAhnentafel.update(person);
 
+                // Only offer the Family selector when the Primary Person has a biological parent on record
+                const primeData = WebsView.theAncestors[id] || {};
+                const hasBioParent = Number(primeData.BioFather) > 0 || Number(primeData.BioMother) > 0;
+                const famSpan = document.getElementById("FamilyTypeSelectorSpan");
+                if (famSpan) famSpan.style.display = hasBioParent ? "" : "none";
+
                 let relativeName = [
                     "kid",
                     "self",
@@ -3025,6 +3528,7 @@ import { Utils } from "../shared/Utils.js";
 
                 self.drawTree(person);
                 clearMessageBelowButtonBar();
+                startAncestorPreload();
             });
         });
     };
@@ -3181,7 +3685,7 @@ import { Utils } from "../shared/Utils.js";
             condLog("SWITCHING to ", newPrimes);
             WebsView.multiViewPrimaries = newPrimes;
         } else {
-            WebsView.multiViewPrimaries = "12";
+            WebsView.multiViewPrimaries = "01";
         }
 
         WebsView.redraw();
@@ -3193,7 +3697,7 @@ import { Utils } from "../shared/Utils.js";
         // numOfLegitCommonAncs;
 
         if (WebsView.listOfPrimePersons.length == 3) {
-            let newPrimes = "12";
+            let newPrimes = "012";
             if (whichType == 1) {
                 newPrimes = document.getElementById("MultiAncestorSelectorSingles").value;
             } else if (whichType == 2) {
@@ -3202,7 +3706,7 @@ import { Utils } from "../shared/Utils.js";
             condLog("SWITCHING to ", newPrimes);
             WebsView.multiViewPrimaries = newPrimes;
         } else {
-            WebsView.multiViewPrimaries = "12";
+            WebsView.multiViewPrimaries = "01";
         }
 
         WebsView.redraw();
@@ -3317,7 +3821,7 @@ import { Utils } from "../shared/Utils.js";
                 condLog("WE ARE IN THE COMMON MODE HERE !!!!");
                 nodes = [];
                 for (let a = 0; a < WebsView.listOfAhnentafels.length; a++) {
-                    WebsView.listOfAhnentafels[a].update();
+                    WebsView.listOfAhnentafels[a].update(undefined, currentFamType());
                     let tmpNodes = WebsView.listOfAhnentafels[a].listOfAncestorsForFanChart(WebsView.numGens2Display);
                     for (let n = 0; n < tmpNodes.length; n++) {
                         tmpNodes[n]["p"] = a; // record the prime num for each node
@@ -3524,7 +4028,9 @@ import { Utils } from "../shared/Utils.js";
                 if (WebsView.listOfLegitCommonAncestors.length == 0) {
                     condLog("NO COMMON ANNCESTORS for the COMMON / SINGLES !!!!");
                     document.getElementById("SummaryMessageArea").innerText =
-                        "At " + WebsView.numGens2Display + " generations, there are 0 common ancestors.";
+                        "At " +
+                        WebsView.internalToDisplayGens(WebsView.numGens2Display, WebsView.familyType) +
+                        " generations, there are 0 common ancestors.";
                     WebsView.clearAll();
                     return;
                 }
@@ -3590,50 +4096,65 @@ import { Utils } from "../shared/Utils.js";
                     }
                 }
             }
-            // Calculate the new NODE positions (skooch together / adjust if needed for repeat ancestors)
-            calculateNodePositions(nodes);
+            const finishDraw = () => {
+                lastGoodDraw = {
+                    viewMode: WebsView.viewMode,
+                    familyType: WebsView.familyType,
+                    numGens2Display: WebsView.numGens2Display,
+                };
+                // Calculate the new NODE positions (skooch together / adjust if needed for repeat ancestors)
+                calculateNodePositions(nodes);
+                if (["Indi", "Repeats", "Singles", "Common"].includes(WebsView.viewMode)) {
+                    layoutWebColumns(nodes, WebsView.viewMode);
+                    applyNudges(nodes, WebsView.viewMode);
+                }
 
-            // Draw the lines connecting the new NODEs
-            condLog("calling drawLines from prototype.draw() ");
-            WebsView.drawLines(nodes);
-            WebsView.logLines;
+                // Draw the lines connecting the new NODEs
+                condLog("calling drawLines from prototype.draw() ");
+                WebsView.drawLines(nodes);
+                WebsView.logLines;
 
-            // Finally - draw the Nodes themselves!
-            condLog("calling drawNodes from prototype.draw() ");
-            this.drawNodes(nodes);
-            WebsView.logLines;
+                // Finally - draw the Nodes themselves!
+                condLog("calling drawNodes from prototype.draw() ");
+                this.drawNodes(nodes);
+                WebsView.logLines;
 
-            // Update the Summary Message based on how many repeat ancestors there are, etc..
-            if (WebsView.viewMode == "Singles" || WebsView.viewMode == "Common") {
-                condLog("Summary Msg Area Calc: ", WebsView.listOfLegitCommonAncestors);
-                const setLegitIDs = new Set(WebsView.listOfLegitCommonIDs);
-                const numLegitCommonAncestors = setLegitIDs.size;
-                showSummaryMessage(
-                    "At " +
-                        WebsView.numGens2Display +
-                        " generations, " +
-                        primaryPeopleFirstNames() +
-                        " have " +
-                        numLegitCommonAncestors +
-                        " common ancestor" +
-                        (numLegitCommonAncestors != 1 ? "s" : "") +
-                        "."
-                );
-            } else {
-                showSummaryMessage(
-                    "At " +
-                        WebsView.numGens2Display +
-                        " generations, " +
-                        primaryPersonFirstName() +
-                        " has " +
-                        WebsView.listOfRepeatAncestors.length +
-                        " repeat ancestor" +
-                        (WebsView.listOfRepeatAncestors.length != 1 ? "s" : "") +
-                        "."
-                );
+                // Update the Summary Message based on how many repeat ancestors there are, etc..
+                if (WebsView.viewMode == "Singles" || WebsView.viewMode == "Common") {
+                    condLog("Summary Msg Area Calc: ", WebsView.listOfLegitCommonAncestors);
+                    const setLegitIDs = new Set(WebsView.listOfLegitCommonIDs);
+                    const numLegitCommonAncestors = setLegitIDs.size;
+                    showSummaryMessage(
+                        "At " +
+                            WebsView.internalToDisplayGens(WebsView.numGens2Display, WebsView.familyType) +
+                            " generations, " +
+                            primaryPeopleFirstNames() +
+                            " have " +
+                            numLegitCommonAncestors +
+                            " common ancestor" +
+                            (numLegitCommonAncestors != 1 ? "s" : "") +
+                            "."
+                    );
+                } else {
+                    showSummaryMessage(
+                        "At " +
+                            WebsView.internalToDisplayGens(WebsView.numGens2Display, WebsView.familyType) +
+                            " generations, " +
+                            primaryPersonFirstName() +
+                            " has " +
+                            WebsView.listOfRepeatAncestors.length +
+                            " repeat ancestor" +
+                            (WebsView.listOfRepeatAncestors.length != 1 ? "s" : "") +
+                            "."
+                    );
+                }
+
+                WebsView.updateFontsIfNeeded();
+            };
+            if (!confirmBigDraw(nodes.length, finishDraw)) {
+                return this;
             }
-
-            WebsView.updateFontsIfNeeded();
+            finishDraw();
         } else {
             throw new Error("Missing root");
         }
@@ -3818,7 +4339,12 @@ import { Utils } from "../shared/Utils.js";
             }
             if (nameSettings == "FName") {
                 theXmultiplier = 3;
-            } else if (nameSettings == "FName" || nameSettings == "FLname" || nameSettings == "FnameLname") {
+            } else if (
+                nameSettings == "FName" ||
+                nameSettings == "FLname" ||
+                nameSettings == "FnameLname" ||
+                nameSettings == "FnameLnameLife"
+            ) {
                 theXmultiplier = 4;
             } else if (nameSettings == "FML") {
                 theXmultiplier = 1.25;
@@ -3851,7 +4377,12 @@ import { Utils } from "../shared/Utils.js";
                         ltrsNeeded = getFirstLNAB(ancestorObject.person).length;
                         if (WebsView.viewMode == "Common") {
                             // let nameSettings = WebsView.currentSettings["name_options_multiNameFormat"];
-                            if (nameSettings == "FName" || nameSettings == "FLname" || nameSettings == "FnameLname") {
+                            if (
+                                nameSettings == "FName" ||
+                                nameSettings == "FLname" ||
+                                nameSettings == "FnameLname" ||
+                                nameSettings == "FnameLnameLife"
+                            ) {
                                 if (nameSettings == "FName") {
                                     thisNewX = thisNewX * 3;
                                 } else {
@@ -3867,6 +4398,13 @@ import { Utils } from "../shared/Utils.js";
                             "nameDivFor" + ancestorObject.ahnNum + "p" + ancestorObject.p
                         ).innerHTML = getFirstLNAB(ancestorObject.person);
                         ltrsNeeded = getFirstLNAB(ancestorObject.person).length;
+                    }
+                    {
+                        const fullNameHtml = getNameAsPerSettings(ancestorObject.person);
+                        document.getElementById(
+                            "nameDivFor" + ancestorObject.ahnNum + "p" + ancestorObject.p
+                        ).innerHTML = fullNameHtml;
+                        ltrsNeeded = longestLineLength(fullNameHtml);
                     }
                     let workingWidth = Math.min(150, 10 * ltrsNeeded); // PRIMARY PEOPLE need room for their FULL NAME
                     theInfoBox.parentNode.parentNode.setAttribute("x", 0 - workingWidth / 2);
@@ -3892,7 +4430,7 @@ import { Utils } from "../shared/Utils.js";
                         if (d._data.Id == theAncestorAtTop.id) {
                             condLog("MAKE IT RAIN !!!!!");
                             nameSettings = "FnameLname";
-                            thisNameNow = getFirstLNAB(ancestorObject.person);
+                            thisNameNow = getNameAsPerSettings(ancestorObject.person);
                             theMaxWidthPerName = 300;
                         }
                     }
@@ -3900,11 +4438,21 @@ import { Utils } from "../shared/Utils.js";
                     let baseWidth4Lettrs = 8.5;
                     if (WebsView.viewMode == "Indi" || WebsView.viewMode == "Singles") {
                         // do nothing with thisNewX
-                        if (nameSettings == "FName" || nameSettings == "FLname" || nameSettings == "FnameLname") {
+                        if (
+                            nameSettings == "FName" ||
+                            nameSettings == "FLname" ||
+                            nameSettings == "FnameLname" ||
+                            nameSettings == "FnameLnameLife"
+                        ) {
                             baseWidth4Lettrs = 5;
                         }
                     } else {
-                        if (nameSettings == "FName" || nameSettings == "FLname" || nameSettings == "FnameLname") {
+                        if (
+                            nameSettings == "FName" ||
+                            nameSettings == "FLname" ||
+                            nameSettings == "FnameLname" ||
+                            nameSettings == "FnameLnameLife"
+                        ) {
                             baseWidth4Lettrs = 5;
                             if (nameSettings == "FName") {
                                 thisNewX = thisNewX * 3;
@@ -3926,7 +4474,7 @@ import { Utils } from "../shared/Utils.js";
                     //     "nameDivFor" + ancestorObject.ahnNum + "p" + ancestorObject.p
                     // ).style.color = "Yellow";
 
-                    let ltrsNeeded = thisNameNow.length;
+                    let ltrsNeeded = longestLineLength(thisNameNow);
                     let fontClr = "Black";
                     if (bkgdColourSetting == "dark") {
                         fontClr = "White";
@@ -4187,6 +4735,38 @@ import { Utils } from "../shared/Utils.js";
                     }
                 }
 
+                if (isHighlightedPerson(ancestorObject.person)) {
+                    const hiWidth = highlightedBoxWidth(ancestorObject.person, ancestorObject.ahnNum == 1);
+                    theInfoBox.parentNode.parentNode.setAttribute("x", 0 - hiWidth / 2);
+                    theInfoBox.parentNode.parentNode.setAttribute("width", hiWidth);
+                }
+
+                // The top ancestor of SINGLE / SINGLES is drawn with their co-parent: two boxes joined by a marriage line,
+                // centred on the node so the lines to the children leave from the middle of the marriage line
+                const holder = theInfoBox.parentNode;
+                holder.querySelectorAll(".coupleExtra").forEach((el) => el.remove());
+                holder.style.cssText = "";
+                theInfoBox.style.flex = "";
+                theInfoBox.style.width = "";
+                const coParent = topCoParent(ancestorObject.person);
+                if (coParent) {
+                    const boxW = (highlightedBoxWidth(ancestorObject.person, false) - COUPLE_GAP) / 2;
+                    holder.style.cssText = "display:flex; align-items:flex-start; width:100%;";
+                    theInfoBox.style.flex = `0 0 ${boxW}px`;
+                    theInfoBox.style.width = `${boxW}px`;
+                    const marriage = document.createElement("div");
+                    marriage.className = "coupleExtra";
+                    marriage.style.cssText = `flex:0 0 ${COUPLE_GAP}px; height:0; border-top:2px solid gray; margin-top:15px;`;
+                    const spouse = theInfoBox.cloneNode(true);
+                    spouse.removeAttribute("id");
+                    spouse.classList.add("coupleExtra");
+                    const spouseName = spouse.querySelector(".name");
+                    spouseName.removeAttribute("id");
+                    spouseName.innerHTML = `${getFirstLNAB(coParent)}<br>${lifespan(coParent)}`;
+                    holder.appendChild(marriage);
+                    holder.appendChild(spouse);
+                }
+
                 // SET the OUTER DIV to also be white, with a rounded radius and solid border
                 // theInfoBox.parentNode.setAttribute("style", "background-color: white; padding:15px; border: solid green; border-radius: 15px;") ;
             }
@@ -4204,7 +4784,7 @@ import { Utils } from "../shared/Utils.js";
                 }
             }
 
-            let Y = WebsView.yDir * vertSpacing * thisGenNum;
+            let Y = WebsView.yDir * vertSpacing * thisGenNum + (ancestorObject.shiftYpx || 0);
 
             // let i = ancestorObject.ahnNum;
 
@@ -4232,6 +4812,8 @@ import { Utils } from "../shared/Utils.js";
             // and if needed a rotation based on the nameAngle
             // return "translate(" + newX + "," + newY + ")" + " " + "rotate(" + nameAngle + ")";
         });
+
+        addNudgeButtons(node);
 
         WebsView.logLines();
     };
@@ -4313,25 +4895,16 @@ import { Utils } from "../shared/Utils.js";
     }
 
     function setUseThisForNode(thisAhnNum, nodes, whichPrime = -1) {
-        // let startingIndex =  nodes.length - 1;
-        // Math.min(thisAhnNum, nodes.length - 1);
-        // if(whichPrime >= 0) {
         for (let index = nodes.length - 1; index >= 0; index--) {
             const element = nodes[index];
             if (element && element.ahnNum) {
                 if (element.ahnNum == thisAhnNum) {
-                    condLog("setUseThisForNode: thisAhnNum, whichPrime, element=", thisAhnNum, whichPrime, element);
                     if (whichPrime >= 0 && element.p != whichPrime) {
                         // do nothing
-                        // condLog("do NOthing ", whichPrime, element.p, element.ahnNum);
                     } else {
-                        // condLog("do SOMEthing ", whichPrime, element.p, element.ahnNum);
                         element["useThis"] = true;
-                        // if (element.p == 2) { console.log("SET element p2:", element);}
-                        // condLog("USE THIS:", element);
                         if (thisAhnNum > 1) {
-                            let newAhnNum = Math.floor(thisAhnNum / 2);
-                            setUseThisForNode(newAhnNum, nodes, whichPrime);
+                            setUseThisForNode(Math.floor(thisAhnNum / 2), nodes, whichPrime);
                         }
                         return;
                     }
@@ -4339,6 +4912,10 @@ import { Utils } from "../shared/Utils.js";
             } else {
                 condLog("Could not compute thisAhnNum:", thisAhnNum, "index:", index, "element:", element);
             }
+        }
+        // No node for this number (Combo has no nodes for Ahnentafel 2 and 3) - keep going up the line anyway
+        if (thisAhnNum > 1) {
+            setUseThisForNode(Math.floor(thisAhnNum / 2), nodes, whichPrime);
         }
     }
 
@@ -4485,6 +5062,567 @@ import { Utils } from "../shared/Utils.js";
             }
         }
         return { id: -1, AhnNums: [] };
+    }
+
+    // FULL view layout: the outermost ancestors are packed left to right using a slot width based on the
+    // widest name box for the chosen Initials/Names setting; every child is then centred between their parents.
+    // Name-box sizing used by drawNodes/drawLines for the current Initials/Names setting
+    function nameLayoutMetrics() {
+        const nameSettings = WebsView.currentSettings["name_options_multiNameFormat"];
+        let multiplier = 1; // drawNodes / drawLines multiply newX by this
+        if (nameSettings == "FName") multiplier = 3;
+        else if (nameSettings == "FLname" || nameSettings == "FnameLname" || nameSettings == "FnameLnameLife")
+            multiplier = 4;
+        else if (nameSettings == "FML") multiplier = 1.25;
+        const baseWidth4Lettrs = multiplier >= 3 ? 5 : 8.5;
+        const maxBoxWidth = 40 * multiplier;
+        const boxWidth = (n) => {
+            if (isHighlightedPerson(n.person)) return highlightedBoxWidth(n.person, n.ahnNum == 1);
+            const ltrs = longestLineLength(getNameAsPerSettings(n.person));
+            return Math.min(
+                maxBoxWidth,
+                Math.max(2 * baseWidth4Lettrs * ltrs, multiplier * (baseWidth4Lettrs + 1) * ltrs + 20)
+            );
+        };
+        return { multiplier, boxWidth };
+    }
+
+    // UNIQUE view: a repeat ancestor is lifted to its own row, which can leave their parents (still on their natural
+    // generation row) below them. Raise any such ancestors to sit above their kids, fanned out and centred over them.
+    function placeParentsAboveRepeatAncestors(nodes) {
+        const { multiplier, boxWidth } = nameLayoutMetrics();
+        const mine = nodes.filter((n) => !n.p || n.p == WebsView.currentPrimeNum);
+        const byAhn = {};
+        mine.forEach((n) => (byAhn[n.ahnNum] = n));
+        const rowOf = (n) =>
+            n.newY && n.newY > 0 ? 1 + 2 * n.newY - WebsView.repeatsStartAtGenNum : Math.floor(Math.log2(n.ahnNum));
+        const root = {};
+        [...mine]
+            .sort((a, b) => a.ahnNum - b.ahnNum)
+            .forEach((n) => {
+                if (n.ahnNum < 2) return;
+                const kid = byAhn[Math.floor(n.ahnNum / 2)];
+                if (!kid) return;
+                const kidRow = rowOf(kid);
+                const inherited = root[kid.ahnNum] !== undefined;
+                if (!inherited && rowOf(n) > kidRow) return;
+                const r = inherited ? byAhn[root[kid.ahnNum]] : kid;
+                root[n.ahnNum] = r.ahnNum;
+                const d = Math.floor(Math.log2(n.ahnNum)) - Math.floor(Math.log2(r.ahnNum));
+                const i = n.ahnNum - r.ahnNum * 2 ** d;
+                n.newX = r.newX + (i - (2 ** d - 1) / 2) * ((boxWidth(n) + 12) / multiplier);
+                n.newY = (kidRow + WebsView.repeatsStartAtGenNum) / 2; // one row above their kid
+            });
+    }
+
+    // UNIQUE / REPEAT views: widen the horizontal spacing (never narrow it) until no two boxes in a row overlap
+    function spreadRowsToAvoidOverlap(nodes) {
+        const { multiplier, boxWidth } = nameLayoutMetrics();
+        const rows = {};
+        nodes.forEach((n) => {
+            if (n.p && n.p != WebsView.currentPrimeNum) return;
+            const key =
+                n.newY && n.newY > 0 ? 1 + 2 * n.newY - WebsView.repeatsStartAtGenNum : Math.floor(Math.log2(n.ahnNum));
+            (rows[key] = rows[key] || []).push(n);
+        });
+        let scale = 1;
+        Object.values(rows).forEach((row) => {
+            row.sort((a, b) => a.newX - b.newX);
+            for (let i = 1; i < row.length; i++) {
+                const gap = (row[i].newX - row[i - 1].newX) * multiplier;
+                if (gap < 0.01) continue; // the same person repeated
+                const need = (boxWidth(row[i]) + boxWidth(row[i - 1])) / 2 + 12;
+                scale = Math.max(scale, need / gap);
+            }
+        });
+        if (scale > 1) nodes.forEach((n) => (n.newX *= scale));
+    }
+
+    // FULL view layout: the outermost ancestors are packed left to right using a slot width based on the
+    // widest name box for the chosen Initials/Names setting; every child is then centred between their parents.
+    function layoutFullTree(nodes) {
+        const { multiplier, boxWidth } = nameLayoutMetrics();
+
+        const byAhn = {};
+        nodes.forEach((n) => {
+            if (!n.p || n.p == WebsView.currentPrimeNum) byAhn[n.ahnNum] = n;
+        });
+        if (!byAhn[1]) return;
+
+        let widest = 0;
+        Object.values(byAhn).forEach((n) => {
+            if (n.ahnNum != 1) widest = Math.max(widest, boxWidth(n));
+        });
+        const slot = (widest + 12) / multiplier;
+
+        const parentsOf = (a) => {
+            const nums = a == 1 && WebsView.familyType == "Combo" ? [4, 5, 6, 7] : [2 * a, 2 * a + 1];
+            return nums.filter((x) => byAhn[x]);
+        };
+        let nextSlot = 0;
+        const place = (a) => {
+            const parents = parentsOf(a);
+            if (parents.length == 0) {
+                byAhn[a].newX = slot * nextSlot++;
+                return;
+            }
+            parents.forEach(place);
+            byAhn[a].newX = parents.reduce((t, k) => t + byAhn[k].newX, 0) / parents.length;
+        };
+        place(1);
+        const shift = byAhn[1].newX;
+        Object.values(byAhn).forEach((n) => (n.newX -= shift));
+    }
+
+    // ---- Manual nudging of person boxes (SINGLE / REPEAT / COMMON / SINGLES) ----
+    // Each click on a box's arrow shifts just that person by a fixed step; the shifts are remembered for the session,
+    // per chart (view + Primary + top ancestor), and are applied after the automatic layout so the lines follow.
+    const NUDGE_X = 100; // px per click, left / right
+    const NUDGE_Y = 50; // px per click, up (top row only)
+    WebsView.nudges = WebsView.nudges || {};
+    const NUDGE_MODES = ["Indi", "Repeats", "Common", "Singles"];
+
+    function nudgeChartKey(mode) {
+        let top = "";
+        if (mode == "Indi") {
+            const t = WebsView.listOfRepeatAncestors[WebsView.repeatAncestorNum - 1];
+            top = t ? t.id || t.Id : "";
+        } else if (mode == "Singles") {
+            const t = WebsView.listOfLegitCommonAncestors[WebsView.commonAncestorNum - 1];
+            top = t ? t.Id || t.id : "";
+        }
+        const prime = mode == "Indi" || mode == "Repeats" ? WebsView.currentPrimeNum : "";
+        return mode + "|" + prime + "|" + top + "|";
+    }
+
+    function applyNudges(nodes, mode) {
+        const chart = nudgeChartKey(mode);
+        const xScale = mode == "Repeats" || mode == "Common" ? nameLayoutMetrics().multiplier : 1;
+        // the top row is worked out from the standard layout, before any shifts
+        let topRow = -Infinity;
+        nodes.forEach((n) => {
+            n.baseNewY = n.newY;
+            topRow = Math.max(topRow, nudgeRowOf(n, mode));
+        });
+        nodes.forEach((n) => {
+            n.isTopRow = n.ahnNum != 1 && nudgeRowOf(n, mode) == topRow;
+            n.shiftYpx = 0;
+            const nudge = WebsView.nudges[chart + n.person._data.Id];
+            if (!nudge) return;
+            n.newX += nudge.dx / xScale;
+            if (n.ahnNum == 1) {
+                // a Primary Person sits at row 0, so its up / down shift is kept as pixels
+                n.shiftYpx = nudge.dy;
+            } else if (nudge.dy) {
+                const dRow = nudge.dy / (WebsView.yDir * vertSpacing);
+                n.newY += mode == "Repeats" ? dRow / 2 : dRow;
+            }
+        });
+    }
+
+    function nudgeRowOf(n, mode) {
+        if (!n.newY || n.newY <= 0) return 0;
+        return mode == "Repeats" ? 1 + 2 * n.newY - WebsView.repeatsStartAtGenNum : n.newY;
+    }
+
+    function nudgePerson(person, dx, dy) {
+        const key = nudgeChartKey(WebsView.viewMode) + person._data.Id;
+        const n = (WebsView.nudges[key] = WebsView.nudges[key] || { dx: 0, dy: 0 });
+        n.dx += dx;
+        n.dy += dy;
+        WebsView.keepZoomNext = true;
+        WebsView.redraw();
+    }
+
+    // Adds the hover arrows to each box: left / right in the top corners, and up in the top middle for the top row
+    function addNudgeButtons(nodeSelection) {
+        const show = NUDGE_MODES.includes(WebsView.viewMode);
+        const resetSpan = document.getElementById("nudgeResetSpan");
+        if (resetSpan) resetSpan.style.display = show ? "" : "none";
+        if (!document.getElementById("nudgeBtnStyle")) {
+            const style = document.createElement("style");
+            style.id = "nudgeBtnStyle";
+            style.textContent =
+                ".nudgeBtn{display:none;position:absolute;width:18px;height:18px;line-height:16px;text-align:center;font-size:12px;" +
+                "background:#fff;border:1px solid #888;border-radius:9px;cursor:pointer;z-index:5;padding:0;user-select:none;}" +
+                ".nudgeBtn:hover{background:#ffd;border-color:#000;}" +
+                ".box:hover .nudgeBtn{display:block;}";
+            document.head.appendChild(style);
+        }
+        nodeSelection.each(function (ancestorObject) {
+            const box = this.querySelector(".box");
+            if (!box) return;
+            box.querySelectorAll(".nudgeBtn").forEach((el) => el.remove());
+            if (!show) return;
+            box.style.position = "relative";
+            const add = (label, title, css, dx, dy) => {
+                const b = document.createElement("div");
+                b.className = "nudgeBtn";
+                b.title = title;
+                b.style.cssText = css;
+                b.textContent = label;
+                ["mousedown", "dblclick"].forEach((ev) => b.addEventListener(ev, (e) => e.stopPropagation()));
+                b.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    nudgePerson(ancestorObject.person, dx, dy);
+                });
+                box.appendChild(b);
+            };
+            add("\u25C0", "Move this person left", "top:-9px;left:-9px;", -NUDGE_X, 0);
+            add("\u25B6", "Move this person right", "top:-9px;right:-9px;", NUDGE_X, 0);
+            if (ancestorObject.isTopRow) {
+                add("\u25B2", "Move this person up", "top:-11px;left:calc(50% - 9px);", 0, -NUDGE_Y);
+            }
+            if (ancestorObject.ahnNum == 1) {
+                // Primary Person: an arrow to push them further away from their parents (and one to bring them back)
+                const away = WebsView.yDir == -1 ? NUDGE_Y : -NUDGE_Y;
+                const arrow = (d) => (d > 0 ? "\u25BC" : "\u25B2");
+                const awayCss = away > 0 ? "bottom:-11px;left:calc(50% - 9px);" : "top:-11px;left:calc(50% - 9px);";
+                const backCss = away > 0 ? "top:-11px;left:calc(50% - 9px);" : "bottom:-11px;left:calc(50% - 9px);";
+                add(arrow(away), "Move this person " + (away > 0 ? "down" : "up"), awayCss, 0, away);
+                const movedP = WebsView.nudges[nudgeChartKey(WebsView.viewMode) + ancestorObject.person._data.Id];
+                if (movedP && movedP.dy * away > 0) {
+                    add(arrow(-away), "Move this person back " + (away > 0 ? "up" : "down"), backCss, 0, -away);
+                }
+                return;
+            }
+            // once someone has been moved up, offer a way to move them back down
+            const moved = WebsView.nudges[nudgeChartKey(WebsView.viewMode) + ancestorObject.person._data.Id];
+            if (moved && moved.dy < 0) {
+                add("\u25BC", "Move this person down", "bottom:-11px;left:calc(50% - 9px);", 0, NUDGE_Y);
+            }
+        });
+    }
+
+    // SINGLE and REPEAT view layout (vertical and symmetrical):
+    //  - every person is one box, however many paths run through them
+    //  - SINGLE ("Indi"): the repeat ancestor is at the top and rows are counted down from them (the longest line sets
+    //    the row); REPEAT: the Primary Person is at the bottom and rows are counted up from them, so any extra space
+    //    for uneven generations ends up at the top. A child is always at least one row below their parent.
+    //  - columns: each line of descent keeps its own column; a person where lines merge is centred between their
+    //    parents, a person who splits into lines is centred over their kids, and a single-file stretch stays in line.
+    //  - vertical spacing is by generation, or by birth year (25 years per row), per the Multi-Paths setting
+    // The same layout is used for SINGLES (like SINGLE, from the top Common Ancestor down) and COMMON (like REPEAT,
+    // from the Primary Persons up), where several Primary Persons share the bottom row.
+    function layoutWebColumns(nodes, mode) {
+        const multi = mode == "Singles" || mode == "Common";
+        const topDown = mode == "Indi" || mode == "Singles";
+        const keyOf = (ahn, pNum) => (multi ? pNum || 0 : 0) + ":" + ahn;
+        const byAhn = {};
+        nodes.forEach((n) => {
+            if (multi || !n.p || n.p == WebsView.currentPrimeNum) byAhn[keyOf(n.ahnNum, n.p)] = n;
+        });
+        const primaryNodes = Object.values(byAhn).filter((n) => n.ahnNum == 1);
+        if (!primaryNodes.length) return;
+
+        const people = {};
+        Object.values(byAhn).forEach((n) => {
+            const id = n.person._data.Id;
+            const level = Math.floor(Math.log2(n.ahnNum));
+            const frac = (n.ahnNum - 2 ** level + 0.5) / 2 ** level;
+            const p = (people[id] = people[id] || { id, nodes: [], parents: new Set(), kids: new Set(), fracs: [] });
+            p.nodes.push(n);
+            p.fracs.push(frac);
+        });
+        Object.values(byAhn).forEach((n) => {
+            // in Combo view the Primary Person's four parents are Ahnentafel 4-7 (there are no nodes for 2 and 3)
+            const comboRoot =
+                n.ahnNum == 1 && WebsView.familyType == "Combo" && !byAhn[keyOf(2, n.p)] && !byAhn[keyOf(3, n.p)];
+            (comboRoot ? [4, 5, 6, 7] : [2 * n.ahnNum, 2 * n.ahnNum + 1]).forEach((pa) => {
+                const paNode = byAhn[keyOf(pa, n.p)];
+                if (!paNode) return;
+                const parent = people[paNode.person._data.Id];
+                const child = people[n.person._data.Id];
+                if (parent !== child) {
+                    child.parents.add(parent);
+                    parent.kids.add(child);
+                }
+            });
+        });
+        const all = Object.values(people);
+        const primaries = [...new Set(primaryNodes.map((n) => people[n.person._data.Id]))];
+        const primary = primaries[0];
+        const isPrim = (p) => primaries.includes(p);
+        let topPerson = null;
+        if (topDown) {
+            const top =
+                mode == "Indi"
+                    ? WebsView.listOfRepeatAncestors[WebsView.repeatAncestorNum - 1]
+                    : WebsView.listOfLegitCommonAncestors[WebsView.commonAncestorNum - 1];
+            const topId = top && (top.id || top.Id);
+            topPerson = topId ? people[topId] : null;
+            if (!topPerson) return;
+        }
+        all.forEach((p) => (p.key = p.fracs.reduce((t, f) => t + f, 0) / p.fracs.length));
+
+        // longest chain of steps from the top ancestor (SINGLE) / up from the Primary Person (REPEAT)
+        const memo = new Map();
+        const longest = (p, towards, seen = new Set()) => {
+            if (memo.has(p)) return memo.get(p);
+            if (seen.has(p)) return 0;
+            seen.add(p);
+            let r = 0;
+            towards(p).forEach((q) => (r = Math.max(r, longest(q, towards, seen) + 1)));
+            memo.set(p, r);
+            return r;
+        };
+        const fromTop = (p) => longest(p, (x) => x.parents);
+        const fromBottom = (p) => longest(p, (x) => x.kids);
+
+        // H = how many rows above the Primary Person
+        const H = new Map();
+        const byBirth = WebsView.currentSettings["path_options_verticalPosition"] == "birth";
+        const yearOf = (p) => {
+            const bd = p.nodes[0].person.getBirthDate && p.nodes[0].person.getBirthDate();
+            const yr = bd ? parseInt(bd.substr(0, 4), 10) : 0;
+            return yr > 0 ? yr : null;
+        };
+        const years = all.map(yearOf).filter((y) => y);
+        if (topDown) {
+            const down = new Map();
+            if (byBirth) {
+                const baseYear = yearOf(topPerson) || (years.length ? Math.min(...years) : 0);
+                [...all]
+                    .sort((a, b) => fromTop(a) - fromTop(b))
+                    .forEach((p) => {
+                        let y = p === topPerson ? 0 : -Infinity;
+                        const yr = yearOf(p);
+                        if (yr && p !== topPerson) y = (yr - baseYear) / 25;
+                        p.parents.forEach((pa) => (y = Math.max(y, down.get(pa) + 1)));
+                        down.set(p, isFinite(y) ? y : fromTop(p));
+                    });
+            } else {
+                all.forEach((p) => down.set(p, fromTop(p)));
+            }
+            let bottom = 0;
+            all.forEach((p) => {
+                if (!isPrim(p)) bottom = Math.max(bottom, down.get(p) + 1);
+            });
+            primaries.forEach((p) => (bottom = Math.max(bottom, down.get(p))));
+            primaries.forEach((p) => down.set(p, bottom));
+            all.forEach((p) => H.set(p, bottom - down.get(p)));
+        } else if (byBirth) {
+            const primaryYear =
+                Math.max(0, ...primaries.map((p) => yearOf(p) || 0)) || (years.length ? Math.max(...years) : 0);
+            [...all]
+                .sort((a, b) => fromBottom(a) - fromBottom(b))
+                .forEach((p) => {
+                    let h = isPrim(p) ? 0 : -Infinity;
+                    const yr = yearOf(p);
+                    if (yr && !isPrim(p)) h = (primaryYear - yr) / 25;
+                    p.kids.forEach((k) => (h = Math.max(h, H.get(k) + 1)));
+                    H.set(p, isFinite(h) ? h : fromBottom(p));
+                });
+        } else {
+            all.forEach((p) => H.set(p, fromBottom(p)));
+        }
+
+        // spouses always share a row (the lower of the two is raised to match), and parents stay above their kids
+        const sibSets = {};
+        all.forEach((k) => {
+            if (k.parents.size == 2 && !isPrim(k)) {
+                const sig = [...k.parents]
+                    .map((q) => q.id)
+                    .sort()
+                    .join("|");
+                (sibSets[sig] = sibSets[sig] || []).push(k);
+            }
+        });
+        for (let pass = 0; pass < 20; pass++) {
+            let changed = false;
+            // full siblings share a row, so they hang level under their parents like they do in SINGLE view
+            Object.values(sibSets).forEach((grp) => {
+                const h = Math.max(...grp.map((k) => H.get(k)));
+                grp.forEach((k) => {
+                    if (H.get(k) != h) {
+                        H.set(k, h);
+                        changed = true;
+                    }
+                });
+            });
+            all.forEach((k) => {
+                if (k.parents.size == 2) {
+                    const [pa, ma] = [...k.parents];
+                    const h = Math.max(H.get(pa), H.get(ma));
+                    if (H.get(pa) != h || H.get(ma) != h) {
+                        H.set(pa, h);
+                        H.set(ma, h);
+                        changed = true;
+                    }
+                }
+                k.parents.forEach((pa) => {
+                    if (!isPrim(k) && H.get(pa) < H.get(k) + 1) {
+                        H.set(pa, H.get(k) + 1);
+                        changed = true;
+                    } else if (isPrim(k) && H.get(pa) < 1) {
+                        H.set(pa, 1);
+                        changed = true;
+                    }
+                });
+            });
+            if (!changed) break;
+        }
+
+        // box widths and slot size (REPEAT's newX is later multiplied by the Initials/Names multiplier)
+        let multiplier = 1;
+        let widthOf;
+        if (topDown) {
+            const nameSettings = WebsView.currentSettings["name_options_indiNameFormat"];
+            if (nameSettings == "FName") multiplier = 3;
+            else if (["FLname", "FnameLname", "FnameLnameLife"].includes(nameSettings)) multiplier = 4;
+            else if (nameSettings == "FML") multiplier = 1.25;
+            const base = multiplier >= 3 ? 5 : 8.5;
+            widthOf = (p) => {
+                const n = p.nodes[0];
+                return isHighlightedPerson(n.person)
+                    ? highlightedBoxWidth(n.person, n.ahnNum == 1)
+                    : Math.min(40 * multiplier, 2 * base * longestLineLength(getNameAsPerSettings(n.person)));
+            };
+        } else {
+            const metrics = nameLayoutMetrics();
+            multiplier = metrics.multiplier;
+            widthOf = (p) => metrics.boxWidth(p.nodes[0]);
+        }
+        let widest = 0;
+        all.forEach((p) => (widest = Math.max(widest, widthOf(p))));
+        const xScale = topDown ? 1 : multiplier; // SINGLE / SINGLES newX is drawn as-is; REPEAT / COMMON is multiplied
+        const slot = (widest + 16) / xScale;
+
+        // columns: first pass places the ends of the lines left to right, with everyone above them centred over their kids
+        let nextSlot = 0;
+        const claimed = new Set(primaries);
+        const place = (p) => {
+            claimed.add(p);
+            const placed = [];
+            [...p.kids]
+                .filter((k) => !claimed.has(k))
+                .sort((a, b) => a.key - b.key)
+                .forEach((k) => {
+                    if (!claimed.has(k)) {
+                        place(k);
+                        placed.push(k);
+                    }
+                });
+            p.x = placed.length ? placed.reduce((t, k) => t + k.x, 0) / placed.length : slot * nextSlot++;
+        };
+        all.filter((p) => p.parents.size == 0)
+            .sort((a, b) => a.key - b.key)
+            .forEach((p) => {
+                if (!claimed.has(p)) place(p);
+            });
+        all.forEach((p) => {
+            if (p.x === undefined) p.x = slot * nextSlot++;
+        });
+        all.forEach((p) => (p.x0 = p.x));
+        const avgX = (set) => [...set].reduce((t, q) => t + q.x, 0) / set.size;
+        const topFirst = [...all].sort((a, b) => H.get(b) - H.get(a));
+        const mergesAndStretches = () =>
+            topFirst.forEach((p) => {
+                if (p.fixed) return;
+                if (p.parents.size >= 2) {
+                    p.x = avgX(p.parents);
+                } else if (p.parents.size == 1) {
+                    const pa = [...p.parents][0];
+                    if (isPrim(p) || pa.kids.size == 1) p.x = pa.x;
+                }
+            });
+        const splits = () =>
+            [...topFirst].reverse().forEach((p) => {
+                if (p.kids.size >= 2 && !isPrim(p) && !p.fixed) p.x = avgX(p.kids);
+            });
+        mergesAndStretches();
+        splits();
+        mergesAndStretches();
+
+        // siblings of the same two parents would otherwise share one spot: spread them out around it, in the order of
+        // their own lines of descent, so each sits above their own kids
+        const sibGroups = {};
+        all.forEach((p) => {
+            if (p.parents.size < 2 || isPrim(p)) return;
+            const sig =
+                [...p.parents]
+                    .map((q) => q.id)
+                    .sort()
+                    .join("|") +
+                "@" +
+                Math.round(H.get(p));
+            (sibGroups[sig] = sibGroups[sig] || []).push(p);
+        });
+        Object.values(sibGroups).forEach((grp) => {
+            if (grp.length < 2 || grp.some((p) => Math.abs(p.x - grp[0].x) > 0.01)) return;
+            grp.sort((a, b) => a.x0 - b.x0);
+            const step = (Math.max(...grp.map(widthOf)) + 12) / xScale;
+            grp.forEach((p, i) => {
+                p.x = grp[0].x + (i - (grp.length - 1) / 2) * step;
+                p.fixed = true;
+            });
+        });
+        mergesAndStretches();
+
+        // Singles / Common: bring spouses together so their marriage line doesn't run behind other boxes in the row
+        if (multi || mode == "Repeats") {
+            const needFor = (a, b) => ((widthOf(a) + widthOf(b)) / 2 + 12) / xScale;
+            const sameRow = (a, b) => Math.abs(H.get(a) - H.get(b)) < 0.75;
+            const couples = [];
+            all.forEach((k) => {
+                if (
+                    k.parents.size == 2 &&
+                    (multi || [...k.parents].every((q) => isHighlightedPerson(q.nodes[0].person)))
+                ) {
+                    const [a, b] = [...k.parents];
+                    if (sameRow(a, b) && !couples.some((c) => c.includes(a) && c.includes(b))) couples.push([a, b]);
+                }
+            });
+            couples.forEach(([a, b]) => {
+                const left = a.x <= b.x ? a : b;
+                const right = left === a ? b : a;
+                const blockers = all
+                    .filter((q) => q !== a && q !== b && sameRow(q, left) && q.x > left.x && q.x < right.x)
+                    .sort((p, q) => p.x - q.x);
+                if (!blockers.length && right.x - left.x < needFor(left, right) * 1.5) return;
+                right.x = left.x + needFor(left, right);
+                if (!blockers.length) return;
+                let nextX = right.x + needFor(right, blockers[0]);
+                blockers.forEach((q) => {
+                    q.x = Math.max(q.x, nextX);
+                    nextX = q.x + needFor(q, q);
+                });
+            });
+            mergesAndStretches();
+        }
+
+        // keep boxes in the same row from overlapping, nudging to the right only when needed
+        // (boxes less than a row apart vertically count as the same row, since birth years give fractional rows)
+        const flat = all.filter((p) => multi || p !== primary);
+        for (let pass = 0; pass < 10; pass++) {
+            let moved = false;
+            flat.sort((a, b) => a.x - b.x);
+            for (let i = 1; i < flat.length; i++) {
+                for (let j = 0; j < i; j++) {
+                    if (Math.abs(H.get(flat[i]) - H.get(flat[j])) >= 0.75) continue;
+                    const need = ((widthOf(flat[i]) + widthOf(flat[j])) / 2 + 12) / xScale;
+                    if (Math.abs(flat[i].x - flat[j].x) < need) {
+                        flat[i].x = flat[j].x + need;
+                        moved = true;
+                    }
+                }
+            }
+            if (!moved) break;
+        }
+
+        const centreX = primaries.reduce((t, p) => t + p.x, 0) / primaries.length;
+        all.forEach((p) => {
+            p.nodes.forEach((n) => {
+                n.newX = p.x - centreX;
+                if (isPrim(p)) {
+                    n.newY = 0;
+                } else {
+                    const h = H.get(p);
+                    // REPEAT rows are converted back by the "1 + 2*newY - repeatsStartAtGenNum" rule used when drawing
+                    n.newY = mode == "Repeats" ? (h - 1 + WebsView.repeatsStartAtGenNum) / 2 : h;
+                }
+            });
+        });
     }
 
     function calculateNodePositions(nodes) {
@@ -5167,7 +6305,9 @@ import { Utils } from "../shared/Utils.js";
             // condLog("Element # " + index, "newY = " + newElement[4]["newY"],thisNameAsPerSettings ,newElement[4]);
         }
 
-        if (WebsView.viewMode == "Indi" && WebsView.currentSettings["path_options_multiPathFormat"] == "smooth") {
+        // Always true while multiPathFormat is fixed at "smooth"; the "jagged" fallback simply skips this block.
+        // (SINGLE and REPEAT positions are subsequently re-laid out by layoutWebColumns.)
+        if (WebsView.viewMode == "Indi" && WebsView.multiPathFormat == "smooth") {
             condLog("SMOOTHING things out ..");
             let numsPerGen = [];
             let XsPerGen = [];
@@ -5177,7 +6317,11 @@ import { Utils } from "../shared/Utils.js";
 
             if (WebsView.listOfRepeatAncestors.length == 0) {
                 WebsView.clearAll();
-                showSummaryMessage("At " + WebsView.numGens2Display + " generations, there are 0 repeat ancestors.");
+                showSummaryMessage(
+                    "At " +
+                        WebsView.internalToDisplayGens(WebsView.numGens2Display, WebsView.familyType) +
+                        " generations, there are 0 repeat ancestors."
+                );
                 return;
             }
             let theAncestorAtTop = WebsView.listOfRepeatAncestors[WebsView.repeatAncestorNum - 1];
@@ -5192,8 +6336,10 @@ import { Utils } from "../shared/Utils.js";
             maxWidth =
                 24 *
                 Math.max(
-                    getNameAsPerSettings(thePeopleList[theAncestorAtTop.id]).length,
-                    getNameAsPerSettings(thePeopleList[WebsView.listOfPrimePersons[WebsView.currentPrimeNum]]).length
+                    longestLineLength(getNameAsPerSettings(thePeopleList[theAncestorAtTop.id])),
+                    longestLineLength(
+                        getNameAsPerSettings(thePeopleList[WebsView.listOfPrimePersons[WebsView.currentPrimeNum]])
+                    )
                 );
             for (let index = 0; index < newOrder.length; index++) {
                 const newElement = newOrder[index];
@@ -5348,7 +6494,7 @@ import { Utils } from "../shared/Utils.js";
             }
         } else if (
             (WebsView.viewMode == "Singles" || WebsView.viewMode == "Common") &&
-            WebsView.currentSettings["path_options_multiPathFormat"] == "smooth"
+            WebsView.multiPathFormat == "smooth" // always true for now - "jagged" is retired
         ) {
             let numsPerGen = [];
             let XsPerGen = [];
@@ -5378,7 +6524,8 @@ import { Utils } from "../shared/Utils.js";
                 WebsView.viewMode == "Common" &&
                 (WebsView.currentSettings["name_options_multiNameFormat"] == "FName" ||
                     WebsView.currentSettings["name_options_multiNameFormat"] == "FLname" ||
-                    WebsView.currentSettings["name_options_multiNameFormat"] == "FnameLname")
+                    WebsView.currentSettings["name_options_multiNameFormat"] == "FnameLname" ||
+                    WebsView.currentSettings["name_options_multiNameFormat"] == "FnameLnameLife")
             ) {
                 maxWidthMultplier = 2;
             }
@@ -5386,8 +6533,10 @@ import { Utils } from "../shared/Utils.js";
             maxWidth =
                 maxWidthMultplier *
                 Math.max(
-                    getNameAsPerSettings(thePeopleList[theAncestorAtTop.id]).length,
-                    getNameAsPerSettings(thePeopleList[WebsView.listOfPrimePersons[WebsView.currentPrimeNum]]).length
+                    longestLineLength(getNameAsPerSettings(thePeopleList[theAncestorAtTop.id])),
+                    longestLineLength(
+                        getNameAsPerSettings(thePeopleList[WebsView.listOfPrimePersons[WebsView.currentPrimeNum]])
+                    )
                 );
 
             condLog({ maxWidth });
@@ -5605,6 +6754,13 @@ import { Utils } from "../shared/Utils.js";
             }
         }
 
+        if (WebsView.viewMode == "Full") {
+            layoutFullTree(nodes);
+        } else if (WebsView.viewMode == "Unique") {
+            placeParentsAboveRepeatAncestors(nodes);
+            spreadRowsToAvoidOverlap(nodes);
+        }
+
         condLog({ newOrder });
         condLog({ nodes });
         for (let index = 0; index < nodes.length; index++) {
@@ -5751,6 +6907,7 @@ import { Utils } from "../shared/Utils.js";
 
         WebsView.numGens2Display = 5;
         WebsView.lastNumGens = 5;
+        WebsView.stopAncestorPreload();
         WebsView.numGensRetrieved = 5;
         WebsView.workingMaxNumGens = 6;
         condLog("Need to adjust WebsView.workingMaxNumGens -> ", WebsView.workingMaxNumGens);
@@ -5789,6 +6946,164 @@ import { Utils } from "../shared/Utils.js";
     }
     function clearSummaryMessage() {
         document.getElementById("SummaryMessageArea").innerHTML = "";
+    }
+
+    // Builds a stand-alone copy of the diagram (all of it, regardless of the current zoom/pan) and saves it
+    function saveDiagramImage(svgNode, gNode, format) {
+        const box = gNode.getBBox();
+        if (!box.width || !box.height) return;
+        const pad = 20;
+        const width = Math.ceil(box.width + 2 * pad);
+        const height = Math.ceil(box.height + 2 * pad);
+
+        const clone = svgNode.cloneNode(true);
+        const props = [
+            "font-family",
+            "font-size",
+            "font-weight",
+            "font-style",
+            "color",
+            "background-color",
+            "border",
+            "border-radius",
+            "padding",
+            "margin",
+            "text-align",
+            "text-decoration",
+            "line-height",
+            "white-space",
+            "overflow",
+            "display",
+            "box-sizing",
+            "fill",
+            "fill-opacity",
+            "stroke",
+            "stroke-width",
+            "stroke-dasharray",
+            "stroke-opacity",
+            "opacity",
+        ];
+        const originals = svgNode.querySelectorAll("*");
+        clone.querySelectorAll("*").forEach((element, i) => {
+            const computed = window.getComputedStyle(originals[i]);
+            element.style.cssText += props.map((name) => `${name}:${computed.getPropertyValue(name)}`).join(";");
+        });
+
+        let background = "#fff";
+        for (let el = svgNode; el; el = el.parentElement) {
+            const colour = window.getComputedStyle(el).backgroundColor;
+            if (colour && colour !== "transparent" && !/rgba\(.*,\s*0\)$/.test(colour)) {
+                background = colour;
+                break;
+            }
+        }
+
+        clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+        clone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+        clone.setAttribute("width", width);
+        clone.setAttribute("height", height);
+        clone.setAttribute("viewBox", `${box.x - pad} ${box.y - pad} ${width} ${height}`);
+        clone.removeAttribute("style");
+        clone.querySelectorAll(".nudgeBtn").forEach((el) => el.remove());
+        const cloneG = clone.querySelector("#svgG");
+        if (cloneG) cloneG.removeAttribute("transform");
+        const backdrop = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        ["x", "y"].forEach((name, i) => backdrop.setAttribute(name, (i ? box.y : box.x) - pad));
+        backdrop.setAttribute("width", width);
+        backdrop.setAttribute("height", height);
+        backdrop.setAttribute("fill", background);
+        clone.insertBefore(backdrop, clone.firstChild);
+
+        const markup = new XMLSerializer().serializeToString(clone);
+        const baseName = "ancestor-webs";
+        const download = (blob, extension) => {
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `${baseName}.${extension}`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        };
+        if (format === "svg") {
+            download(new Blob([markup], { type: "image/svg+xml" }), "svg");
+            return;
+        }
+        const scale = Math.min(2, 16000 / Math.max(width, height));
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = Math.round(width * scale);
+            canvas.height = Math.round(height * scale);
+            const context = canvas.getContext("2d");
+            context.fillStyle = background;
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(img, 0, 0, canvas.width, canvas.height);
+            try {
+                if (format === "png") {
+                    canvas.toBlob((blob) => blob && download(blob, "png"), "image/png");
+                } else {
+                    canvas.toBlob(
+                        async (blob) => {
+                            if (!blob) return;
+                            download(
+                                buildPdf(
+                                    new Uint8Array(await blob.arrayBuffer()),
+                                    canvas.width,
+                                    canvas.height,
+                                    width,
+                                    height
+                                ),
+                                "pdf"
+                            );
+                        },
+                        "image/jpeg",
+                        0.95
+                    );
+                }
+            } catch (error) {
+                console.error("Could not export the diagram:", error);
+            }
+        };
+        img.onerror = () => console.error("Could not create the image from the diagram.");
+        img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(markup);
+    }
+
+    // Minimal single-page PDF wrapping a JPEG; the page is sized to the diagram (in points).
+    function buildPdf(jpeg, pixelWidth, pixelHeight, pageWidth, pageHeight) {
+        const encoder = new TextEncoder();
+        const chunks = [];
+        const offsets = [];
+        let length = 0;
+        const add = (data) => {
+            const bytes = typeof data === "string" ? encoder.encode(data) : data;
+            chunks.push(bytes);
+            length += bytes.length;
+        };
+        const object = (number, body) => {
+            offsets[number] = length;
+            add(`${number} 0 obj\n${body}\nendobj\n`);
+        };
+        const content = `q ${pageWidth} 0 0 ${pageHeight} 0 0 cm /Im0 Do Q`;
+        add("%PDF-1.4\n");
+        object(1, "<< /Type /Catalog /Pages 2 0 R >>");
+        object(2, "<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
+        object(
+            3,
+            `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>`
+        );
+        offsets[4] = length;
+        add(
+            `4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${pixelWidth} /Height ${pixelHeight} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`
+        );
+        add(jpeg);
+        add("\nendstream\nendobj\n");
+        object(5, `<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+        const xref = length;
+        add(`xref\n0 6\n0000000000 65535 f \n`);
+        for (let i = 1; i <= 5; i++) add(`${String(offsets[i]).padStart(10, "0")} 00000 n \n`);
+        add(`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+        return new Blob(chunks, { type: "application/pdf" });
     }
 
     /**
@@ -5972,12 +7287,95 @@ import { Utils } from "../shared/Utils.js";
         return `${getFirstName(person)} ${person._data.LastNameAtBirth}`;
     }
 
+    // Length of the longest line when a name contains <br> line breaks
+    function longestLineLength(text) {
+        return Math.max(
+            ...String(text)
+                .split("<br>")
+                .map((line) => line.length)
+        );
+    }
+
     /**
      * Get the appropriate Name or set of Initials, based on the TYPE of viewMode AND the current Settings
      */
+    // Full Name + Lifespan is always used for the Primary Person(s) and for the top ancestor in the Single views;
+    // coloured (repeat / common) ancestors in the Multi-Ancestor views get it too unless turned off in Settings
+    function isHighlightedPerson(person) {
+        const mode = WebsView.viewMode;
+        if (!person || !person._data) return false;
+        const id = person._data.Id;
+        if (WebsView.listOfPrimePersons.includes(id)) return true;
+        if (mode == "Indi") {
+            const top = WebsView.listOfRepeatAncestors[WebsView.repeatAncestorNum - 1];
+            return !!top && top.id == id;
+        }
+        if (mode == "Singles") {
+            const top = WebsView.listOfLegitCommonAncestors[WebsView.commonAncestorNum - 1];
+            return !!top && top.Id == id;
+        }
+        if (!["Full", "Unique", "Repeats", "Common"].includes(mode)) return false;
+        if (WebsView.currentSettings["name_options_showFullHighlights"] === false) return false;
+        if (mode == "Common") {
+            return (WebsView.listOfLegitCommonAncestors || []).some((c) => c && c.Id == id);
+        }
+        const ahns = WebsView.myAhnentafel.listByPerson[id];
+        return !!ahns && ahns.length > 1;
+    }
+
+    // Box width (px) needed for a highlighted person's Full Name + Lifespan
+    function highlightedBoxWidth(person, isPrimary) {
+        const single = (p) =>
+            Math.min(240, (isPrimary ? 10 : 8.5) * longestLineLength(`${getFirstLNAB(p)}<br>${lifespan(p)}`) + 24);
+        const coParent = topCoParent(person);
+        if (coParent) {
+            // the top ancestor and their co-parent are drawn as two equal boxes joined by a marriage line
+            return 2 * Math.max(single(person), single(coParent)) + COUPLE_GAP;
+        }
+        return single(person);
+    }
+
+    const COUPLE_GAP = 28; // width of the marriage line between the two boxes of the top couple
+
+    // For the top Common/Repeat ancestor in SINGLE / SINGLES: the co-parent shared by all of their children in the web (or null)
+    function topCoParent(person) {
+        if (!person || !person._data) return null;
+        const id = person._data.Id;
+        let lists;
+        if (WebsView.viewMode == "Indi") {
+            const top = WebsView.listOfRepeatAncestors[WebsView.repeatAncestorNum - 1];
+            if (!top || top.id != id) return null;
+            lists = [WebsView.myAhnentafel];
+        } else if (WebsView.viewMode == "Singles") {
+            const top = WebsView.listOfLegitCommonAncestors[WebsView.commonAncestorNum - 1];
+            if (!top || top.Id != id) return null;
+            lists = WebsView.listOfAhnentafels;
+        } else {
+            return null;
+        }
+        const maxAhn = 2 ** WebsView.numGens2Display - 1;
+        const others = new Set();
+        for (const list of lists) {
+            if (!list || !list.listByPerson) continue;
+            const ahns = [].concat(list.listByPerson[id] || []);
+            for (const a of ahns) {
+                if (a < 2 || a > maxAhn) continue;
+                if (WebsView.familyType == "Combo" && a < 8) return null;
+                const otherId = list.list[a ^ 1];
+                if (!otherId || otherId == id) return null;
+                others.add(otherId);
+            }
+        }
+        if (others.size != 1) return null;
+        return thePeopleList[[...others][0]] || null;
+    }
+
     function getNameAsPerSettings(person) {
         let thisNameSetting = "";
         let thisName = "";
+        if (isHighlightedPerson(person)) {
+            return `${getFirstLNAB(person)}<br>${lifespan(person)}`;
+        }
         if (
             WebsView.viewMode == "Full" ||
             WebsView.viewMode == "Unique" ||
@@ -6007,6 +7405,9 @@ import { Utils } from "../shared/Utils.js";
         }
         if (thisNameSetting == "FnameLname") {
             thisName = getFirstLNAB(person);
+        }
+        if (thisNameSetting == "FnameLnameLife") {
+            thisName = `${getFirstLNAB(person)}<br>${lifespan(person)}`;
         }
 
         return thisName;
@@ -6056,15 +7457,11 @@ import { Utils } from "../shared/Utils.js";
     // NEW FUNCTIONS HERE to DEAL WITH MULTIPLE ROOT PEOPLE
 
     function loadNewPrimaryPerson(newPrimeID, passNum = 1) {
+        WebsView.resetBigDrawThreshold();
         let loadingTD = document.getElementById("loadingTD");
 
         condLog("Need to load a NEW PRIMARY ", newPrimeID, WebsView.numGensRetrieved + " generations");
         flashWarningMessageBelowButtonBar("Please be patient while new family tree is being loaded ...");
-        if (passNum > 1) {
-            flashWarningMessageBelowButtonBar(
-                "Thank you for your patience - need to retrieve a few more family members ..."
-            );
-        }
         //  let theListOfIDs = WebsView.myAhnentafel.listOfAncestorsToBeLoadedForLevel(newLevel);
         // condLog(theListOfIDs);
         if (newPrimeID.length == 0) {
@@ -6077,212 +7474,175 @@ import { Utils } from "../shared/Utils.js";
             // WikiTreeAPI.getAncestors(
             //     APP_ID,
             //     newPrimeID,
-            let theListOfIDs = [newPrimeID];
-            let theOptions = {};
-
+            WebsView.stopAncestorPreload(); // any background load is out of date once there is a new Primary Person
             loadingTD.innerHTML = "loading";
-            if (passNum == 1) {
-                theOptions = { ancestors: Math.min(9, WebsView.numGensRetrieved) };
-            } else if (passNum > 1 && WebsView.numGensRetrieved > 9) {
-                theListOfIDs = WebsView.myAhnentafel.listOfAncestorsAtLevel(6);
+            getPeoplePaged([newPrimeID], { ancestors: Math.min(25, WebsView.numGensRetrieved) }).then(
+                function (result) {
+                    if (result) {
+                        WebsView.theAncestors = result[2];
+                        condLog("getPeople RESULT:", result);
 
-                theOptions = { ancestors: WebsView.numGensRetrieved - 6, minGeneration: 3 };
-            }
-            // WikiTreeAPI.getAncestors(APP_ID ,id, 5, [
-            WikiTreeAPI.getPeople(
-                // (appId, IDs, fields, options = {})
-                APP_ID,
-                theListOfIDs,
+                        condLog("theAncestors:", WebsView.theAncestors);
+                        condLog("WebsView.primePerson:", WebsView.primePerson);
+                        condLog("B4 loop - thePeopleList had ", thePeopleList.population());
+                        condLog("WebsView.theAncestors.length", Object.keys(result).length);
 
-                [
-                    "Id",
-                    "Derived.BirthName",
-                    "Derived.BirthNamePrivate",
-                    "FirstName",
-                    "MiddleInitial",
-                    "LastNameAtBirth",
-                    "LastNameCurrent",
-                    "BirthDate",
-                    "BirthLocation",
-                    "DeathDate",
-                    "DeathLocation",
-                    "Mother",
-                    "Father",
-                    "BioMother",
-                    "BioFather",
-                    "Children",
-                    "Parents",
-                    "Spouses",
-                    "Siblings",
-                    "Photo",
-                    "Name",
-                    "Gender",
-                    "Privacy",
-                    "Photo",
-                    "BirthDecade",
-                    "RealName",
-                    "DataStatus",
-                ],
-                theOptions
-            ).then(function (result) {
-                if (result) {
-                    WebsView.theAncestors = result[2];
-                    condLog("getPeople RESULT:", result);
-
-                    condLog("theAncestors:", WebsView.theAncestors);
-                    condLog("WebsView.primePerson:", WebsView.primePerson);
-                    condLog("B4 loop - thePeopleList had ", thePeopleList.population());
-                    condLog("WebsView.theAncestors.length", Object.keys(result).length);
-
-                    let thisNewID = newPrimeID; //WebsView.theAncestors[0].Id;
-                    // condLog("FOUND id = ", result[1][newPrimeID].Id);
-                    if (passNum == 1) {
-                        thisNewID = result[1][newPrimeID].Id;
-                        condLog("FOUND id = ", result[1][newPrimeID].Id);
-                        WebsView.listOfPrimePersons.push(thisNewID);
-                        WebsView.currentPrimeNum = WebsView.listOfPrimePersons.length - 1;
-                    }
-
-                    // WebsView.listOfPrimePersons.push(thisNewID);
-                    // WebsView.currentPrimeNum = WebsView.listOfPrimePersons.length - 1;
-                    let thisPrimeNum = WebsView.listOfPrimePersons.length;
-
-                    condLog(
-                        "passNum,thisPrimeNum,newPrimeID,WebsView.primePerson",
-                        passNum,
-                        thisPrimeNum,
-                        newPrimeID,
-                        WebsView.primePerson
-                    );
-                    // for (let index = 0; index < WebsView.theAncestors.length; index++) {
-                    for (const ancID in WebsView.theAncestors) {
-                        let thePerson = WebsView.theAncestors[ancID];
+                        let thisNewID = newPrimeID;
                         if (passNum == 1) {
-                            if (thePerson.Id < 0) {
-                                thePerson.Id = thisPrimeNum * 100 - thePerson.Id;
-                                thePerson["Name"] = "Private-" + thePerson.Id;
-                                thePerson["FirstName"] = "Private";
-                                thePerson["LastNameAtBirth"] = "TBD!";
-                            }
-                            if (thePerson.Mother < 0) {
-                                thePerson.Mother = thisPrimeNum * 100 - thePerson.Mother;
-                            }
-                            if (thePerson.Father < 0) {
-                                thePerson.Father = thisPrimeNum * 100 - thePerson.Father;
-                            }
+                            thisNewID = result[1][newPrimeID].Id;
+                            condLog("FOUND id = ", result[1][newPrimeID].Id);
+                            WebsView.listOfPrimePersons.push(thisNewID);
+                            WebsView.currentPrimeNum = WebsView.listOfPrimePersons.length - 1;
                         }
-                        thePeopleList.add(WebsView.theAncestors[ancID]);
-                    }
 
-                    let theNewPrimePerson = thePeopleList[thisNewID];
-                    if (passNum == 1) {
-                        theNewPrimePerson._data.Father = WebsView.theAncestors[thisNewID].Father;
-                        theNewPrimePerson._data.Mother = WebsView.theAncestors[thisNewID].Mother;
-                    }
+                        // WebsView.listOfPrimePersons.push(thisNewID);
+                        // WebsView.currentPrimeNum = WebsView.listOfPrimePersons.length - 1;
+                        let thisPrimeNum = WebsView.listOfPrimePersons.length;
 
-                    condLog("theNewPrimePerson", thisNewID, theNewPrimePerson);
-
-                    // PUT everyone into the Ahnentafel order ... which will include the private TBD! peeps if any
-                    WebsView.myAhnentafel.update(theNewPrimePerson);
-
-                    let relativeName = [
-                        "kid",
-                        "self",
-                        "Father",
-                        "Mother",
-                        "Grandfather",
-                        "Grandmother",
-                        "Grandfather",
-                        "Grandmother",
-                        "Great-Grandfather",
-                        "Great-Grandmother",
-                        "Great-Grandfather",
-                        "Great-Grandmother",
-                        "Great-Grandfather",
-                        "Great-Grandmother",
-                        "Great-Grandfather",
-                        "Great-Grandmother",
-                    ];
-
-                    // GO through the first chunk  (up to great-grandparents) - and swap out TBD! for their relaionship names
-                    for (var a = 1; a < 16 && passNum == 1; a++) {
-                        let thisPeep = thePeopleList[WebsView.myAhnentafel.list[a]];
-                        // condLog("Peep ",a, thisPeep);
-                        if (thisPeep && thisPeep._data["LastNameAtBirth"] == "TBD!") {
-                            thisPeep._data["LastNameAtBirth"] = relativeName[a];
-                            if (a % 2 == 0) {
-                                thisPeep._data["Gender"] = "Male";
-                            } else {
-                                thisPeep._data["Gender"] = "Female";
-                            }
-                            // condLog("FOUND a TBD!", thisPeep);
-                        }
-                    }
-
-                    if (passNum == 1 && WebsView.numGensRetrieved > 9) {
-                        // NEED to PREP FOR PASS 2
-
-                        loadNewPrimaryPerson(thisNewID, 2);
-                    } else {
-                        // FINALLY - set the PRIME PERSON, and the DRAW the Ancestor Tree
-                        condLog("theNewPrimePerson:", theNewPrimePerson);
-                        WebsView.primePerson = theNewPrimePerson;
-                        WebsView.myAncestorTree.draw();
-                        // self.drawTree(thePerson);
-                        clearMessageBelowButtonBar();
                         condLog(
-                            "AFT loop - thePeopleList had ",
-                            thePeopleList.population(),
-                            "people",
-                            WebsView.listOfAhnentafels.length,
-                            "Ahnentafels",
-                            WebsView.listOfPrimePersons.length,
-                            "primer persons",
-                            "currentPrimeNum:",
-                            WebsView.currentPrimeNum,
-                            WebsView.myAhnentafel
+                            "passNum,thisPrimeNum,newPrimeID,WebsView.primePerson",
+                            passNum,
+                            thisPrimeNum,
+                            newPrimeID,
+                            WebsView.primePerson
                         );
-
-                        while (WebsView.listOfAhnentafels.length < WebsView.listOfPrimePersons.length) {
-                            WebsView.listOfAhnentafels.push(new AhnenTafel.Ahnentafel());
+                        // for (let index = 0; index < WebsView.theAncestors.length; index++) {
+                        for (const ancID in WebsView.theAncestors) {
+                            let thePerson = WebsView.theAncestors[ancID];
+                            if (passNum == 1) {
+                                if (thePerson.Id < 0) {
+                                    thePerson.Id = thisPrimeNum * 100 - thePerson.Id;
+                                    thePerson["Name"] = "Private-" + thePerson.Id;
+                                    thePerson["FirstName"] = "Private";
+                                    thePerson["LastNameAtBirth"] = "TBD!";
+                                }
+                                if (thePerson.Mother < 0) {
+                                    thePerson.Mother = thisPrimeNum * 100 - thePerson.Mother;
+                                }
+                                if (thePerson.Father < 0) {
+                                    thePerson.Father = thisPrimeNum * 100 - thePerson.Father;
+                                }
+                            }
+                            thePeopleList.add(WebsView.theAncestors[ancID]);
                         }
 
-                        for (let index = 0; index < WebsView.listOfPrimePersons.length; index++) {
-                            WebsView.listOfAhnentafels[index].update(
-                                WebsView.PeopleList[WebsView.listOfPrimePersons[index]]
-                            );
-                            WebsView.listOfA1Ahnentafels[index].update(
-                                WebsView.PeopleList[WebsView.listOfPrimePersons[index]]
-                            );
-                            WebsView.listOfBioAhnentafels[index].update(
-                                WebsView.PeopleList[WebsView.listOfPrimePersons[index]],
-                                "Bio"
-                            );
-                            WebsView.listOfComboAhnentafels[index].update(
-                                WebsView.PeopleList[WebsView.listOfPrimePersons[index]],
-                                "Combo"
-                            );
-                        }
-                        condLog("LIST of AHNENTAFELS:");
-                        for (let index = 0; index < WebsView.listOfPrimePersons.length; index++) {
-                            condLog(WebsView.listOfAhnentafels[index]);
+                        let theNewPrimePerson = thePeopleList[thisNewID];
+                        if (passNum == 1) {
+                            theNewPrimePerson._data.Father = WebsView.theAncestors[thisNewID].Father;
+                            theNewPrimePerson._data.Mother = WebsView.theAncestors[thisNewID].Mother;
                         }
 
-                        if (WebsView.listOfAhnentafels.length == 3) {
-                            WebsView.multiViewPrimaries = "012";
-                        } else if (WebsView.listOfAhnentafels.length == 2) {
-                            WebsView.multiViewPrimaries = "01";
+                        condLog("theNewPrimePerson", thisNewID, theNewPrimePerson);
+
+                        // PUT everyone into the Ahnentafel order ... which will include the private TBD! peeps if any
+                        WebsView.myAhnentafel.update(theNewPrimePerson);
+
+                        let relativeName = [
+                            "kid",
+                            "self",
+                            "Father",
+                            "Mother",
+                            "Grandfather",
+                            "Grandmother",
+                            "Grandfather",
+                            "Grandmother",
+                            "Great-Grandfather",
+                            "Great-Grandmother",
+                            "Great-Grandfather",
+                            "Great-Grandmother",
+                            "Great-Grandfather",
+                            "Great-Grandmother",
+                            "Great-Grandfather",
+                            "Great-Grandmother",
+                        ];
+
+                        // GO through the first chunk  (up to great-grandparents) - and swap out TBD! for their relaionship names
+                        for (var a = 1; a < 16 && passNum == 1; a++) {
+                            let thisPeep = thePeopleList[WebsView.myAhnentafel.list[a]];
+                            // condLog("Peep ",a, thisPeep);
+                            if (thisPeep && thisPeep._data["LastNameAtBirth"] == "TBD!") {
+                                thisPeep._data["LastNameAtBirth"] = relativeName[a];
+                                if (a % 2 == 0) {
+                                    thisPeep._data["Gender"] = "Male";
+                                } else {
+                                    thisPeep._data["Gender"] = "Female";
+                                }
+                                // condLog("FOUND a TBD!", thisPeep);
+                            }
                         }
 
-                        recalculateCommonNames();
-                        redoRootSelector();
-                        loadingTD.innerHTML = "&nbsp;";
-                        WebsView.redraw();
+                        {
+                            // FINALLY - set the PRIME PERSON, and the DRAW the Ancestor Tree
+                            console.log("theNewPrimePerson:", theNewPrimePerson);
+                            WebsView.primePerson = theNewPrimePerson;
+                            WebsView.myAncestorTree.draw();
+                            // self.drawTree(thePerson);
+                            clearMessageBelowButtonBar();
+                            condLog(
+                                "AFT loop - thePeopleList had ",
+                                thePeopleList.population(),
+                                "people",
+                                WebsView.listOfAhnentafels.length,
+                                "Ahnentafels",
+                                WebsView.listOfPrimePersons.length,
+                                "primer persons",
+                                "currentPrimeNum:",
+                                WebsView.currentPrimeNum,
+                                WebsView.myAhnentafel
+                            );
+
+                            while (WebsView.listOfAhnentafels.length < WebsView.listOfPrimePersons.length) {
+                                WebsView.listOfAhnentafels.push(new AhnenTafel.Ahnentafel());
+                            }
+                            [
+                                WebsView.listOfA1Ahnentafels,
+                                WebsView.listOfBioAhnentafels,
+                                WebsView.listOfComboAhnentafels,
+                            ].forEach((list) => {
+                                while (list.length < WebsView.listOfPrimePersons.length) {
+                                    list.push(new AhnenTafel.Ahnentafel());
+                                }
+                            });
+                            console.log("WebsView.listOfPrimePersons = ", WebsView.listOfPrimePersons);
+                            for (let index = 0; index < WebsView.listOfPrimePersons.length; index++) {
+                                WebsView.listOfAhnentafels[index].update(
+                                    WebsView.PeopleList[WebsView.listOfPrimePersons[index]],
+                                    currentFamType()
+                                );
+                                WebsView.listOfA1Ahnentafels[index].update(
+                                    WebsView.PeopleList[WebsView.listOfPrimePersons[index]]
+                                );
+                                WebsView.listOfBioAhnentafels[index].update(
+                                    WebsView.PeopleList[WebsView.listOfPrimePersons[index]],
+                                    "Bio"
+                                );
+                                WebsView.listOfComboAhnentafels[index].update(
+                                    WebsView.PeopleList[WebsView.listOfPrimePersons[index]],
+                                    "Combo"
+                                );
+                            }
+                            condLog("LIST of AHNENTAFELS:");
+                            for (let index = 0; index < WebsView.listOfPrimePersons.length; index++) {
+                                condLog(WebsView.listOfAhnentafels[index]);
+                            }
+
+                            if (WebsView.listOfAhnentafels.length == 3) {
+                                WebsView.multiViewPrimaries = "012";
+                            } else if (WebsView.listOfAhnentafels.length == 2) {
+                                WebsView.multiViewPrimaries = "01";
+                            }
+
+                            recalculateCommonNames();
+                            redoRootSelector();
+                            loadingTD.innerHTML = "&nbsp;";
+                            WebsView.redraw();
+                            startAncestorPreload();
+                        }
+                        // }
+                        condLog("thePeopleList:", thePeopleList);
                     }
-                    // }
-                    condLog("thePeopleList:", thePeopleList);
                 }
-            });
+            );
         }
     }
 
