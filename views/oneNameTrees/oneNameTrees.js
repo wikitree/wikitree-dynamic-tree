@@ -17,6 +17,9 @@ window.OneNameTrees = class OneNameTrees extends View {
     // More profiles than this is more than we can load, so the results are of no use to us.
     static MAX_PROFILES = 5000;
     static VARIANTS_KEY = "ONTsurnameVariants";
+    // The search can be given in the address, e.g. #name=Smith-1&view=oneNameTrees&surname=Smith,Smyth&location=Yorkshire
+    // &centuries=17-19. Each parameter is also the id of the box it fills.
+    static URL_PARAMS = ["surname", "location", "centuries"];
     static PRIVACY_LEVELS = new Map([
         [60, "Privacy: Open"],
         [50, "Public"],
@@ -187,7 +190,10 @@ window.OneNameTrees = class OneNameTrees extends View {
       <ol>
         <li>Put a surname in the box and hit 'Go'. If you're likely to get too many results, you can enter a location and/or
          a century or centuries, too.  (The century box accepts a variety of input including a single number ("16"),
-         a list of numbers ("16,17" or "16 17"), a range of numbers ("16-19"), and a range of years (1500-1900).)</li>
+         a list of numbers ("16,17" or "16 17"), a range of numbers ("16-19"), and a range of years (1500-1900).)<br>
+         The search is added to the page address, so you can bookmark or share it. You can also write the address
+         yourself: add <code>&amp;surname=</code>, <code>&amp;location=</code> and/or <code>&amp;centuries=</code> to it, e.g.
+         <code>#view=oneNameTrees&amp;surname=Smith,Smyth&amp;location=Yorkshire&amp;centuries=17-19</code>.</li>
         <li>
           The IDs of all public profiles with the surname (as Last Name at Birth, Current Last Name, or Other Name),
           plus any with variants of the surname as entered in the Google Sheet (click 'Variants')*, are fetched from
@@ -365,16 +371,22 @@ window.OneNameTrees = class OneNameTrees extends View {
             </div>
         </div>`);
     }
-    init(container_selector, person_id) {
+    init(container_selector, person_id, params = {}) {
         const view = new window.OneNameTrees(container_selector, person_id);
-        view.start();
+        view.start(params);
     }
-    start() {
+    start(params = {}) {
         $("#wt-id-text,#show-btn").prop("disabled", true); //.css("background-color", "lightgrey");
         $("body").addClass("oneNameTrees");
         if ($("#controlWrapper").length == 0) {
             $(this.headerHTML).insertBefore($("#view-loader"));
             this.controls = $("#controlWrapper");
+        }
+        // Fill the boxes from the address. A surname there takes the place of the one from the WikiTree ID.
+        for (const param of OneNameTrees.URL_PARAMS) {
+            if (params[param]) {
+                $(`#${param}`).val(params[param]);
+            }
         }
         $("#cancelFetch").hide();
         //$("#helpButton").appendTo($("main")).css("float", "right").css("margin", "0.2em");
@@ -397,6 +409,7 @@ window.OneNameTrees = class OneNameTrees extends View {
             title: "One Name Trees",
             description: `See descendants trees for one surname (and its variants).`,
             docs: "",
+            params: OneNameTrees.URL_PARAMS,
         };
     }
 
@@ -4818,22 +4831,29 @@ window.OneNameTrees = class OneNameTrees extends View {
         });
     }
 
-    loadFromURL() {
-        // Check name parameter of URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const surname = urlParams.get("name");
-        const place = urlParams.get("place");
-        if (surname) {
-            $("#surname").val(surname);
-            if (place) {
-                $("#location").val(place);
+    /**
+     * Put the search in the address, so that it can be bookmarked or shared and a reload runs it again.
+     */
+    updateURL() {
+        const params = new URLSearchParams(window.location.hash.slice(1));
+        const oldHash = params.toString();
+        for (const param of OneNameTrees.URL_PARAMS) {
+            const value = $(`#${param}`).val()?.trim();
+            if (value) {
+                params.set(param, value);
+            } else {
+                params.delete(param);
             }
-            $("#submit").click();
-            this.setNewTitle();
+        }
+        const newHash = params.toString();
+        if (newHash != oldHash) {
+            // Commas are fine as they are, and "Smith,Smyth" reads better than "Smith%2CSmyth".
+            history.replaceState(null, "", "#" + newHash.replace(/%2C/gi, ","));
         }
     }
 
     async startTheFetching(surname, location, centuries) {
+        this.updateURL();
         // The query is built from the surname variants, so if we have none cached we have to wait
         // for the list to arrive before we can go any further.
         if (!this.nameVariants.size) {
@@ -5082,8 +5102,6 @@ window.OneNameTrees = class OneNameTrees extends View {
 
                 $this.clearFiltersButton();
             });
-
-        $this.loadFromURL();
     }
 
     exportTableToExcel() {
