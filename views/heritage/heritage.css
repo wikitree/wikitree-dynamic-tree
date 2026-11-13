@@ -188,3 +188,67 @@ div.heritage select {
 #heritageContainer .center {
   text-align: center;
 }
+
+/* Clicking a legend entry or a pie slice lists the people born in that country */
+#heritageContainer #legend .legend-item {
+  cursor: pointer;
+}
+#heritageContainer #legend .legend-item:hover .legend-label {
+  text-decoration: underline;
+}
+
+#heritage-people {
+  position: fixed;
+  top: 10vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(32em, calc(100vw - 2em));
+  max-height: 80vh;
+  overflow: auto;
+  border: 3px solid forestgreen;
+  border-radius: 1em;
+  padding: 0.5em 1em 1em;
+  background: white;
+  box-shadow: 0.5em 0.5em 1em grey;
+  z-index: 11000;
+  text-align: left;
+}
+#heritage-people h3 {
+  margin: 0.3em 1.5em 0.2em 0;
+}
+#heritage-people .legend-bullet {
+  display: inline-block;
+  height: 16px;
+  width: 16px;
+  border: 1px solid;
+  vertical-align: baseline;
+}
+#heritage-people .count,
+#heritage-people .intro {
+  margin: 0.2em 0;
+  font-size: 0.9em;
+  color: #555;
+}
+#heritage-people ol {
+  margin: 0.5em 0 0;
+  padding-left: 1.8em;
+}
+#heritage-people li {
+  margin-bottom: 0.4em;
+}
+#heritage-people .year {
+  color: #555;
+}
+#heritage-people .share {
+  float: right;
+  margin-left: 1em;
+  font-weight: normal;
+  color: #555;
+}
+#heritage-people h3 .share {
+  float: none;
+}
+#heritage-people .place {
+  font-size: 0.85em;
+  color: #666;
+}

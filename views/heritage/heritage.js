@@ -1,4 +1,5 @@
 import { Utils } from "../shared/Utils.js";
+import { CountryNameMerger } from "../shared/CountryNames.js";
 
 window.HeritageView = class HeritageView extends View {
     static #helpText = `
@@ -7,7 +8,8 @@ window.HeritageView = class HeritageView extends View {
     <p>
         This app shows the heritage of a profile based on the birth countries of that profile's ancestors or descendants.
         The birth country is the right most part of the birth location field. The number of generations to analyse can
-        be changed. Hover over any pie section to display the country name and percentage.  
+        be changed. Hover over any pie section to display the country name and percentage. Click a pie section or
+        a legend entry to see the people born in that country.
     </p>
     <h3>Overview Mode</h3>
     <p>
@@ -49,6 +51,12 @@ window.HeritageView = class HeritageView extends View {
         let genNames = [];
         let GENERATIONS = 5; // default value
         let familyMembers = {};
+        let countryNames = new CountryNameMerger(); // so "Danmark" and "Denmark" etc. count as one country
+
+        // The country part of a location, with its name standardised (see CountryNames.js)
+        function countryOf(location) {
+            return countryNames.name(Utils.settingsStyleLocation(location, "Country"));
+        }
         let direction = "ancestor"; // default value
 
         document.querySelector(container_selector).innerHTML = `
@@ -138,6 +146,7 @@ window.HeritageView = class HeritageView extends View {
         $(document).on("keyup", function (e) {
             if (e.key === "Escape" || e.keyCode === 27) {
                 $("#help-text").slideUp();
+                $("#heritage-people").remove();
             }
         });
 
@@ -167,6 +176,8 @@ window.HeritageView = class HeritageView extends View {
             Utils.showShakingTree();
 
             familyMembers = {};
+            countryNames = new CountryNameMerger();
+            $("#heritage-people").remove();
 
             GENERATIONS = $("#generations").val();
             let outputMode = "overview"; // default value
@@ -196,18 +207,26 @@ window.HeritageView = class HeritageView extends View {
             let tableBody = document.querySelector("#heritage-table > tbody");
             tableBody.innerHTML = ""; // Clear away any previous results
 
-            await getFamilyMembers(id);
+            try {
+                await getFamilyMembers(id);
 
-            if (Object.keys(familyMembers).length == 1) {
-                alert("Only one result. Have you used a private or unlisted profile?");
-                Utils.hideShakingTree;
-            } else {
-                if (outputMode == "overview") {
-                    findOverallHeritage(id);
+                if (Object.keys(familyMembers).length == 1) {
+                    alert("Only one result. Have you used a private or unlisted profile?");
+                    Utils.hideShakingTree();
+                    $("#getHeritageButton").prop("disabled", false);
                 } else {
-                    fillGenNames();
-                    findCountryCountByGeneration(missingAsUnknown);
+                    if (outputMode == "overview") {
+                        findOverallHeritage(id);
+                    } else {
+                        fillGenNames();
+                        findCountryCountByGeneration(missingAsUnknown);
+                    }
                 }
+            } catch (error) {
+                // Don't leave the shaking tree up and the button disabled if something goes wrong.
+                console.error("Heritage Charts:", error);
+                Utils.hideShakingTree();
+                $("#getHeritageButton").prop("disabled", false);
             }
         }
 
@@ -233,7 +252,7 @@ window.HeritageView = class HeritageView extends View {
                 [status, resultByKey, ancestor_json] = await WikiTreeAPI.getPeople(
                     "heritage",
                     id,
-                    ["BirthLocation, BirthLocation, Name, Derived.BirthName, Father, Mother, Meta"],
+                    ["BirthLocation", "BirthDate", "Name", "Derived.BirthName", "Father", "Mother", "Meta"],
                     options
                 );
                 // save the list of familyMembers
@@ -290,7 +309,7 @@ window.HeritageView = class HeritageView extends View {
 
                     let birthCountry;
                     if (familyMember.hasOwnProperty("BirthLocation")) {
-                        birthCountry = Utils.settingsStyleLocation(familyMember["BirthLocation"], "Country");
+                        birthCountry = countryOf(familyMember["BirthLocation"]);
                     }
                     if (!birthCountry) {
                         birthCountry = "Unknown";
@@ -302,7 +321,15 @@ window.HeritageView = class HeritageView extends View {
                         // increase the percentage
                         item.percentage += heritageFraction;
                     } else {
-                        countries.push({ name: birthCountry, percentage: heritageFraction });
+                        item = { name: birthCountry, percentage: heritageFraction, people: [] };
+                        countries.push(item);
+                    }
+                    // Remember who this share comes from (one entry per person, even if both their parents are unknown)
+                    let contributor = item.people.find((entry) => entry.member === familyMember);
+                    if (contributor) {
+                        contributor.share += heritageFraction;
+                    } else {
+                        item.people.push({ member: familyMember, share: heritageFraction });
                     }
                 }
             }
@@ -348,10 +375,10 @@ window.HeritageView = class HeritageView extends View {
                     let birthCountry;
                     let deathCountry;
                     if (familyMember.hasOwnProperty("BirthLocation")) {
-                        birthCountry = Utils.settingsStyleLocation(familyMember["BirthLocation"], "Country");
+                        birthCountry = countryOf(familyMember["BirthLocation"]);
                     }
                     if (familyMember.hasOwnProperty("DeathLocation")) {
-                        deathCountry = Utils.settingsStyleLocation(familyMember["DeathLocation"], "Country");
+                        deathCountry = countryOf(familyMember["DeathLocation"]);
                     }
 
                     // increase the profile count of the proper generation
@@ -359,11 +386,7 @@ window.HeritageView = class HeritageView extends View {
 
                     // add the birth country to the proper generation
                     let birthGeneration = birthCountries[generation];
-                    if (birthCountry) {
-                        birthGeneration.push(birthCountry);
-                    } else {
-                        birthGeneration.push("Unknown");
-                    }
+                    birthGeneration.push({ name: birthCountry || "Unknown", member: familyMember });
 
                     // add the death country to the proper generation
                     let deathGeneration = deathCountries[generation];
@@ -381,15 +404,17 @@ window.HeritageView = class HeritageView extends View {
             const chartSVGs = [];
             for (const generation in birthCountries) {
                 let countries = [];
-                birthCountries[generation].forEach((country) => {
+                birthCountries[generation].forEach(({ name: country, member }) => {
                     // check if country is already in the list
                     let item = countries.find((element) => element.name == country);
                     if (item) {
                         // increment the profile count
                         item.count++;
                     } else {
-                        countries.push({ name: country, count: 1 });
+                        item = { name: country, count: 1, people: [] };
+                        countries.push(item);
                     }
+                    item.people.push({ member });
                 });
 
                 let totalForGeneration = missingAsUnknown
@@ -405,8 +430,10 @@ window.HeritageView = class HeritageView extends View {
                             // increment the profile count
                             item.count += missingProfiles;
                         } else {
-                            countries.push({ name: "Unknown", count: missingProfiles });
+                            item = { name: "Unknown", count: missingProfiles, people: [] };
+                            countries.push(item);
                         }
+                        item.missing = missingProfiles;
                     }
                 }
 
@@ -498,8 +525,11 @@ window.HeritageView = class HeritageView extends View {
 
         function getLengend(countries, colorFunction) {
             let legendHTML = "";
-            countries.forEach((item) => {
+            countries.forEach((item, index) => {
                 legendHTML +=
+                    `<span class='legend-item' data-index='${index}' title='Show the people born in ${escapeHtml(
+                        item.name
+                    )}'>` +
                     "<span class='legend-bullet' style='background-color:" +
                     colorFunction(item.name) +
                     "'></span>" +
@@ -512,13 +542,104 @@ window.HeritageView = class HeritageView extends View {
                         maximumSignificantDigits: 2,
                     }) +
                     "</span>" +
+                    "</span>" +
                     "<br>";
             });
             let div = document.createElement("div");
             div.setAttribute("id", "legend");
             div.innerHTML = legendHTML;
+            div.querySelectorAll(".legend-item").forEach((el) => {
+                el.addEventListener("click", () => {
+                    const item = countries[Number(el.dataset.index)];
+                    showPeople(item, colorFunction(item.name));
+                });
+            });
 
             return div;
+        }
+
+        function escapeHtml(text) {
+            return String(text ?? "").replace(
+                /[&<>"']/g,
+                (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]
+            );
+        }
+
+        function formatPercent(value) {
+            return value.toLocaleString(undefined, { style: "percent", maximumSignificantDigits: 2 });
+        }
+
+        function displayName(member) {
+            return member.BirthName || member.Name || "Private profile";
+        }
+
+        function birthYear(member) {
+            const year = member.BirthDate ? member.BirthDate.slice(0, 4) : "";
+            return year && year !== "0000" ? year : "";
+        }
+
+        // The people in a country's slice, sorted by share (overview) and then by birth year
+        function sortedPeople(item) {
+            return (item.people || []).slice().sort((a, b) => {
+                if ((b.share || 0) !== (a.share || 0)) return (b.share || 0) - (a.share || 0);
+                const yearA = birthYear(a.member) || "9999";
+                const yearB = birthYear(b.member) || "9999";
+                return yearA === yearB ? displayName(a.member).localeCompare(displayName(b.member)) : yearA < yearB ? -1 : 1;
+            });
+        }
+
+        // Tooltip for a pie slice: the country, its percentage and the first few names
+        function sliceTitle(item) {
+            const people = sortedPeople(item);
+            const maxNames = 10;
+            let title = `${item.name}: (${formatPercent(item.percentage)})`;
+            if (people.length) {
+                title += "\n" + people.slice(0, maxNames).map((p) => "• " + displayName(p.member)).join("\n");
+                if (people.length > maxNames) title += `\n… and ${people.length - maxNames} more`;
+            }
+            if (item.missing) title += `\n(${item.missing} missing from WikiTree or private)`;
+            return title + "\nClick for the full list";
+        }
+
+        // A box listing the people behind a country's slice, with links to their profiles
+        function showPeople(item, colour) {
+            $("#heritage-people").remove();
+            const isOverview = (item.people || []).some((p) => p.share !== undefined);
+            const people = sortedPeople(item);
+            const rows = people
+                .map(({ member, share }) => {
+                    const year = birthYear(member);
+                    const name = member.Name
+                        ? `<a href="https://www.wikitree.com/wiki/${encodeURI(member.Name)}" target="_blank">${escapeHtml(
+                              displayName(member)
+                          )}</a>`
+                        : escapeHtml(displayName(member));
+                    return `<li>
+                        ${name}${year ? ` <span class="year">(b. ${year})</span>` : ""}
+                        ${share !== undefined ? `<span class="share">${formatPercent(share)}</span>` : ""}
+                        <div class="place">${escapeHtml(member.BirthLocation || "No birth place")}</div>
+                    </li>`;
+                })
+                .join("");
+            const intro = isOverview
+                ? `<p class="intro">The furthest known ancestor on each line who was born here, with the share of heritage that comes through them.</p>`
+                : "";
+            const missing = item.missing
+                ? `<p class="intro">Plus ${item.missing} missing from WikiTree or private.</p>`
+                : "";
+            const count = people.length == 1 ? "1 person" : `${people.length} people`;
+            const box = $(`
+                <div id="heritage-people" class="heritage-not-printable">
+                    <xx title="Close">[ x ]</xx>
+                    <h3><span class="legend-bullet" style="background-color:${colour}"></span>
+                        ${escapeHtml(item.name)} <span class="share">${formatPercent(item.percentage)}</span></h3>
+                    <p class="count">${count}</p>
+                    ${intro}
+                    ${people.length ? `<ol>${rows}</ol>` : ""}
+                    ${missing}
+                </div>`);
+            box.appendTo("#heritageContainer");
+            box.find("xx").on("click", () => box.remove());
         }
 
         function generateColorMapFunction(data) {
@@ -583,22 +704,16 @@ window.HeritageView = class HeritageView extends View {
                 .join("path")
                 .attr("fill", (d) => color(d.data.name))
                 .attr("d", arc)
+                .style("cursor", "pointer")
+                .on("click", (event, d) => showPeople(d.data, color(d.data.name)))
                 .append("title")
-                .text(
-                    (d) =>
-                        d.data.name +
-                        ": (" +
-                        d.data.percentage.toLocaleString(undefined, {
-                            style: "percent",
-                            maximumSignificantDigits: 2,
-                        }) +
-                        ")"
-                );
+                .text((d) => sliceTitle(d.data));
 
             // Create a new arc generator to place a label close to the edge.
             // The label shows the value if there is enough room.
             svg.append("g")
                 .attr("text-anchor", "middle")
+                .attr("pointer-events", "none") // let clicks on a label reach its slice
                 .selectAll()
                 .data(arcs)
                 .join("text")

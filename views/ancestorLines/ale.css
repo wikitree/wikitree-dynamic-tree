@@ -228,3 +228,17 @@ div.ale td {
     display: none;
   }
 }
+
+/* Small screens (e.g. a phone in landscape): keep the Options box from filling the screen. It scrolls
+   instead, with room at the bottom so its last line can be scrolled clear of the fixed ← → buttons. */
+@media (max-height: 500px), (max-width: 600px) {
+  #aleFieldset #optionsTbl {
+    display: block;
+    max-height: 50vh;
+    overflow: auto;
+    padding-bottom: 50px;
+  }
+  #aleFieldset #otherWtIds {
+    max-width: 100%;
+  }
+}
