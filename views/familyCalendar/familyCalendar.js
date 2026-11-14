@@ -29,7 +29,9 @@ window.CalendarView = class CalendarView extends View {
             </div>
         `;
 
-        $("main").append(displayOptionsHTML);
+        // index.html has two <main> elements, so $("main").append() added two copies of these options, and only the
+        // first was removed when switching to another app. Add one copy, just above the view.
+        $("#view-container").before(displayOptionsHTML);
 
         // If 'month' parameter exists, store it (default to current month if not present)
         const selectedMonth = isNaN(params.month)

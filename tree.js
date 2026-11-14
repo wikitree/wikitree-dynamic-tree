@@ -39,15 +39,19 @@
  *
  *     alternativelly, you can create those fields directly in constructor, e.g.: this.title = "Template view"
  *
- *  2. register view in ViewRegistry
+ *  2. register view in the app list in index.js (do NOT add <script> tags to index.html):
  *
- *     a) link script file in header section of index.html, e.g.:
+ *        "new-view-id": {
+ *            title: "New View",                       // shown in the TREE APP selector
+ *            className: "NewViewObject",              // the global (window.NewViewObject) your script defines
+ *            needs: ["d3"],                           // shared libraries from appLibraries in index.js, if any
+ *            scripts: ["views/new_view/NewView.js"],  // classic scripts, run in this order
+ *            modules: [],                             // ES module entry points (their imports load automatically)
+ *            styles: ["views/new_view/NewView.css"],
+ *        },
  *
- *        <script src="views/new_view/NewView.js"></script>
- *
- *     b) create new entry ("new-view-id": <NewViewObject>) in first parameter of ViewRegistry constructor (in index.js), e.g.:
- *
- *        "new-view-id": new NewViewObject(),
+ *     The app's files are only loaded when a user selects it and clicks GO, so the view must not rely on
+ *     globals defined by another app's files. Put shared code in a library in appLibraries instead.
  *
  *  3. Enjoy your newly registered view ;-)
  *
@@ -82,6 +86,106 @@ window.View = class View {
     close() {}
 };
 
+/*
+ * The AppLoader adds an app's stylesheets and scripts to the page when the app is first used, and resolves once
+ * they have all loaded. Each file is only ever added once, even when several apps (or libraries) list it.
+ */
+window.AppLoader = class AppLoader {
+    constructor(libraries = {}) {
+        this.libraries = libraries;
+        this.files = new Map(); // absolute URL -> Promise that resolves when the file has loaded
+    }
+
+    // Load everything an app (or library) needs: its libraries first, then its stylesheets and classic scripts
+    // (which run in the order listed), and finally its ES modules.
+    loadApp(app) {
+        const files = { styles: [], scripts: [], modules: [] };
+        this.collect(app, files, new Set());
+        // views/fanChart/SettingsOptions.js stores the open settings panel in the global "self", which is normally the
+        // window itself. Some libraries (e.g. FullCalendar and jsPDF) attach themselves to "self" when they load, so
+        // put the window back while files load, and restore the settings panel afterwards.
+        const savedSelf = window.self;
+        if (savedSelf !== window) window.self = window;
+        const restoreSelf = () => {
+            if (savedSelf !== window && window.self === window) window.self = savedSelf;
+        };
+
+        const styles = files.styles.map((href) => this.loadFile("style", href));
+        const scripts = files.scripts.map((src) => this.loadFile("script", src));
+        return Promise.all([...styles, ...scripts])
+            .then(() => Promise.all(files.modules.map((src) => this.loadFile("module", src))))
+            .finally(restoreSelf);
+    }
+
+    collect(item, files, seen) {
+        for (const name of item.needs || []) {
+            const library = this.libraries[name];
+            if (!library) throw new Error(`Unknown library "${name}"`);
+            if (seen.has(name)) continue;
+            seen.add(name);
+            this.collect(library, files, seen);
+        }
+        for (const kind of ["styles", "scripts", "modules"]) {
+            for (const file of item[kind] || []) {
+                if (!files[kind].includes(file)) files[kind].push(file);
+            }
+        }
+    }
+
+    // file is a URL, or { url, integrity } for a file that must match a Subresource Integrity hash.
+    loadFile(type, file) {
+        const url = typeof file === "string" ? file : file.url;
+        const absUrl = new URL(url, document.baseURI).href;
+        if (!this.files.has(absUrl)) {
+            const promise = this.alreadyInPage(type, absUrl)
+                ? Promise.resolve()
+                : this.addToPage(type, url, absUrl, file.integrity);
+            this.files.set(absUrl, promise);
+        }
+        return this.files.get(absUrl);
+    }
+
+    // A file may still be included statically in the page (e.g. where the Tree Apps are embedded elsewhere).
+    // Static scripts and stylesheets have finished loading by the time anyone clicks GO.
+    alreadyInPage(type, absUrl) {
+        const selector = type === "style" ? "link[rel=stylesheet][href]" : "script[src]";
+        return [...document.querySelectorAll(selector)].some(
+            (el) => !el.dataset.appLoader && (type === "style" ? el.href : el.src) === absUrl
+        );
+    }
+
+    addToPage(type, url, absUrl, integrity) {
+        return new Promise((resolve, reject) => {
+            let el;
+            if (type === "style") {
+                el = document.createElement("link");
+                el.rel = "stylesheet";
+                el.href = url;
+            } else {
+                el = document.createElement("script");
+                if (type === "module") el.type = "module";
+                // Scripts added by code run as soon as they arrive unless async is false. With async false
+                // they still download in parallel, but run in the order they were added.
+                el.async = false;
+                el.src = url;
+            }
+            if (integrity) {
+                el.integrity = integrity;
+                el.crossOrigin = "anonymous";
+            }
+            el.dataset.appLoader = "true";
+            el.addEventListener("load", () => resolve());
+            el.addEventListener("error", () => {
+                // Forget the failed file so that a later attempt tries again.
+                el.remove();
+                this.files.delete(absUrl);
+                reject(new Error(`Could not load ${url}`));
+            });
+            document.head.appendChild(el);
+        });
+    }
+};
+
 window.ViewError = class ViewError extends Error {
     constructor(message) {
         super(message); // Call parent Error class for construction
@@ -107,11 +211,19 @@ window.ViewRegistry = class ViewRegistry {
     WT_STATUS = "#wt-status";
     INFO_PANEL = "#info-panel";
 
-    // index.html starts with a script that creates a new ViewRegistry, and then immediately calls .render() to update the selection form.
-    constructor(views, session_manager) {
-        this.views = views;
+    // index.js creates a new ViewRegistry, and then immediately calls .render() to update the selection form.
+    // apps describes each app and the files it needs (see index.js). An app's files are only loaded, and its view
+    // only created, when it is first used.
+    constructor(apps, libraries, session_manager) {
+        this.apps = {};
+        for (const id in apps) {
+            if (!apps[id].disabled) this.apps[id] = apps[id];
+        }
+        this.loader = new AppLoader(libraries);
+        this.views = {}; // id -> Promise of the view object, once the app has been requested
         this.session = session_manager;
         this.currentView = undefined;
+        this.submitCount = 0;
 
         // This auto-launches the previously selected view (if there was one) when the page reloads.
         const orig_onLoggedIn_cb = this.session.lm.events?.onLoggedIn;
@@ -125,7 +237,7 @@ window.ViewRegistry = class ViewRegistry {
         };
 
         if (location.hash) {
-            this.session.loadUrlHash(Object.keys(views), location.hash);
+            this.session.loadUrlHash(Object.keys(this.apps), location.hash);
         }
 
         addEventListener("hashchange", (e) => this.onHashChange(e));
@@ -137,7 +249,7 @@ window.ViewRegistry = class ViewRegistry {
 
         let h = e.target.location.hash;
         if (h.match(/^#name=.+(&view=.+)?/) || h.match(/^#view=.+(&name=.+)?/)) {
-            this.session.loadUrlHash(Object.keys(this.views), e.target.location.hash);
+            this.session.loadUrlHash(Object.keys(this.apps), e.target.location.hash);
 
             document.querySelector(this.WT_ID_TEXT).value = this.session.personName;
             document.querySelector(this.VIEW_SELECT).value = this.session.viewID;
@@ -149,14 +261,14 @@ window.ViewRegistry = class ViewRegistry {
     // Add an event listener to the "go" button to call onSubmit() when clicked.
     // Fill in some data from the logged-in user.
     render() {
-        let views = this.views;
+        let apps = this.apps;
         const options =
-            Object.keys(this.views)
+            Object.keys(this.apps)
                 .sort(function (a, b) {
                     // Sort the app options alphabetically by title
-                    return views[a].title.localeCompare(views[b].title);
+                    return apps[a].title.localeCompare(apps[b].title);
                 })
-                .map((id) => `<option value="${id}">${this.views[id].title}</option>`)
+                .map((id) => `<option value="${id}">${this.apps[id].title}</option>`)
                 .join("") + `<option value="otherapps">Other Apps</option>`;
 
         const submitBtn = document.querySelector(this.SHOW_BTN);
@@ -164,7 +276,12 @@ window.ViewRegistry = class ViewRegistry {
 
         const viewSelect = document.querySelector(this.VIEW_SELECT);
         viewSelect.innerHTML = options;
-        viewSelect.value = this.session.viewID || (Object.keys(this.views).length ? Object.keys(this.views)[0] : "");
+        viewSelect.value = this.session.viewID || (Object.keys(this.apps).length ? Object.keys(this.apps)[0] : "");
+
+        // Start loading an app's files as soon as it is selected, so it is (nearly) ready when GO is clicked.
+        viewSelect.addEventListener("change", () => {
+            if (this.apps[viewSelect.value]) this.getView(viewSelect.value).catch(() => {});
+        });
 
         document.querySelector(this.WT_ID_TEXT).value = this.session.personName;
 
@@ -181,8 +298,32 @@ window.ViewRegistry = class ViewRegistry {
     // Currently we call getPerson() at the API to see that the provided ID is valid, and then launch the view.
     // Possibly this should be changed/removed. Different views require different incoming data, and some are just using the ID
     // and then immediately recalling getPerson() on that ID, which is a waste.
-    onSubmit(e) {
+    // Load the app's files (the first time it is used) and create its view object. Returns a Promise of the view.
+    getView(viewID) {
+        if (!this.views[viewID]) {
+            const app = this.apps[viewID];
+            this.views[viewID] = this.loader
+                .loadApp(app)
+                .then(() => {
+                    const ViewClass = window[app.className];
+                    if (typeof ViewClass !== "function") {
+                        throw new Error(`${app.className} was not defined by the app's files.`);
+                    }
+                    const view = new ViewClass(...(app.args || []));
+                    view.id = viewID;
+                    return view;
+                })
+                .catch((err) => {
+                    delete this.views[viewID]; // so that a later attempt tries again
+                    throw err;
+                });
+        }
+        return this.views[viewID];
+    }
+
+    async onSubmit(e) {
         e.preventDefault();
+        const submitNumber = ++this.submitCount;
 
         const wtID = this.getCurrentWtId();
         const viewID = document.querySelector(this.VIEW_SELECT).value;
@@ -197,13 +338,24 @@ window.ViewRegistry = class ViewRegistry {
             return;
         }
 
-        const view = this.views[viewID];
-        view.id = viewID;
-
         const viewLoader = document.querySelector(this.VIEW_LOADER);
 
         // This shouldn't happen, but perhaps we should display an error so new View builders can see what happened.
-        if (view === undefined) return;
+        if (this.apps[viewID] === undefined) return;
+
+        let view;
+        viewLoader.classList.remove("hidden");
+        try {
+            view = await this.getView(viewID);
+        } catch (err) {
+            viewLoader.classList.add("hidden");
+            if (submitNumber === this.submitCount) {
+                this.showError(`Could not load the ${this.apps[viewID].title} app. ${err.message} Please try again.`);
+            }
+            return;
+        }
+        // If GO was clicked again (perhaps for another app) while this app was loading, let that click win.
+        if (submitNumber !== this.submitCount) return;
 
         // Extract all parameters from the URL hash
         const urlParams = new URLSearchParams(window.location.hash.slice(1));

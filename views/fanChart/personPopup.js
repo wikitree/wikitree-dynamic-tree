@@ -12,6 +12,24 @@
 // Put these functions into a "personPopup" namespace.
 window.personPopup = window.personPopup || {};
 
+// The popup reads some settings from FanChartView and SuperBigFamView, and its close buttons call
+// SuperBigFamView.removePopup() and SuperBigFamView.removePodDIV(). Tree Apps are loaded on demand, so those two
+// apps may not be loaded when another app (Fractal Tree, Ancestor Webs, X Family Tree, CC7 Circles, ...) shows a
+// popup. Until they are, stand in for them with the same values their scripts set when they load. Loading the real
+// app replaces these stand-ins.
+window.FanChartView = window.FanChartView || { currentSettings: {} };
+window.SuperBigFamView = window.SuperBigFamView || {
+    displayPrivatize: 0,
+    currentSettings: {},
+    removePopup: function () {
+        document.getElementById("popupDIV").innerHTML = "";
+        document.getElementById("popupDIV").style.display = "none";
+    },
+    removePodDIV: function () {
+        document.getElementById("connectionPodDIV").style.display = "none";
+    },
+};
+
 let connectObject = {};
 let currentPersonPopupID = 0;
 let currentConnectionPopupID = 0;
