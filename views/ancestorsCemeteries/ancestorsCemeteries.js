@@ -43,10 +43,10 @@ window.AncestorsCemeteriesView = class AncestorsCemeteriesView extends View {
     }
 };
 
-function findCemetery(data) {
+function findCemetery(data = []) {
     let searchWords = ['burial', 'cemetery', 'memorial', 'gardens', 'park', 'potters', 'field']
     const regex = new RegExp(searchWords.join("|"), "i");  // 'i' for case-insensitive        
-    const matchedWords = data.filter(word => regex.test(word));
+    const matchedWords = (data || []).filter(word => regex.test(word)); // Categories is missing for some profiles
     let result = JSON.stringify(matchedWords);
     result = result.replace(/[_]/g, ' ').replace(/[\[\]\'\"]/g, '');
 
@@ -67,7 +67,10 @@ function generateTable(data) {
     // create table header
     const thead = document.createElement("thead");
     const headerRow = document.createElement('tr');
-    const headers = Object.keys(data[0]);    
+    // Use the fields of all the ancestors, not just the first: the API leaves out fields a profile doesn't have
+    // (e.g. Categories), and the Cemetery column must always be there.
+    const headers = [...new Set(data.flatMap((person) => Object.keys(person)))];
+    if (!headers.includes("Categories")) headers.push("Categories");
 
     headers.forEach(header => {
         const th = document.createElement('th');
@@ -114,7 +117,7 @@ function generateTable(data) {
                 td.innerHTML = `<a href="${url}">${person}</a>`;                  
             }
             else {
-                td.textContent = item[header];                
+                td.textContent = item[header] ?? "";
             }            
             row.appendChild(td);
         });

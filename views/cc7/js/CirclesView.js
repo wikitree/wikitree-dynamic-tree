@@ -605,12 +605,12 @@ export class CirclesView {
 
         var popupDIV =
             '<div id=popupDIV class="pop-up" style="display:none; position:absolute; left:20px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
-            '<span style="color:red; align:left" title="close pop-up"><A onclick="SuperBigFamView.removePopup();">' +
+            "<span style=\"color:red; align:left\" title=\"close pop-up\"><A onclick=\"var p = document.getElementById('popupDIV'); p.innerHTML = ''; p.style.display = 'none';\">" +
             SVGbtnCLOSE +
             "</A></span></div>";
         var connectionPodDIV =
             '<div id=connectionPodDIV class="pop-up" style="display:none; width:fit-content; position:absolute; left:700px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
-            '<span style="color:red; align:left" title="close pop-up"><A onclick="SuperBigFamView.removePodDIV();">' +
+            '<span style="color:red; align:left" title="close pop-up"><A onclick="document.getElementById(\'connectionPodDIV\').style.display = \'none\';">' +
             SVGbtnCLOSE +
             "</A></span></div>";
 

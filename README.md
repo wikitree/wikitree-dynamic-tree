@@ -39,7 +39,8 @@ Cookies are used to store the API login id (if there is one), the starting profi
 
 ### [index.html](index.html) and [index.js](index.js) 
 
-Include the script(s) for a view and register the view in the ViewRegistry.
+index.html loads only the shared code. Each view (app) is registered in index.js, together with the scripts and
+stylesheets it needs, which are only loaded when the app is selected.
 
 ### [lib](lib)
 

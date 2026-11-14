@@ -1,6 +1,5 @@
 import { CC7Utils } from "./CC7Utils.js";
 import { Utils } from "../../shared/Utils.js";
-import { CC7 } from "./cc7.js";
 
 export class StatsView {
     static async build() {

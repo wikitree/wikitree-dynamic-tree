@@ -8,10 +8,10 @@ The WikiTree team has created a base/core view, which is a forked family tree gr
 
 There are several places to share ideas and questions with other developers:
 
--   The WikiTree [G2G forum](https://www.wikitree.com/g2g/)
--   The WikiTree Apps [Google Group](https://groups.google.com/g/WikiTreeApps/)
--   The WikiTree [GitHub](https://github.com/wikitree/wikitree-dynamic-tree/)
--   The WikiTree [Discord](https://discord.gg/9EMSdccnn3)
+- The WikiTree [G2G forum](https://www.wikitree.com/g2g/)
+- The WikiTree Apps [Google Group](https://groups.google.com/g/WikiTreeApps/)
+- The WikiTree [GitHub](https://github.com/wikitree/wikitree-dynamic-tree/)
+- The WikiTree [Discord](https://discord.gg/9EMSdccnn3)
 
 ## Getting started
 
@@ -47,7 +47,6 @@ Before you start check [WikiTree codestyle](/docs/codestyle.md) and optionally s
 
 1. Create a new subdirectory (e.g. `views/newView/`) inside `views/` to hold the new code
 1. Create `views/newView/newView.js`
-
     - in the file create new structure
 
         `[class based]` Create descendant of View class and override method
@@ -70,16 +69,15 @@ Before you start check [WikiTree codestyle](/docs/codestyle.md) and optionally s
                     description: "",
                     // link pointing at some webpage with documentation
                     docs: "",
-                    params: ["param1", "param2"]
+                    params: ["param1", "param2"],
                 };
             }
 
             init(container_selector, person_id, params) {
                 // do whathever you want there
                 // to showcase your awesome view, e.g.
-                document.querySelector(
-                    container_selector
-                ).innerHTML = `<p>WikiTree ID of selected person is: ${person_id}</p>`;
+                document.querySelector(container_selector).innerHTML =
+                    `<p>WikiTree ID of selected person is: ${person_id}</p>`;
             }
         }
         ```
@@ -94,20 +92,27 @@ Before you start check [WikiTree codestyle](/docs/codestyle.md) and optionally s
 
         alternativelly, you can create those fields directly in constructor, e.g.: this.title = "Template view"
 
-2. link your new script file in `<head>` section of the `index.html` and register your new view in `ViewRegistry` in index.js, e.g.
+1. register your new view in the `apps` list in index.js, with the files it needs. Do not add `<script>` or `<link>` tags to `index.html`: an app's files are only loaded when someone selects the app and clicks GO. For example:
 
     ```js
-    new ViewRegistry(
-        {
-            "wt-dynamic-tree": new WikiTreeDynamicTreeViewer(),
+    const apps = {
+        "wt-dynamic-tree": { ... },
 
-            // ...
+        // ...
 
-            "new-view": new NewView(), // <-- your new view
+        "new-view": {
+            title: "New View", // shown in the TREE APP selector
+            className: "NewView", // the global your script defines (window.NewView)
+            needs: ["d3"], // shared libraries from appLibraries in index.js, if any
+            scripts: ["views/newView/NewView.js"], // classic scripts, run in this order
+            modules: [], // or: ES module entry points (the files they import load automatically)
+            styles: ["views/newView/newView.css"],
         },
-        new SessionManager(WikiTreeAPI, loginManager)
-    ).render();
+    };
     ```
+
+    Because apps are loaded separately, your view must not rely on globals defined by another app's files. If several
+    apps share code, put it in a library and add it to `appLibraries` in index.js and list it in each app's `needs`.
 
 ## Share your view
 
@@ -125,8 +130,8 @@ One way to deal with this is to put your work up at apps.wikitree.com. Requests 
 
 Other workarounds include:
 
--   A Chrome extension like [Moesif CORS](https://chrome.google.com/webstore/detail/moesif-origin-cors-change/digfbfaphojjndkpccljibejjbppifbc)
--   CORS Anywhere Proxy: [Public demo](https://cors-anywhere.herokuapp.com/corsdemo) / [Example usage](https://stackblitz.com/edit/wikitree-getperson2?file=index.ts)
+- A Chrome extension like [Moesif CORS](https://chrome.google.com/webstore/detail/moesif-origin-cors-change/digfbfaphojjndkpccljibejjbppifbc)
+- CORS Anywhere Proxy: [Public demo](https://cors-anywhere.herokuapp.com/corsdemo) / [Example usage](https://stackblitz.com/edit/wikitree-getperson2?file=index.ts)
 
 ## Prettier
 
@@ -142,15 +147,15 @@ The general installation instructions can be viewed at the [Prettier Docs](https
 
 To install Prettier in [Visual Studio Code](https://code.visualstudio.com/):
 
--   Go to `View > Extensions`
--   Search for "Prettier - Code formatter"
--   Select the "Install" button
+- Go to `View > Extensions`
+- Search for "Prettier - Code formatter"
+- Select the "Install" button
 
 To set it up so it formats on save:
 
--   Go to `File > Preferences > Settings`
--   Search for "Default Formatter" and select "Prettier - Code formatter" in the dropdown
--   Search for "Format On Save" and make sure the checkbox is checked
+- Go to `File > Preferences > Settings`
+- Search for "Default Formatter" and select "Prettier - Code formatter" in the dropdown
+- Search for "Format On Save" and make sure the checkbox is checked
 
 It will use the settings in the `.prettierrc` file in the repository.
 
@@ -168,7 +173,7 @@ If you haven't installed Prettier or are using the VS Code extension, you may be
 
 ## Other potentially useful tools
 
--   [WikiTree API](https://github.com/wikitree/wikitree-api) - documentation of available API functions
--   [Markdown viewer](https://chrome.google.com/webstore/detail/markdown-viewer/ckkdlimhmcjmikdlpkmbgfkaikojcbjk) - Chrome extension to view Markdown (.md files in project documentation)
--   [JSON viewer](https://chrome.google.com/webstore/detail/json-viewer/gbmdgpbipfallnflgajpaliibnhdgobh) - Chrome extension to view JSON, like the output from the WikiTree API
--   [WikiTree Styles](https://www.wikitree.com/css/guide/index.html) - WikiTree Developer Style Guide
+- [WikiTree API](https://github.com/wikitree/wikitree-api) - documentation of available API functions
+- [Markdown viewer](https://chrome.google.com/webstore/detail/markdown-viewer/ckkdlimhmcjmikdlpkmbgfkaikojcbjk) - Chrome extension to view Markdown (.md files in project documentation)
+- [JSON viewer](https://chrome.google.com/webstore/detail/json-viewer/gbmdgpbipfallnflgajpaliibnhdgobh) - Chrome extension to view JSON, like the output from the WikiTree API
+- [WikiTree Styles](https://www.wikitree.com/css/guide/index.html) - WikiTree Developer Style Guide

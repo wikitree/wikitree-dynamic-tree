@@ -1386,7 +1386,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
 
         let roleName = "";
         if (fsPerson.Name != $("#wtid").val()) {
-            roleName = `data-name="${htmlEntities(fsPerson.Name)}" data-id="${fsPerson.Id}"`;
+            roleName = `data-name="${this.htmlEntities(fsPerson.Name)}" data-id="${fsPerson.Id}"`;
         }
 
         if (fsPerson.Gender) {
@@ -1398,7 +1398,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
             fsWTIDSpan = "<span class='fsWTID'>(" + this.htmlEntities(fsPerson.Name) + ")</span>";
         }
 
-        let showName = htmlEntities(this.displayName(fsPerson)[0]);
+        let showName = this.htmlEntities(this.displayName(fsPerson)[0]);
 
         showName = showName.replace(/(“.+”)/, "<span class='nicknames'>$1</span>");
         let otherLastNames = "";
@@ -1630,7 +1630,7 @@ window.FamilyGroupAppView = class FamilyGroupAppView extends View {
                 }
 
                 otherMarriageRow += `
-                <tr data-person='${htmlEntities(oSpouse.Name)}' data-role='${role}' class='otherMarriageRow'>
+                <tr data-person='${this.htmlEntities(oSpouse.Name)}' data-role='${role}' class='otherMarriageRow'>
                     <th class='otherMarriageHeading heading'>${oSpousesHeadingText}</th>
                     <td class='otherMarriageDate'>
                         <span class='otherSpouseName' data-name="${this.htmlEntities(oSpouse.Name)}" data-id="${
