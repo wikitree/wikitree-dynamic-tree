@@ -92,6 +92,33 @@ main {
   margin: 0.5em;
 }
 
+/* Full screen (the button by "GO"): the page fills the screen, without the WikiTree header. */
+body.full-screen-view {
+  background: #f7f6f0;
+}
+
+body.full-screen-view > header {
+  display: none;
+}
+
+body.full-screen-view #main {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+body.full-screen-view #main > .row {
+  margin-top: 0 !important;
+}
+
+body.full-screen-view #view-container {
+  margin: 0.25em 0;
+  min-height: calc(100vh - 100px);
+}
+
+#full-screen-btn {
+  margin-left: 0.5em;
+}
+
 /* A div that can be filled by launchTree() with specific information for each view. */
 #treeInfo {
   border-top: 1px solid black;

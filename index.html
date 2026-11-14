@@ -206,6 +206,10 @@
   <script src="views/lineageMatrix/LineageMatrixView.js"></script>
   <link rel="stylesheet" href="views/lineageMatrix/lineageMatrix.css" />
   <!-- end Lineage Matrix -->
+
+  <!-- begin Family Explorer and Galaxy Explorer -->
+  <script type="module" src="views/familyExplorer/familyExplorer.js"></script>
+  <!-- end Family Explorer and Galaxy Explorer -->
 </head>
 
 <body>
@@ -250,6 +254,8 @@
                 <label for="wt-id-text">ID:</label>
                 <input id="wt-id-text" type="text" placeholder="e.g. Windsor-1" />
                 <input id="show-btn" class="btn btn-primary p-2" type="submit" value="GO" />
+                <button id="full-screen-btn" class="btn btn-secondary p-2" type="button"
+                  title="Fill the screen with the app (Esc to leave)">Full screen</button>
               </form>
             </div>
             
