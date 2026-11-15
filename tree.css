@@ -115,8 +115,31 @@ body.full-screen-view #view-container {
   min-height: calc(100vh - 100px);
 }
 
+/* A round icon like the help "?" beside it. */
 #full-screen-btn {
+  display: inline-flex;
   margin-left: 0.5em;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: #25422d;
+  line-height: 0;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+#settings-panel .col-auto > #full-screen-btn {
+  margin-left: 0;
+}
+
+#full-screen-btn:hover {
+  color: #3d6b49;
+}
+
+#full-screen-btn:focus-visible {
+  outline: 2px solid #f6a821;
+  outline-offset: 2px;
 }
 
 /* A div that can be filled by launchTree() with specific information for each view. */
