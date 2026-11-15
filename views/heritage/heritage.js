@@ -254,7 +254,7 @@ window.HeritageView = class HeritageView extends View {
                     id,
                     [
                         "BirthLocation",
-                        "BirthYear",
+                        "BirthDate",
                         "DeathLocation",
                         "Name",
                         "Derived.BirthName",
