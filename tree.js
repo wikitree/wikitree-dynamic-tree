@@ -98,6 +98,7 @@ window.ViewRegistry = class ViewRegistry {
     VIEW_SELECT = "#view-select";
     WT_ID_TEXT = "#wt-id-text";
     SHOW_BTN = "#show-btn";
+    FULL_SCREEN_BTN = "#full-screen-btn";
     VIEW_CONTAINER = "#view-container";
     VIEW_TITLE = "#view-title";
     VIEW_DESCRIPTION = " #view-description";
@@ -162,6 +163,19 @@ window.ViewRegistry = class ViewRegistry {
         const submitBtn = document.querySelector(this.SHOW_BTN);
         submitBtn.addEventListener("click", (e) => this.onSubmit(e));
 
+        const fullScreenBtn = this.addFullScreenButton();
+        if (fullScreenBtn) {
+            fullScreenBtn.addEventListener("click", () => this.toggleFullScreen());
+            // Leaving the browser's full screen (Esc, or its own controls) leaves ours too.
+            document.addEventListener("fullscreenchange", () => {
+                if (!document.fullscreenElement) this.setFullScreen(false);
+            });
+            // (where the browser has no full screen, e.g. iPhone Safari, Esc still leaves)
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape" && !document.fullscreenElement) this.setFullScreen(false);
+            });
+        }
+
         const viewSelect = document.querySelector(this.VIEW_SELECT);
         viewSelect.innerHTML = options;
         viewSelect.value = this.session.viewID || (Object.keys(this.views).length ? Object.keys(this.views)[0] : "");
@@ -175,6 +189,61 @@ window.ViewRegistry = class ViewRegistry {
         } else {
             this.showWarning('Enter a WikiTree ID and select a View, then click "Go" to begin.');
         }
+    }
+
+    // Full screen for every app: the page fills the screen without the WikiTree header, keeping the bar with the
+    // app list. The whole page goes full screen (not just the view container), so popups and tooltips that apps
+    // add to the page's body still show.
+    // The button is a small round icon like the help "?" beside it. It's added here, not in the page, because
+    // WikiTree.com has its own page around the apps: after the "?" there, or after "GO" in index.html.
+    addFullScreenButton() {
+        const goBtn = document.querySelector(this.SHOW_BTN);
+        if (!goBtn || document.querySelector(this.FULL_SCREEN_BTN)) return document.querySelector(this.FULL_SCREEN_BTN);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.id = this.FULL_SCREEN_BTN.slice(1);
+        this.showFullScreenState(button, false);
+        const helpLink = document.querySelector('#settings-panel a[href*="Help:Tree_Apps"]');
+        const after = helpLink?.closest(".col-auto") || goBtn.closest(".col-auto");
+        if (after) {
+            // (WikiTree.com's form: each control in its own Bootstrap column)
+            const col = document.createElement("div");
+            col.className = "col-auto";
+            col.appendChild(button);
+            after.after(col);
+        } else {
+            (helpLink || goBtn).after(button);
+        }
+        return button;
+    }
+
+    showFullScreenState(button, on) {
+        const label = on ? "Leave full screen (Esc)" : "Full screen: fill the screen with the app";
+        button.title = label;
+        button.setAttribute("aria-label", label);
+        button.setAttribute("aria-pressed", String(on));
+        // Corners pointing out (full screen) or in (leave it), white on a dark green circle.
+        const path = on ? "M11 7v4H7M15 7v4h4M19 15h-4v4M7 15h4v4" : "M7 11V7h4M15 7h4v4M19 15v4h-4M11 19H7v-4";
+        button.innerHTML = `<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true" focusable="false"><circle cx="13" cy="13" r="13" fill="currentColor"/><path d="${path}" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    }
+
+    toggleFullScreen() {
+        const on = !document.body.classList.contains("full-screen-view");
+        this.setFullScreen(on);
+        if (on) {
+            document.documentElement.requestFullscreen?.().catch(() => {});
+        } else if (document.fullscreenElement) {
+            document.exitFullscreen?.().catch(() => {});
+        }
+    }
+
+    setFullScreen(on) {
+        if (document.body.classList.contains("full-screen-view") === on) return;
+        document.body.classList.toggle("full-screen-view", on);
+        const fullScreenBtn = document.querySelector(this.FULL_SCREEN_BTN);
+        if (fullScreenBtn) this.showFullScreenState(fullScreenBtn, on);
+        // Apps that size themselves to the window redraw on resize.
+        window.dispatchEvent(new Event("resize"));
     }
 
     // When the "Go" button is clicked, grab the provided WikiTree ID and the selected View.

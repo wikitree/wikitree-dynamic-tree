@@ -80,6 +80,8 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "timelineTree": new TimelineTreeView(),
         "research": new ResearchView(),
         "lineageMatrix": new LineageMatrixView(),
+        "familyExplorer": new FamilyExplorerView(),
+        "galaxyExplorer": new GalaxyExplorerView(),
     };
 
     for (let key in views) {
