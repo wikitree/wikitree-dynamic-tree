@@ -23,7 +23,7 @@ const LABELS_MAX = 70;
 const GALAXY_CSS = `
   .wbe-galaxy { position: absolute; inset: 0; overflow: hidden; outline: none; background: radial-gradient(ellipse at 50% 45%, #1b2350 0%, #0d1230 45%, #05060f 100%);
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #e8ecff; }
-  .wbe-galaxy canvas.wbe-galaxy-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+  .wbe-galaxy canvas.wbe-galaxy-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
   .wbe-galaxy canvas.wbe-galaxy-canvas:active { cursor: grabbing; }
   .wbe-galaxy-key { position: absolute; top: 10px; left: 12px; display: flex; flex-direction: column; gap: 3px; font-size: 12px; pointer-events: none; max-width: 40%; padding: 6px 9px; border-radius: 8px; background: rgba(8, 12, 36, 0.72); z-index: 1; }
   .wbe-galaxy-key span { display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #c9d0f0; }
@@ -202,7 +202,7 @@ export function mountFamilyGalaxy(host, options) {
     </div>
     <div class="wbe-galaxy-tip" hidden></div>
     <div class="wbe-galaxy-card" hidden></div>
-    <div class="wbe-galaxy-hint">Drag to turn · scroll to zoom · click a star to see who it is · ancestors above, descendants below</div>`;
+    <div class="wbe-galaxy-hint">Drag to turn · scroll or pinch to zoom · click a star to see who it is · ancestors above, descendants below</div>`;
   host.appendChild(root);
   const canvas = root.querySelector("canvas");
   const ctx = canvas.getContext("2d");
@@ -567,14 +567,50 @@ export function mountFamilyGalaxy(host, options) {
     return best;
   }
 
-  // Drag to turn, scroll to zoom, click a star.
+  // Drag to turn, scroll (or pinch, on a touch screen) to zoom, click a star.
   let dragging = null;
+  const touches = new Map(); // pointerId -> {x, y}, for a two-finger pinch
+  let pinch = null;
+  let pinched = false; // (until every finger is up: lifting the last one after a pinch is not a tap)
+  const touchGap = () => {
+    const [a, b] = [...touches.values()];
+    return Math.hypot(a.x - b.x, a.y - b.y) || 1;
+  };
   canvas.addEventListener("pointerdown", (event) => {
-    dragging = { x: event.clientX, y: event.clientY, yaw: camera.yaw, pitch: camera.pitch, moved: false };
     canvas.setPointerCapture?.(event.pointerId);
+    if (event.pointerType === "touch") {
+      touches.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (touches.size === 2) {
+        // A second finger: pinch to zoom instead of turning (and never counts as a tap on a star)
+        pinch = { gap: touchGap(), distance: camera.distance };
+        pinched = true;
+        dragging = null;
+        return;
+      }
+      if (touches.size > 2) return;
+      pinched = false;
+    }
+    dragging = { x: event.clientX, y: event.clientY, yaw: camera.yaw, pitch: camera.pitch, moved: false };
+  });
+  const endTouch = (event) => {
+    touches.delete(event.pointerId);
+    if (touches.size < 2) pinch = null;
+  };
+  canvas.addEventListener("pointercancel", (event) => {
+    endTouch(event);
+    if (!touches.size) pinched = false;
+    dragging = null;
   });
   canvas.addEventListener("pointermove", (event) => {
     const rect = canvas.getBoundingClientRect();
+    if (touches.has(event.pointerId)) touches.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (pinch) {
+      if (touches.size === 2) {
+        camera.distance = Math.max(250, Math.min(4200, (pinch.distance * pinch.gap) / touchGap()));
+        idleSince = performance.now();
+      }
+      return;
+    }
     if (dragging) {
       const dx = event.clientX - dragging.x;
       const dy = event.clientY - dragging.y;
@@ -599,8 +635,12 @@ export function mountFamilyGalaxy(host, options) {
     canvas.style.cursor = hit ? "pointer" : "";
   });
   canvas.addEventListener("pointerup", (event) => {
+    const wasPinch = pinched;
+    endTouch(event);
+    if (!touches.size) pinched = false;
     const drag = dragging;
     dragging = null;
+    if (wasPinch) return;
     idleSince = performance.now();
     if (drag?.moved) return;
     const rect = canvas.getBoundingClientRect();
