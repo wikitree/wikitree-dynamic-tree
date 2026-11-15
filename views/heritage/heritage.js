@@ -252,7 +252,7 @@ window.HeritageView = class HeritageView extends View {
                 [status, resultByKey, ancestor_json] = await WikiTreeAPI.getPeople(
                     "heritage",
                     id,
-                    ["BirthLocation", "BirthDate", "Name", "Derived.BirthName", "Father", "Mother", "Meta"],
+                    ["BirthLocation", "DeathLocation", "Name", "Derived.BirthName", "Father", "Mother", "Meta"],
                     options
                 );
                 // save the list of familyMembers
@@ -584,7 +584,11 @@ window.HeritageView = class HeritageView extends View {
                 if ((b.share || 0) !== (a.share || 0)) return (b.share || 0) - (a.share || 0);
                 const yearA = birthYear(a.member) || "9999";
                 const yearB = birthYear(b.member) || "9999";
-                return yearA === yearB ? displayName(a.member).localeCompare(displayName(b.member)) : yearA < yearB ? -1 : 1;
+                return yearA === yearB
+                    ? displayName(a.member).localeCompare(displayName(b.member))
+                    : yearA < yearB
+                      ? -1
+                      : 1;
             });
         }
 
@@ -594,7 +598,12 @@ window.HeritageView = class HeritageView extends View {
             const maxNames = 10;
             let title = `${item.name}: (${formatPercent(item.percentage)})`;
             if (people.length) {
-                title += "\n" + people.slice(0, maxNames).map((p) => "• " + displayName(p.member)).join("\n");
+                title +=
+                    "\n" +
+                    people
+                        .slice(0, maxNames)
+                        .map((p) => "• " + displayName(p.member))
+                        .join("\n");
                 if (people.length > maxNames) title += `\n… and ${people.length - maxNames} more`;
             }
             if (item.missing) title += `\n(${item.missing} missing from WikiTree or private)`;
