@@ -252,7 +252,16 @@ window.HeritageView = class HeritageView extends View {
                 [status, resultByKey, ancestor_json] = await WikiTreeAPI.getPeople(
                     "heritage",
                     id,
-                    ["BirthLocation", "DeathLocation", "Name", "Derived.BirthName", "Father", "Mother", "Meta"],
+                    [
+                        "BirthLocation",
+                        "BirthYear",
+                        "DeathLocation",
+                        "Name",
+                        "Derived.BirthName",
+                        "Father",
+                        "Mother",
+                        "Meta",
+                    ],
                     options
                 );
                 // save the list of familyMembers
