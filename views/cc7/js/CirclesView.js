@@ -603,17 +603,6 @@ export class CirclesView {
             }
         }
 
-        var popupDIV =
-            '<div id=popupDIV class="pop-up" style="display:none; position:absolute; left:20px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
-            '<span style="color:red; align:left" title="close pop-up"><A onclick="SuperBigFamView.removePopup();">' +
-            SVGbtnCLOSE +
-            "</A></span></div>";
-        var connectionPodDIV =
-            '<div id=connectionPodDIV class="pop-up" style="display:none; width:fit-content; position:absolute; left:700px; background-color:#EFEFEF; border: solid darkgrey 4px; border-radius: 15px; padding: 15px;}">' +
-            '<span style="color:red; align:left" title="close pop-up"><A onclick="SuperBigFamView.removePodDIV();">' +
-            SVGbtnCLOSE +
-            "</A></span></div>";
-
         var innerLegendBits =
             `<P align="right">Legend: <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="orange"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC2</text></svg>` +
             ` <svg id="circlePerson22554776" width="38" height="38"><ellipse cx="19" cy="19" rx="18" ry="18" stroke="black" stroke-width="1" fill="cyan"></ellipse><text text-anchor="middle" x="19" y="22" style="font-size:14; fill:black;" textLength="34" lengthAdjust="spacingAndGlyphs">CC3</text></svg>` +
@@ -654,7 +643,7 @@ export class CirclesView {
             "<span id=PDFgenProgressBar class='btn-secondary'  style='display:none;' >Processing PDF .... please hold ...</span> " +
             "</div></div>";
 
-        popupDIV += connectionPodDIV + legendDIV + PDFgenPopupHTML;
+        const popupDIV = legendDIV + PDFgenPopupHTML;
 
         let toggleLegendFunctionCode = `if (document.getElementById("legendDIV").style.display == "none") {
                 document.getElementById("legendDIV").style.display = "block";
@@ -697,9 +686,10 @@ export class CirclesView {
         </div>`
         );
         circlesDisplay.insertBefore($("#peopleTable"));
+        // The person popup (and its connection diagram) are shared with the Table view, so they are created once
+        // and moved into whichever view shows them.
+        window.personPopup.ensurePopupContainers(circlesDisplay[0]);
 
-        $("#popupDIV").draggable();
-        $("#connectionPodDIV").draggable();
         $("#legendDIV").draggable();
 
         this.updateView();
@@ -1648,77 +1638,45 @@ export class CirclesView {
                 }
 
                 let thisID = this["id"].replace("circlePerson", "");
-                let person = window.people.get(1.0 * thisID);
-
-                condLog(window.people.get(1.0 * thisID));
-                person.getDisplayName = function () {
-                    if (person.LongName) {
-                        return person.LongName;
-                    } else if (person.RealName) {
-                        return person.RealName + " " + person.LastNameAtBirth;
-                    } else {
-                        return "Private";
-                    }
-                };
-                person.getGender = function () {
-                    return person.Gender;
-                };
-                person.getName = function () {
-                    return person.Name;
-                };
-                person.getBirthDate = function () {
-                    return person.BirthDate;
-                };
-                person.getDeathDate = function () {
-                    return person.DeathDate;
-                };
-                person.getBirthLocation = function () {
-                    return person.BirthLocation;
-                };
-                person.getDeathLocation = function () {
-                    return person.DeathLocation;
-                };
-                person.getPhotoUrl = function () {
-                    if (person.PhotoData && person.PhotoData["url"]) {
-                        return person.PhotoData["url"];
-                    }
-                };
-
-                // CirclesView.PersonCodesObject[person.Id].getPhotoUrl = function (person) {
-
-                //     if (person.PhotoData && person.PhotoData["url"]) {
-                //         return person.PhotoData["url"];
-                //     } else {
-                //         return "";
-                //     }
-                // };
-
-                let numDegreesForPopup = person.Meta.Degrees + " " + "degrees";
-                if (person.Meta.Degrees == 1) {
-                    numDegreesForPopup = "1 degree";
-                }
-                if (person.Meta.Degrees == 0) {
-                    numDegreesForPopup = "Primary";
-                }
-                // console.log("Does this person have META degrees ??", person);
-                // CirclesView.PersonCodesObject[person.Id]._data.CodesLongList[0].CirclesView.PersonCodesObject[person.Id];
-
-                window.personPopup.popupHTML(person, {
-                    type: "CC",
-                    person: { _data: CirclesView.PersonCodesObject[person.Id] },
-                    personID: person.Id,
-                    personName: person.Name,
-                    leafCollection: CirclesView.theLeafCollection,
-                    peopleList: CirclesView.PersonCodesObject,
-                    appID: "cc7",
-                    SettingsObj: Settings,
-                    extra: { degree: numDegreesForPopup },
-                });
-
-                condLog(CirclesView.PersonCodesObject);
-                condLog(CirclesView.theLeafCollection["A0"]);
-                condLog(CirclesView.PersonCodesObject[CirclesView.theLeafCollection["A0"].Id]);
+                const person = window.people.get(1.0 * thisID);
+                window.personPopup.ensurePopupContainers(document.getElementById("circlesDisplay"));
+                CirclesView.showPersonPopup(person);
             });
+        });
+    }
+
+    /**
+     * Show the shared person popup (views/fanChart/personPopup.js) for a person in window.people.
+     * The popup gets everything it needs from the person object, so no API call is made. The connection codes that
+     * let it draw how the person is connected to the root person are worked out here first if no view has done so
+     * yet. The caller must have put #popupDIV where it should appear (see personPopup.ensurePopupContainers).
+     */
+    static showPersonPopup(person) {
+        window.personPopup.addPersonAccessors(person);
+        if (!CirclesView.PersonCodesObject[window.rootId]) {
+            CirclesView.connectAllToPrimaryPerson(window.rootId);
+        }
+
+        const extra = {};
+        const degrees = person.Meta?.Degrees;
+        if (degrees == 0) {
+            extra.degree = "Primary";
+        } else if (degrees == 1) {
+            extra.degree = "1 degree";
+        } else if (degrees > 1) {
+            extra.degree = degrees + " degrees";
+        }
+
+        window.personPopup.popupHTML(person, {
+            type: "CC",
+            person: { _data: CirclesView.PersonCodesObject[person.Id] },
+            personID: person.Id,
+            personName: person.Name,
+            leafCollection: CirclesView.theLeafCollection,
+            peopleList: CirclesView.PersonCodesObject,
+            appID: "cc7",
+            SettingsObj: Settings,
+            extra: extra,
         });
     }
 

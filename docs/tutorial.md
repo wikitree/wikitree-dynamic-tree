@@ -54,22 +54,19 @@ The first thing you want to do before writing a new feature is to switch to a ne
 
 Create a folder inside `views` called `helloWorld`. Inside that folder, create a file called `helloWorld.js`. This is where you will write your app code. We will come back to it in a bit.
 
-In `index.html`, link your script in the `<head>` section.
-
-```html
-<script type="module" src="views/helloWorld/helloWorld.js"></script>
-```
-
-The last step is to register your view in `index.js`.
-
-Add your app to the `views` constant:
+The last step is to register your view in `index.js`. Add your app, and the files it needs, to the `apps` constant.
+(Don't add a `<script>` tag to `index.html`: each app's files are only loaded when someone selects that app.)
 
 ```js
-const views = {
-    "couples": new CouplesTreeView(),
+const apps = {
+    "fanchart": { ... },
     ...
-    "helloWorld": new HelloWorldView(),
- };
+    "helloWorld": {
+        title: "Hello World",
+        className: "HelloWorldView",
+        modules: ["views/helloWorld/helloWorld.js"],
+    },
+};
 ```
 
 ## Writing your feature code

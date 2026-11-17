@@ -55,7 +55,8 @@ export class Utils {
             if (lastPopup) {
                 condLog("GOING to SLIDE UP the Fan Chart lastPopup");
                 lastPopup.slideUp("fast");
-                setNextZLevel(highestZIndex);
+                // setNextZLevel() is defined in views/fanChart/SettingsOptions.js, which only some apps load.
+                if (typeof setNextZLevel === "function") setNextZLevel(highestZIndex);
             }
         }
     }

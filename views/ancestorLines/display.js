@@ -42,6 +42,18 @@ export function showTree(
     const brickWallColour = $("#aleBrickWallColour").val() || "#ff0000";
     var currentMaxShowGen = initialMaxShowGen();
 
+    // Hovering over a name shows the person popup used by the Fan Chart (instead of the birth/death title text).
+    // Clicking the name still opens the profile.
+    window.personPopup?.enableHoverPopup({
+        container: "#aleContainer",
+        selector: "g.label",
+        getPerson: (el) => {
+            const person = d3.select(el).datum()?.data;
+            return person && canShowPopup(person) ? person : null;
+        },
+        showPopup: showPersonPopup,
+    });
+
     function initialMaxShowGen() {
         return Math.max(Math.min(theTree.maxGeneration, maxGenToShow), expandLOIs ? genCountsInLOI.length : 0);
     }
@@ -438,7 +450,7 @@ export function showTree(
             .append("text")
             .attr("wtId", (d) => d.data.getNumId())
             .style("fill", (d) => (d.data.isBrickWall() ? brickWallColour : "inherit"));
-        labelGroup.append("title").text((d) => birthAndDeathData(d.data));
+        labelGroup.append("title").text((d) => labelTitle(d.data));
 
         function formLabel(p, name) {
             const lbl = p.isBioParent() ? "[bio] " : "";
@@ -462,6 +474,10 @@ export function showTree(
                 return `${birthString(person, privatise)}\n${deathString(person, privatise)}`;
             }
             return `${birthString(person)}\n${deathString(person)}`;
+        }
+        // A name with a popup gets no title text, so that the browser's tooltip doesn't show on top of the popup
+        function labelTitle(person) {
+            return canShowPopup(person) ? "" : birthAndDeathData(person);
         }
         function isTextOnLeft(d) {
             return labelsLeftOnly || d.children || d._children;
@@ -534,7 +550,7 @@ export function showTree(
                     const p = d.data;
                     return formLabel(p, getPersonName(p));
                 });
-            nodeSelection.select("g.label title").text((d) => birthAndDeathData(d.data));
+            nodeSelection.select("g.label title").text((d) => labelTitle(d.data));
         }
         // Collect the widths of all labels and store it on the node for when we want to adjust he lengths
         function measureLabels(nodeSelection) {
@@ -1021,6 +1037,26 @@ export function showTree(
         const theLeft = theClickedOffset.left + lOffset;
         elem.css({ top: theClickedOffset.top + tOffset, left: theLeft });
     }
+}
+
+// The person popup (views/fanChart/personPopup.js) shows full names, dates and places, so we don't show it for
+// people the privacy options say should be hidden, nor for people we don't have a profile for.
+function canShowPopup(person) {
+    if (!window.personPopup?.popupHTML || !person.getWtId()) return false;
+    const privatise = document.getElementById("privatise")?.checked;
+    const anonLiving = document.getElementById("anonLiving")?.checked;
+    if (anonLiving && person.isLiving()) return false;
+    if (privatise && (person.isUnlisted() || person.isPrivate())) return false;
+    return true;
+}
+
+function showPersonPopup(person) {
+    // ALE has no connection codes for the popup's connection diagram, so its icon is hidden
+    window.personPopup.popupHTML(person, {
+        type: "ALE",
+        personID: person.getNumId(),
+        extra: { hideConnectionIcon: true },
+    });
 }
 
 const DupNodeColours = [
