@@ -3,8 +3,9 @@
  * With Ian's permission, Riël Smit (Smit-641) adapted it to be a WikiTree Dynamic Tree view
  * using the getPeople API call for fetching the CC7 profiles.
  *
- * It makes use (through direct code inclusion) of FileSave (https://github.com/eligrey/FileSaver.js/)
- * and SheetJs (https://www.npmjs.com/package/xlsx)
+ * It uses FileSaver (https://github.com/eligrey/FileSaver.js/, local copy in views/shared/FileSaver.min.js)
+ * and SheetJS (https://www.npmjs.com/package/xlsx, loaded from cdn.sheetjs.com).
+ * Both are listed as libraries in index.js.
  */
 import { theSourceRules } from "../../../lib/biocheck-api/src/SourceRules.js";
 import { BioCheckPerson } from "../../../lib/biocheck-api/src/BioCheckPerson.js";
@@ -242,7 +243,7 @@ class CC7 {
                 const myId = self.attr("id");
                 const [lastPopup] = CC7.findTopPopup();
                 if (self.is(":visible") && myId != lastPopup?.attr("id")) {
-                    self.css("z-index", ++StatsView.lastZLevel);
+                    self.css("z-index", Settings.getNextZLevel());
                 }
             });
 
