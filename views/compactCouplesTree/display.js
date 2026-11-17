@@ -42,6 +42,59 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
     const anonLiving = $("#anonLiving").is(":checked");
     var currentMaxShowGen = theTree.maxGeneration;
 
+    // Hovering over a name, in the tree or in a children or spouses list, shows the person popup used by the
+    // Fan Chart (instead of the title text). Clicking the name still opens the profile.
+    window.personPopup?.enableHoverPopup({
+        container: "#cctContainer",
+        selector: "g.cct-name, a.cct-profile-link",
+        getPerson: (el) => {
+            let person;
+            if (el.tagName.toLowerCase() == "a") {
+                person = getPersonById(+el.getAttribute("data-person-id"));
+            } else {
+                person = d3.select(el).datum()?.data?.get(el.getAttribute("data-side"));
+            }
+            return person && canShowPopup(person) ? person : null;
+        },
+        showPopup: showPersonPopup,
+    });
+
+    function getPersonById(id) {
+        return theTree.people.get(id) || CCTE.peopleCache?.getIfPresent(id);
+    }
+
+    // The popup shows full names, dates and places, so we don't show it for people the privacy options say should
+    // be hidden, nor for people we don't have a profile for.
+    function canShowPopup(person) {
+        if (!window.personPopup?.popupHTML || !person || person.isNoSpouse || !person.getWtId?.()) return false;
+        if (anonLiving && person.isLiving()) return false;
+        if (privatise && (person.isUnlisted() || person.isPrivate())) return false;
+        return true;
+    }
+
+    function showPersonPopup(person) {
+        // The popup expects the data of a person as returned by the API, but the people cache keeps a person's
+        // spouses as a Set of ids, with the marriage data in MarriageDates. Give the popup the format it expects.
+        const data = { ...person._data };
+        delete data.SpousesOrdered;
+        if (!data.LongName) data.LongName = person.getDisplayName(); // the name the popup shows
+        data.Spouses = [...(person._data.Spouses || [])].map((id) => ({
+            Id: id,
+            ...(person._data.MarriageDates?.[id] || {}),
+            DoNotDisplay: 0,
+            NotMarried: 0,
+        }));
+        window.personPopup.popupHTML(window.personPopup.addPersonAccessors(data), {
+            type: "CCT",
+            personID: data.Id,
+            getPersonData: (id) => getPersonById(+id)?._data,
+            SettingsObj: { getNextZLevel: () => CCTE.getNextZLevel() },
+            // We don't have the connection codes the popup's connection diagram needs, and the tree already shows
+            // how each person is connected
+            extra: { hideConnectionIcon: true },
+        });
+    }
+
     function calculateWidths() {
         const treeWidth = currentMaxShowGen * edgeFactor;
         return [treeWidth, calculateSvgWidth(treeWidth)];
@@ -619,10 +672,14 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                 .attr("target", "_blank");
 
             // Create a group for the label
-            const labelGroup = link.append("g").attr("transform", function () {
-                const dy = side === "a" ? aTextBottom : bTextBottom;
-                return `translate(-13,${dy})`;
-            });
+            const labelGroup = link
+                .append("g")
+                .attr("class", "cct-name")
+                .attr("data-side", side)
+                .attr("transform", function () {
+                    const dy = side === "a" ? aTextBottom : bTextBottom;
+                    return `translate(-13,${dy})`;
+                });
 
             const nameParts = [
                 ["FirstName", "MiddleInitials", "LastNameAtBirth"],
@@ -679,7 +736,11 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                     }
                 });
 
-            text.append("title").text((d) => birthAndDeathData(d.data.get(side)));
+            // A name with a popup gets no title text, so that the browser's tooltip doesn't show on top of the popup
+            text.append("title").text((d) => {
+                const p = d.data.get(side);
+                return canShowPopup(p) ? "" : birthAndDeathData(p);
+            });
 
             if (flagAncestors) {
                 // For each label group, only insert a rect when datum indicates user-ancestor.
@@ -1138,7 +1199,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             item.appendChild(
                 aDivWith(
                     "aChild",
-                    aProfileLink(childName, child.getWtId(), child.isBrickWall()),
+                    aProfileLink(childName, child.getWtId(), child.isBrickWall(), child),
                     document.createTextNode(" "),
                     aTreeLink(childName, child.getWtId()),
                     document.createTextNode(` ${lifespan(child)}`)
@@ -1180,6 +1241,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
                 mDate: mDate,
                 msDate: Utils.dateObject(mDate),
                 isBrickWall: spouse.isBrickWall,
+                person: spouse,
             });
         }
 
@@ -1210,7 +1272,7 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
             item.appendChild(
                 aDivWith(
                     "altSpouse",
-                    aProfileLink(spouseData.name, spouseData.wtId, spouseData.isBrickWall()),
+                    aProfileLink(spouseData.name, spouseData.wtId, spouseData.isBrickWall(), spouseData.person),
                     aSpanWith(
                         "lifespan",
                         document.createTextNode(" "),
@@ -1269,8 +1331,9 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
      * @param {*} itsText The text to display in the link
      * @param {*} personId The profile id to link to
      * @param {*} isBrickWall Whether or not the profile has been classified as a brick wall
+     * @param {*} person (optional) The person linked to. If given, hovering over the link shows the person popup.
      */
-    function aProfileLink(itsText, personId, isBrickWall) {
+    function aProfileLink(itsText, personId, isBrickWall, person) {
         const profileLink = document.createElement("a");
         let txt;
         if (isBrickWall) {
@@ -1283,7 +1346,12 @@ export function showTree(ccte, treeInfo, connectors = false, hideTreeHeader = fa
         profileLink.appendChild(txt);
         profileLink.href = `https://www.wikitree.com/wiki/${personId}`;
         profileLink.target = "_blank";
-        profileLink.setAttribute("title", `Open the profile of ${itsText} on a new page`);
+        if (person && canShowPopup(person)) {
+            profileLink.className = "cct-profile-link";
+            profileLink.setAttribute("data-person-id", person.getId());
+        } else {
+            profileLink.setAttribute("title", `Open the profile of ${itsText} on a new page`);
+        }
         return profileLink;
     }
 

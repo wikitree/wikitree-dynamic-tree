@@ -5,7 +5,9 @@
 
         Currently used in the Super Tree, Fan Chart, Fractal Tree, Ancestor Webs, X Family Tree, FanDoku
         
-        To be added to CC7 Views in Bubble View
+        Also used in CC7 Views (Circles View and Table View) and the Ancestor Lines Explorer.
+        personPopup.addPersonAccessors() and personPopup.ensurePopupContainers() let an app show the popup for a plain
+        API person object, and personPopup.enableHoverPopup() shows it when hovering over e.g. a name.
 
         */
 
@@ -28,6 +30,178 @@ window.SuperBigFamView = window.SuperBigFamView || {
     removePodDIV: function () {
         document.getElementById("connectionPodDIV").style.display = "none";
     },
+};
+
+/**
+ * Give a plain person object (one as returned by the getPeople or getProfile API, such as the people in CC7's
+ * window.people) the accessor methods that personPopup.popupHTML() calls, so that an app does not need to wrap its
+ * people in the Fan Chart's Person class to show a popup. Methods the object already has are left alone.
+ * Returns the same object.
+ */
+personPopup.addPersonAccessors = function (person) {
+    const accessors = {
+        getDisplayName: function () {
+            if (person.LongName) {
+                return person.LongName;
+            } else if (person.RealName) {
+                return person.RealName + " " + person.LastNameAtBirth;
+            } else {
+                return "Private";
+            }
+        },
+        getGender: () => person.Gender,
+        getName: () => person.Name,
+        getBirthDate: () => person.BirthDate,
+        getDeathDate: () => person.DeathDate,
+        getBirthLocation: () => person.BirthLocation,
+        getDeathLocation: () => person.DeathLocation,
+        getPhotoUrl: function () {
+            if (person.PhotoData && person.PhotoData["url"]) {
+                return person.PhotoData["url"];
+            }
+        },
+    };
+    for (const [name, fn] of Object.entries(accessors)) {
+        if (typeof person[name] != "function") {
+            person[name] = fn;
+        }
+    }
+    return person;
+};
+
+/**
+ * Make sure the #popupDIV (the person popup) and #connectionPodDIV (the connection diagram it can open) exist, and
+ * that they are inside parentEl. They are created the first time this is called and moved (and hidden) when a later
+ * call names a different parent, so an app with several views can show the same popup in whichever view is active
+ * without ending up with duplicate ids.
+ */
+personPopup.ensurePopupContainers = function (parentEl) {
+    const boxStyle =
+        "display:none; position:absolute; background-color:#EFEFEF; border: solid darkgrey 4px; " +
+        "border-radius: 15px; padding: 15px;";
+    const containers = [
+        {
+            id: "popupDIV",
+            style: boxStyle + " left:20px;",
+            close: "var p = document.getElementById('popupDIV'); p.innerHTML = ''; p.style.display = 'none';",
+        },
+        {
+            id: "connectionPodDIV",
+            style: boxStyle + " width:fit-content; left:700px;",
+            close: "document.getElementById('connectionPodDIV').style.display = 'none';",
+        },
+    ];
+    for (const c of containers) {
+        let div = document.getElementById(c.id);
+        if (!div) {
+            div = document.createElement("div");
+            div.id = c.id;
+            div.className = "pop-up";
+            div.setAttribute("style", c.style);
+            div.innerHTML =
+                `<span style="color:red; align:left" title="close pop-up"><A onclick="${c.close}">` +
+                SVGbtnCLOSE +
+                "</A></span>";
+            parentEl.appendChild(div);
+            if (window.jQuery && jQuery.fn.draggable) {
+                jQuery(div).draggable();
+            }
+        } else if (div.parentElement !== parentEl) {
+            div.style.display = "none";
+            div.style.top = "";
+            div.style.left = c.id == "popupDIV" ? "20px" : "700px";
+            parentEl.appendChild(div);
+        }
+    }
+    return document.getElementById("popupDIV");
+};
+
+/**
+ * Show the person popup when the mouse rests on certain elements, as a richer replacement for a title tooltip.
+ * Clicks on those elements are left alone (e.g. a name link still opens the profile).
+ * The popup stays up while the mouse is over it, so its links and buttons can be used, and goes away shortly after the
+ * mouse leaves both the element and the popup. If the user opens the connection diagram from the popup, it is placed
+ * just below the popup.
+ * Calling this again for the same container replaces the earlier handlers.
+ *
+ * options:
+ *   container  - element or selector that contains the elements; the popup is placed in it, and the event handlers
+ *                are attached to it (delegated, so elements added later are covered too)
+ *   selector   - selector for the elements inside container that should show a popup
+ *   getPerson  - function (element) returning the person to show, or a falsy value to show nothing for this element
+ *   showPopup  - function (person) that calls personPopup.popupHTML() with whatever connection object the app needs
+ *   showDelay  - ms the mouse must rest on an element before the popup appears (default 400)
+ *   hideDelay  - ms after leaving the element (or the popup) before the popup goes away (default 400)
+ */
+personPopup.enableHoverPopup = function ({
+    container,
+    selector,
+    getPerson,
+    showPopup,
+    showDelay = 400,
+    hideDelay = 400,
+}) {
+    const ns = ".personPopupHover";
+    const $container = $(container);
+    const containerEl = $container[0];
+    if (!containerEl) return;
+
+    let showTimer = null;
+    let hideTimer = null;
+    let shownPerson = null;
+    // Another view of the same app may use the popup too (it is moved to whoever shows it), so we only manage it
+    // while it is in our container.
+    const ownsPopup = (popup) => popup && popup.parentElement === containerEl;
+
+    function hide() {
+        const popup = document.getElementById("popupDIV");
+        if (ownsPopup(popup)) $(popup).stop(true, true).hide();
+        shownPerson = null;
+    }
+    function scheduleHide() {
+        // Cancelling a pending show means a popup never appears after the mouse has already left the element
+        clearTimeout(showTimer);
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(hide, hideDelay);
+    }
+    function show(el, mouseX) {
+        const person = getPerson(el);
+        if (!person) return;
+        personPopup.ensurePopupContainers(containerEl);
+        const $popup = $("#popupDIV");
+        if ($popup.is(":visible") && shownPerson === person) return;
+
+        // popupHTML() hides the popup if it is already showing this person, so start from a hidden popup
+        $popup.stop(true, true).hide();
+        showPopup(person);
+        if (!$popup.is(":visible")) return;
+        shownPerson = person;
+        $popup.offset({ top: $(el).offset().top, left: mouseX + 20 });
+    }
+
+    $container
+        .off(ns)
+        .on("mouseenter" + ns, selector, function (event) {
+            const el = this;
+            clearTimeout(showTimer);
+            clearTimeout(hideTimer);
+            showTimer = setTimeout(() => show(el, event.pageX), showDelay);
+        })
+        .on("mouseleave" + ns, selector, scheduleHide)
+        .on("mouseenter" + ns, "#popupDIV", function () {
+            if (ownsPopup(this)) clearTimeout(hideTimer);
+        })
+        .on("mouseleave" + ns, "#popupDIV", function () {
+            if (ownsPopup(this)) scheduleHide();
+        })
+        .on("click" + ns, "#popupDIV a[onclick^='popupConnectionDIV']", function () {
+            // The icon's own onclick has just opened the connection diagram. Place it below the popup, wherever the
+            // popup is now (it may have been dragged).
+            const $popup = $("#popupDIV");
+            if (!ownsPopup($popup[0])) return;
+            const offset = $popup.offset();
+            $("#connectionPodDIV").offset({ top: offset.top + $popup.outerHeight() + 10, left: offset.left });
+        });
 };
 
 let connectObject = {};
@@ -53,7 +227,7 @@ let copyPathDescriptionIcon = `<span id=copyConnectionDescriptionICON class="ico
 
 // Returns an array [x , y] that corresponds to the endpoint of rθ from (centreX,centreY)
 personPopup.popupHTML = function (person, connectionObj = {}, appIcon = "", appView = "") {
-    console.log("Popup for ", person, connectionObj);
+    // console.log("Popup for ", person, connectionObj);
     connectObject = connectionObj;
 
     let personData = person._data;
@@ -113,7 +287,7 @@ personPopup.popupHTML = function (person, connectionObj = {}, appIcon = "", appV
         treeUrl = window.location.pathname + "?id=" + person.getName();
 
     // Use generic gender photos if there is not profile photo available
-    if (!photoUrl || (SuperBigFamView.displayPrivatize == 1 && person._data.IsLiving == true)) {
+    if (!photoUrl || (SuperBigFamView.displayPrivatize == 1 && personData.IsLiving == true)) {
         if (person.getGender() === "Male") {
             photoUrl = "images/icons/male.gif";
         } else if (person && person.getGender() === "Female") {
@@ -191,7 +365,11 @@ personPopup.popupHTML = function (person, connectionObj = {}, appIcon = "", appV
         // condLog(window.people.get(1.0 * spID));
 
         let theSpouseData = null;
-        if (spID > 0 && thePeopleList && thePeopleList[spID] && thePeopleList[spID]._data) {
+        if (spID > 0 && connectObject.getPersonData) {
+            // The app can tell us where to find the data of other people (e.g. a spouse)
+            theSpouseData = connectObject.getPersonData(spID) || null;
+        }
+        if (spID > 0 && theSpouseData == null && thePeopleList && thePeopleList[spID] && thePeopleList[spID]._data) {
             theSpouseData = thePeopleList[spID]._data;
         } else if (spID > 0 && theSpouseData == null && window.people) {
             theSpouseData = window.people.get(1.0 * spID);
@@ -298,7 +476,7 @@ personPopup.popupHTML = function (person, connectionObj = {}, appIcon = "", appV
         if (connectObject.ahNum == 1 || connectObject.ahNum == [1]) {
             connectionIcon = `<br/><br/><A onclick=document.getElementById('customPathEntryDIV').style.display='block'; title="Open up form to show a custom connection path between two people."><img style="height:24px; cursor:pointer;" src="https://www.wikitree.com/images/icons/icon-connect.svg"><img style="height:24px; cursor:pointer;" src="https://www.wikitree.com/images/icons/icon-relationship.svg"></A>`;
         }
-    } else if (rootId && rootId == connectObject.personID) {
+    } else if (window.rootId && window.rootId == connectObject.personID) {
         connectionIcon = `<br/><br/><A onclick=document.getElementById('customPathEntryDIV').style.display='block'; title="Open up form to show a custom connection path between two people."><img style="height:24px; cursor:pointer;" src="https://www.wikitree.com/images/icons/icon-connect.svg"><img style="height:24px; cursor:pointer;" src="https://www.wikitree.com/images/icons/icon-relationship.svg"></A>`;
     }
 
@@ -410,7 +588,46 @@ function breakDownCC7Code(longCode) {
     return CCcodes;
 }
 
-async function popupConnectionDIV(doReverse = "", pathNum = 0, overrideLastPersonID = "", doRelationship = -1) {
+let lastConnectionDIVArgs = [];
+
+/**
+ * Show (or toggle) the connection diagram for the current popup person in #connectionPodDIV.
+ * Drawing it can need a getConnections API call, which can fail (e.g. a connection reset). Without this wrapper such a
+ * failure became an unhandled promise rejection and left "Please wait ..." in the pod forever. Now the pod shows what
+ * went wrong, with a button to try again.
+ */
+async function popupConnectionDIV(...args) {
+    lastConnectionDIVArgs = args;
+    try {
+        await drawPopupConnectionDIV(...args);
+    } catch (error) {
+        console.error("Could not draw the connection diagram:", error);
+        // So that the next click on the connection icon (or Try again) opens the pod again instead of closing it
+        currentConnectionPopupID = 0;
+        const pod = document.getElementById("connectionPodDIV");
+        if (!pod) return;
+        const reason = $("<div>").text(error?.message || String(error)).html();
+        pod.style.display = "block";
+        pod.innerHTML =
+            `<div class="popup-box" style="border-color: red">
+                <span style="color:red; position:absolute; right:-0.2em; top:-0.2em; cursor:pointer;">` +
+            `<a onclick="document.getElementById('connectionPodDIV').style.display = 'none';">` +
+            SVGbtnCLOSE +
+            `</a></span>
+                <p>Sorry, the connection could not be retrieved from WikiTree.<br/>
+                This is usually a temporary network problem.</p>
+                <p style="font-size:smaller; color:#666;">${reason}</p>
+                <button class="btn btn-secondary btn-sm" onclick="retryPopupConnectionDIV();">Try again</button>
+            </div>`;
+    }
+}
+
+function retryPopupConnectionDIV() {
+    currentConnectionPopupID = 0;
+    popupConnectionDIV(...lastConnectionDIVArgs);
+}
+
+async function drawPopupConnectionDIV(doReverse = "", pathNum = 0, overrideLastPersonID = "", doRelationship = -1) {
     if (doRelationship == -1) {
         doRelationship = 0;
         if (overrideLastPersonID != "") {

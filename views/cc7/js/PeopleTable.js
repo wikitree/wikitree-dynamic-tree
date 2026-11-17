@@ -676,6 +676,15 @@ class PeopleTable {
                 PeopleTable.showFamilySheet(event, $(this));
             });
 
+        // Hovering over a name shows the person popup (the one used by the Fan Chart and the Circles view).
+        // Clicking the name still opens the profile.
+        window.personPopup?.enableHoverPopup({
+            container: "#cc7Container",
+            selector: "td.connectionsName",
+            getPerson: (el) => window.people.get(+$(el).closest("tr").attr("data-id")),
+            showPopup: (person) => CirclesView.showPersonPopup(person),
+        });
+
         $("#cc7Container")
             .off("click", "img.timelineButton")
             .on("click", "img.timelineButton", function () {

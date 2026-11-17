@@ -2006,6 +2006,8 @@ class CC7 {
                 "#statsView",
                 "#missingLinksTable",
                 "#circlesDisplay",
+                "#popupDIV",
+                "#connectionPodDIV",
                 "#tooBig",
                 ".viewButton",
                 "#wideTableButton",

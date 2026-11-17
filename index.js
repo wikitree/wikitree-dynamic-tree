@@ -121,7 +121,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "ale": {
             title: "Ancestor Lines Explorer",
             className: "ALEView",
-            needs: ["d3", "floatingScroll", "fileSaver"],
+            needs: ["d3", "fanChartCommon", "floatingScroll", "fileSaver"],
             modules: [
                 "views/ancestorLines/api.js",
                 "views/ancestorLines/person.js",
@@ -163,14 +163,14 @@ window.addEventListener("DOMContentLoaded", (event) => {
         "ccdtree": {
             title: "Compact Couple Descendants",
             className: "CCDView",
-            needs: ["d3", "floatingScroll"],
+            needs: ["d3", "fanChartCommon", "floatingScroll"],
             modules: ["views/compactDescendantsTree/ccd_view.js"],
             styles: ["views/compactDescendantsTree/ccd.css"],
         },
         "cctree": {
             title: "Compact Couple Ancestors",
             className: "CCTView",
-            needs: ["d3", "floatingScroll"],
+            needs: ["d3", "fanChartCommon", "floatingScroll"],
             modules: ["views/compactCouplesTree/cct_view.js"],
             styles: ["views/compactCouplesTree/cct.css"],
         },
