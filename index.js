@@ -106,66 +106,11 @@ window.addEventListener("DOMContentLoaded", (event) => {
     // To add a new app, add a unique keyword with a description of the app and the files it needs (see the
     // comment at the top of tree.js). Do not add <script> tags for it to index.html: an app's files are only
     // loaded when someone uses it.
-    // The default app is the first one (but this is only used if the user has not used the page before, since
-    // the last app used is saved in a cookie and used the next time the user goes to this page).
+    // Keep the apps in alphabetical order of their keyword. The default app is the one marked default: true (but this
+    // is only used if the user has not used the page before, since the last app used is saved in a cookie and used
+    // the next time the user goes to this page).
     // Note: the keyword is used as part of the URL to get to the app.
     const apps = {
-        "fanchart": {
-            title: "Fan Chart",
-            className: "FanChartView",
-            needs: ["fanChartCommon", "jsPDF"],
-            modules: ["views/fanChart/FanChartView.js"],
-        },
-        "couples": {
-            title: "Couples Dynamic Tree",
-            className: "CouplesTreeView",
-            needs: ["d3", "floatingScroll"],
-            modules: [
-                "views/couplesTree/cached_person.js",
-                "views/couplesTree/cache_loader.js",
-                "views/couplesTree/people_cache.js",
-                "views/couplesTree/couples_tree.js",
-            ],
-            styles: ["views/couplesTree/couples_tree.css"],
-        },
-        "cctree": {
-            title: "Compact Couple Ancestors",
-            className: "CCTView",
-            needs: ["d3", "floatingScroll"],
-            modules: ["views/compactCouplesTree/cct_view.js"],
-            styles: ["views/compactCouplesTree/cct.css"],
-        },
-        "ccdtree": {
-            title: "Compact Couple Descendants",
-            className: "CCDView",
-            needs: ["d3", "floatingScroll"],
-            modules: ["views/compactDescendantsTree/ccd_view.js"],
-            styles: ["views/compactDescendantsTree/ccd.css"],
-        },
-        "wt-dynamic-tree": {
-            title: "Dynamic Tree",
-            className: "WikiTreeDynamicTreeViewer",
-            needs: ["d3"],
-            scripts: ["views/baseDynamicTree/WikiTreeDynamicTreeViewer.js"],
-        },
-        "timeline": {
-            title: "Family Timeline",
-            className: "TimelineView",
-            needs: ["visTimeline"],
-            scripts: ["views/timeline/TimelineView.js"],
-        },
-        "fandoku": {
-            title: "FanDoku game",
-            className: "FandokuView",
-            needs: ["fanChartCommon"],
-            modules: ["views/fandoku/FandokuView.js"],
-        },
-        "fractal": {
-            title: "Fractal Tree",
-            className: "FractalView",
-            needs: ["fanChartCommon", "jsPDF"],
-            modules: ["views/fractalTree/FractalView.js"],
-        },
         "ahnentafel": {
             title: "Ahnentafel Ancestor List",
             className: "AhnentafelView",
@@ -173,47 +118,25 @@ window.addEventListener("DOMContentLoaded", (event) => {
             scripts: ["views/ahnentafel/ahnentafel.js"],
             styles: ["views/ahnentafel/ahnentafel.css"],
         },
-        "genealogyReport": {
-            title: "Genealogy Report",
-            className: "GenealogyReportView",
-            modules: ["views/genealogyReport/genealogyReport.js"],
-            styles: ["views/genealogyReport/genealogyReport.css"],
+        "ale": {
+            title: "Ancestor Lines Explorer",
+            className: "ALEView",
+            needs: ["d3", "floatingScroll", "fileSaver"],
+            modules: [
+                "views/ancestorLines/api.js",
+                "views/ancestorLines/person.js",
+                "views/ancestorLines/ancestor_tree.js",
+                "views/ancestorLines/display.js",
+                "views/ancestorLines/ancestor_lines_explorer.js",
+                "views/ancestorLines/ale_view.js",
+            ],
+            styles: ["views/ancestorLines/ale.css"],
         },
-        "surnames": {
-            title: "Surnames List",
-            className: "SurnamesView",
-            scripts: ["views/surnames/surnames.js"],
-            styles: ["views/surnames/surnames.css"],
-        },
-        "namecloud": {
-            title: "Name Cloud",
-            className: "NameCloudView",
-            modules: ["views/nameCloud/name_cloud_view.js"],
-            styles: ["views/nameCloud/name_cloud.css"],
-        },
-        "webs": {
-            title: "Ancestor Webs",
-            className: "WebsView",
-            needs: ["fanChartCommon"],
-            modules: ["views/webs/WebsView.js"],
-        },
-        "ccwebs": {
-            title: "Connection Checkers Web",
-            className: "CCWebsView",
-            scripts: ["views/ccwebs/CCWebsView.js"],
-        },
-        "familygroup": {
-            title: "Family Group View",
-            className: "FamilyView",
-            scripts: ["views/familyView/familyView.js"],
-            styles: ["views/familyView/familyView.css"],
-        },
-        "printer-friendly": {
-            title: "Printer Friendly",
-            className: "PrinterFriendlyView",
-            args: [WikiTreeAPI, 6],
-            scripts: ["views/printerFriendly/PrinterFriendlyView.js"],
-            styles: ["views/printerFriendly/printerFriendly.css"],
+        "ancestorsCemeteries": {
+            title: "Ancestors Cemeteries",
+            className: "AncestorsCemeteriesView",
+            needs: ["dataTables"],
+            modules: ["views/ancestorsCemeteries/ancestorsCemeteries.js"],
         },
         "calendar": {
             title: "Family Calendar",
@@ -221,18 +144,6 @@ window.addEventListener("DOMContentLoaded", (event) => {
             needs: ["fullCalendar", "html2canvas"],
             scripts: ["views/familyCalendar/familyCalendar.js"],
             styles: ["views/familyCalendar/calendar.css"],
-        },
-        "portraits": {
-            title: "Family Portraits",
-            className: "PortraitView",
-            scripts: ["views/familyPortraits/portraits.js"],
-            styles: ["views/familyPortraits/portraits.css"],
-        },
-        "nameTest": {
-            title: "Test name construction",
-            className: "NameTestView",
-            disabled: true,
-            scripts: ["views/nameTest/name_test.js"],
         },
         "cc7": {
             title: "CC7 Views",
@@ -249,19 +160,36 @@ window.addEventListener("DOMContentLoaded", (event) => {
             ],
             styles: ["views/cc7/css/cc7.css"],
         },
-        "ale": {
-            title: "Ancestor Lines Explorer",
-            className: "ALEView",
-            needs: ["d3", "floatingScroll", "fileSaver"],
+        "ccdtree": {
+            title: "Compact Couple Descendants",
+            className: "CCDView",
+            needs: ["d3", "floatingScroll"],
+            modules: ["views/compactDescendantsTree/ccd_view.js"],
+            styles: ["views/compactDescendantsTree/ccd.css"],
+        },
+        "cctree": {
+            title: "Compact Couple Ancestors",
+            className: "CCTView",
+            needs: ["d3", "floatingScroll"],
+            modules: ["views/compactCouplesTree/cct_view.js"],
+            styles: ["views/compactCouplesTree/cct.css"],
+        },
+        "ccwebs": {
+            title: "Connection Checkers Web",
+            className: "CCWebsView",
+            scripts: ["views/ccwebs/CCWebsView.js"],
+        },
+        "couples": {
+            title: "Couples Dynamic Tree",
+            className: "CouplesTreeView",
+            needs: ["d3", "floatingScroll"],
             modules: [
-                "views/ancestorLines/api.js",
-                "views/ancestorLines/person.js",
-                "views/ancestorLines/ancestor_tree.js",
-                "views/ancestorLines/display.js",
-                "views/ancestorLines/ancestor_lines_explorer.js",
-                "views/ancestorLines/ale_view.js",
+                "views/couplesTree/cached_person.js",
+                "views/couplesTree/cache_loader.js",
+                "views/couplesTree/people_cache.js",
+                "views/couplesTree/couples_tree.js",
             ],
-            styles: ["views/ancestorLines/ale.css"],
+            styles: ["views/couplesTree/couples_tree.css"],
         },
         "descendants": {
             title: "Descendants",
@@ -270,11 +198,11 @@ window.addEventListener("DOMContentLoaded", (event) => {
             scripts: ["views/descendants/descendants.js"],
             styles: ["views/descendants/descendants.css"],
         },
-        "xtree": {
-            title: "X Family Tree",
-            className: "XTreeView",
-            needs: ["fanChartCommon"],
-            scripts: ["views/xTree/XTreeView.js"],
+        "familygroup": {
+            title: "Family Group View",
+            className: "FamilyView",
+            scripts: ["views/familyView/familyView.js"],
+            styles: ["views/familyView/familyView.css"],
         },
         "familyGroupApp": {
             title: "Family Group App",
@@ -283,29 +211,55 @@ window.addEventListener("DOMContentLoaded", (event) => {
             modules: ["views/familyGroupApp/familyGroupApp.js"],
             styles: ["views/familyGroupApp/familyGroupApp.css"],
         },
-        "superbig": {
-            title: "Super Tree",
-            className: "SuperBigFamView",
+        "fanchart": {
+            default: true, // shown in the selector the first time someone uses the page
+            title: "Fan Chart",
+            className: "FanChartView",
             needs: ["fanChartCommon", "jsPDF"],
-            modules: ["views/superBigFamTree/SuperBigFamView.js"],
+            modules: ["views/fanChart/FanChartView.js"],
         },
-        "slippyTree": {
-            title: "Slippy Tree",
-            className: "SlippyTree",
-            modules: ["views/slippyTree/script.js"],
-            styles: ["views/slippyTree/style.css"],
+        "fandoku": {
+            title: "FanDoku game",
+            className: "FandokuView",
+            needs: ["fanChartCommon"],
+            modules: ["views/fandoku/FandokuView.js"],
         },
-        "stats": {
-            title: "Statistics",
-            className: "StatsView",
-            needs: ["sortable"],
-            modules: ["views/stats/stats.js"],
-            styles: ["views/stats/stats.css"],
+        "fractal": {
+            title: "Fractal Tree",
+            className: "FractalView",
+            needs: ["fanChartCommon", "jsPDF"],
+            modules: ["views/fractalTree/FractalView.js"],
         },
-        "wtPlusMaps": {
-            title: "WT+ Maps",
-            className: "WtPlusMaps",
-            modules: ["views/wtPlusMaps/wtPlusMaps.js"],
+        "genealogyReport": {
+            title: "Genealogy Report",
+            className: "GenealogyReportView",
+            modules: ["views/genealogyReport/genealogyReport.js"],
+            styles: ["views/genealogyReport/genealogyReport.css"],
+        },
+        "heritage": {
+            title: "Heritage Charts",
+            className: "HeritageView",
+            needs: ["d3"],
+            modules: ["views/heritage/heritage.js"],
+            styles: ["views/heritage/heritage.css"],
+        },
+        "lineageMatrix": {
+            title: "Lineage Matrix",
+            className: "LineageMatrixView",
+            scripts: ["views/lineageMatrix/LineageMatrixView.js"],
+            styles: ["views/lineageMatrix/lineageMatrix.css"],
+        },
+        "namecloud": {
+            title: "Name Cloud",
+            className: "NameCloudView",
+            modules: ["views/nameCloud/name_cloud_view.js"],
+            styles: ["views/nameCloud/name_cloud.css"],
+        },
+        "nameTest": {
+            title: "Test name construction",
+            className: "NameTestView",
+            disabled: true,
+            scripts: ["views/nameTest/name_test.js"],
         },
         "oneNameTrees": {
             title: "One Name Trees",
@@ -320,24 +274,18 @@ window.addEventListener("DOMContentLoaded", (event) => {
             ],
             styles: ["views/oneNameTrees/oneNameTrees.css"],
         },
-        "ancestorsCemeteries": {
-            title: "Ancestors Cemeteries",
-            className: "AncestorsCemeteriesView",
-            needs: ["dataTables"],
-            modules: ["views/ancestorsCemeteries/ancestorsCemeteries.js"],
+        "portraits": {
+            title: "Family Portraits",
+            className: "PortraitView",
+            scripts: ["views/familyPortraits/portraits.js"],
+            styles: ["views/familyPortraits/portraits.css"],
         },
-        "heritage": {
-            title: "Heritage Charts",
-            className: "HeritageView",
-            needs: ["d3"],
-            modules: ["views/heritage/heritage.js"],
-            styles: ["views/heritage/heritage.css"],
-        },
-        "timelineTree": {
-            title: "Timeline Tree",
-            className: "TimelineTreeView",
-            modules: ["views/timelineTree/timelineTree.js"],
-            styles: ["views/timelineTree/timelineTree.css"],
+        "printer-friendly": {
+            title: "Printer Friendly",
+            className: "PrinterFriendlyView",
+            args: [WikiTreeAPI, 6],
+            scripts: ["views/printerFriendly/PrinterFriendlyView.js"],
+            styles: ["views/printerFriendly/printerFriendly.css"],
         },
         "research": {
             title: "Research",
@@ -345,11 +293,65 @@ window.addEventListener("DOMContentLoaded", (event) => {
             scripts: ["views/research/sites.js", "views/research/research.js"],
             styles: ["views/research/research.css"],
         },
-        "lineageMatrix": {
-            title: "Lineage Matrix",
-            className: "LineageMatrixView",
-            scripts: ["views/lineageMatrix/LineageMatrixView.js"],
-            styles: ["views/lineageMatrix/lineageMatrix.css"],
+        "slippyTree": {
+            title: "Slippy Tree",
+            className: "SlippyTree",
+            modules: ["views/slippyTree/script.js"],
+            styles: ["views/slippyTree/style.css"],
+        },
+        "stats": {
+            title: "Statistics",
+            className: "StatsView",
+            needs: ["sortable"],
+            modules: ["views/stats/stats.js"],
+            styles: ["views/stats/stats.css"],
+        },
+        "superbig": {
+            title: "Super Tree",
+            className: "SuperBigFamView",
+            needs: ["fanChartCommon", "jsPDF"],
+            modules: ["views/superBigFamTree/SuperBigFamView.js"],
+        },
+        "surnames": {
+            title: "Surnames List",
+            className: "SurnamesView",
+            scripts: ["views/surnames/surnames.js"],
+            styles: ["views/surnames/surnames.css"],
+        },
+        "timeline": {
+            title: "Family Timeline",
+            className: "TimelineView",
+            needs: ["visTimeline"],
+            scripts: ["views/timeline/TimelineView.js"],
+        },
+        "timelineTree": {
+            title: "Timeline Tree",
+            className: "TimelineTreeView",
+            modules: ["views/timelineTree/timelineTree.js"],
+            styles: ["views/timelineTree/timelineTree.css"],
+        },
+        "webs": {
+            title: "Ancestor Webs",
+            className: "WebsView",
+            needs: ["fanChartCommon"],
+            modules: ["views/webs/WebsView.js"],
+        },
+        "wt-dynamic-tree": {
+            title: "Dynamic Tree",
+            className: "WikiTreeDynamicTreeViewer",
+            needs: ["d3"],
+            scripts: ["views/baseDynamicTree/WikiTreeDynamicTreeViewer.js"],
+        },
+        "wtPlusMaps": {
+            title: "WT+ Maps",
+            className: "WtPlusMaps",
+            modules: ["views/wtPlusMaps/wtPlusMaps.js"],
+        },
+        "xtree": {
+            title: "X Family Tree",
+            className: "XTreeView",
+            needs: ["fanChartCommon"],
+            scripts: ["views/xTree/XTreeView.js"],
         },
     };
 

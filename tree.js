@@ -276,7 +276,9 @@ window.ViewRegistry = class ViewRegistry {
 
         const viewSelect = document.querySelector(this.VIEW_SELECT);
         viewSelect.innerHTML = options;
-        viewSelect.value = this.session.viewID || (Object.keys(this.apps).length ? Object.keys(this.apps)[0] : "");
+        const appIds = Object.keys(this.apps);
+        const defaultApp = appIds.find((id) => this.apps[id].default) || appIds[0] || "";
+        viewSelect.value = this.session.viewID || defaultApp;
 
         // Start loading an app's files as soon as it is selected, so it is (nearly) ready when GO is clicked.
         viewSelect.addEventListener("change", () => {
