@@ -86,7 +86,10 @@
                     .style("transform-origin", "0 0");
             });
         d3Container.call(zoom);
-        d3Container.call(zoom.transform, d3.zoomIdentity.scale(1).translate(originOffsetX, originOffsetY));
+        // apply initial translation/scale. On a narrow screen (e.g. a phone) the desktop offset would put the
+        // root person off the right edge, so centre it horizontally instead.
+        const startX = width > 0 ? Math.min(originOffsetX, Math.round(width / 2)) : originOffsetX;
+        d3Container.call(zoom.transform, d3.zoomIdentity.scale(1).translate(startX, originOffsetY));
 
         // Setup controllers for the ancestor and descendant trees
         self.ancestorTree = new AncestorTree(g);

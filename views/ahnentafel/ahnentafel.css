@@ -720,6 +720,13 @@
   z-index: 11000;
   cursor: default;
 }
+@media (max-width: 800px) {
+  #ahnentafelHelpText {
+    left: 0.5em;
+    right: 0.5em;
+    width: auto;
+  }
+}
 #ahnentafelHelpText h2 {
   margin: 0.2em 0;
   text-align: center;

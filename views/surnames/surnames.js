@@ -114,14 +114,21 @@ window.Surnames = class Surnames {
         this.surnamesSeen.push(p.LastNameAtBirth);
 
         // Add ancestor profiles recursively to our display.
+        // Take the parents from getPeople's copy of the starting profile where we can: when the viewer may not see
+        // private parents, getPerson gives Father/Mother as null, but getPeople still links them through placeholder
+        // profiles (negative Ids), so the older generations can still be shown.
+        const root = this.people?.[p.Id] || p;
         let paternal = new Array();
-        paternal.push(await this.nextPerson(p.Father));
+        paternal.push(this.nextPerson(root.Father ?? p.Father));
 
         let maternal = new Array();
-        maternal.push(await this.nextPerson(p.Mother));
+        maternal.push(this.nextPerson(root.Mother ?? p.Mother));
 
         // Display them all.
         this.displayAncestors(paternal, maternal);
+
+        // The list is drawn, so remove the "Gathering surnames..." notice.
+        wtViewRegistry.clearStatus();
     }
 
     // Call getPeople at the API to get our full set of ancestors. These are returned as a list of "people" that are not yet
@@ -134,8 +141,7 @@ window.Surnames = class Surnames {
             fields: this.profileFields,
             ancestors: this.maxGeneration
         });
-        this.people = new Array();
-        this.people = data[0].people;
+        this.people = data?.[0]?.people || {};
     }
 
     // This is a recursive function listing all of the surnames for the given set of people/ancestors, and then
@@ -194,7 +200,7 @@ window.Surnames = class Surnames {
         }
         */
 
-        if (id in this.people) {
+        if (id && id in this.people) {
             return this.people[id];
         }
 
@@ -205,6 +211,11 @@ window.Surnames = class Surnames {
     // Each generation is in a "row" with the paternal and maternal columns. Each row is just a list of surnames, styled to highlight
     // new surnames, and sized by generation.
     displayPerson(person) {
+        // A private profile the viewer may not see: getPeople gives it a negative Id and no names.
+        if (person.Id < 0 || (person.Id != 0 && !person.Name)) {
+            return `<div class="surnameItem" title="Private profile">[private]</div>`;
+        }
+
         let classes = "surnameItem";
         if (this.surnamesSeen.indexOf(person.LastNameAtBirth) < 0 && person.Id != 0) {
             classes += " newSurname";

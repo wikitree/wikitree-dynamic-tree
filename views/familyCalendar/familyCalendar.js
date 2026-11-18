@@ -11,14 +11,26 @@ window.CalendarView = class CalendarView extends View {
     }
 
     close() {
-        // Another view is about to be activated, remove the display options
-        $("#view-options").remove();
+        // Another view is about to be activated, remove the display options.
+        // Use an attribute selector so that every copy is removed, not just the first.
+        $("[id='view-options']").remove();
+    }
+
+    static monthFromParam(month) {
+        const currentMonth = new Date().getMonth() + 1;
+        if (month === undefined || month === null) return currentMonth;
+        const text = String(month).trim();
+        if (/^\d+$/.test(text)) {
+            const n = parseInt(text, 10);
+            return n >= 1 && n <= 12 ? n : currentMonth;
+        }
+        const abbr = text.slice(0, 3).toLowerCase();
+        const index = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"].indexOf(abbr);
+        return index >= 0 ? index + 1 : currentMonth;
     }
 
     init(selector, person_id, params) {
-        if ($("#view-options").length) {
-            $("#view-options").remove();
-        }
+        $("[id='view-options']").remove();
         const displayOptionsHTML = `
             <div id="view-options">
                 <label for="display-mode">Display Mode:</label>
@@ -29,12 +41,14 @@ window.CalendarView = class CalendarView extends View {
             </div>
         `;
 
-        $("main").append(displayOptionsHTML);
+        // index.html has an inner <main> (holding the info panel) inside <main id="main">, so
+        // $("main") would add the options twice. Add them once, to the inner one.
+        const $optionsParent = $("#main main").length ? $("#main main").first() : $("main").first();
+        $optionsParent.append(displayOptionsHTML);
 
-        // If 'month' parameter exists, store it (default to current month if not present)
-        const selectedMonth = isNaN(params.month)
-            ? new Date(Date.parse(params.month + " 1")).getMonth() + 1
-            : parseInt(params.month) || new Date().getMonth() + 1;
+        // 'month' may be a number (1-12) or a month name; default to the current month.
+        // (Date.parse("undefined 1") is January in Chrome but NaN in Safari, so don't rely on it.)
+        const selectedMonth = CalendarView.monthFromParam(params.month);
 
         // Use 'viewMode' to set the default display mode
         const selectedViewMode = params.viewMode || "list"; // default to list view

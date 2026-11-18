@@ -502,8 +502,10 @@ window.CouplesTreeView = class CouplesTreeView extends View {
 
             d3Container.call(zoom);
 
-            // apply initial translation/scale
-            d3Container.call(zoom.transform, d3.zoomIdentity.scale(1).translate(originOffsetX, originOffsetY));
+            // apply initial translation/scale. On a narrow screen (e.g. a phone) the desktop offset would put the
+            // root person off the right edge, so centre it horizontally instead.
+            const startX = width > 0 ? Math.min(originOffsetX, Math.round(width / 2)) : originOffsetX;
+            d3Container.call(zoom.transform, d3.zoomIdentity.scale(1).translate(startX, originOffsetY));
 
             // Setup controllers for the ancestor and descendant trees
             this.ancestorTree = new AncestorTree(g);
@@ -561,12 +563,23 @@ window.CouplesTreeView = class CouplesTreeView extends View {
         loadAndDraw(id) {
             condLog(`loadAndDraw(${id})`);
             const self = this;
-            self.richLoad(id).then(function (person) {
-                condLog(`=======RICH_LOADed ${person.toString()}`, person);
-                const aRoot = new Couple("A", { a: person, isRoot: true });
-                const dRoot = new Couple("D", { a: person, isRoot: true });
-                self.drawTree(aRoot, dRoot);
-            });
+            // The first draw waits for several rounds of getPerson calls (the person, their parents, spouse and
+            // children, and those people's spouses), so say that something is happening rather than show an empty area.
+            wtViewRegistry.showNotice("Loading the tree...");
+            self.richLoad(id)
+                .then(function (person) {
+                    condLog(`=======RICH_LOADed ${person.toString()}`, person);
+                    const aRoot = new Couple("A", { a: person, isRoot: true });
+                    const dRoot = new Couple("D", { a: person, isRoot: true });
+                    self.drawTree(aRoot, dRoot);
+                    wtViewRegistry.clearStatus();
+                })
+                .catch(function (error) {
+                    console.error("Couples Tree: loading failed", error);
+                    wtViewRegistry.showError(
+                        `The tree could not be loaded (${error?.message || error}). Please try again in a minute.`
+                    );
+                });
         }
 
         /**

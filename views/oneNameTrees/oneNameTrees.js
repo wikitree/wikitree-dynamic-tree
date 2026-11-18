@@ -2855,9 +2855,7 @@ window.OneNameTrees = class OneNameTrees extends View {
                     spouseInfo.Id
                 }' data-gender='${gender}' data-marriage-date='${marriageDate}'>m. <a href="https://www.wikitree.com/wiki/${
                     spouseInfo.Name
-                }" target="_blank">${spouseName}</a>${spouseAkaLastNames} <span class='wtid'>(
-                    spouseInfo.Name || ""
-                })</span>${duplicateLink} <span class='dates'>${this.displayDates(
+                }" target="_blank">${spouseName}</a>${spouseAkaLastNames} <span class='wtid'>(${spouseInfo.Name || ""})</span>${duplicateLink} <span class='dates'>${this.displayDates(
                     spouseInfo
                 )}</span> ${married}</span>`;
             }

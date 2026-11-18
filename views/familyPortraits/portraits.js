@@ -30,6 +30,7 @@ window.PortraitView = class PortraitView extends View {
         const validSiblings = (siblings) => ['1', '0'].includes(siblings) ? siblings : '1';
         const siblings = validSiblings(params.siblings);
 
+        this.photoCount = 0;
         var pageNumber = 0;
         this.getPages(pageNumber, selector, person_id, ancestors, siblings);
     }
@@ -106,10 +107,17 @@ window.PortraitView = class PortraitView extends View {
                     galleryContainer.append(newGalleryDiv);
                 }
 
-                var numPeople = Object.keys(data[0].people).length;
+                this.photoCount += photoDataList.length;
+
+                var numPeople = Object.keys(data[0].people || {}).length;
                 if (numPeople === 1000) {
                     pageNumber += 1000;
                     this.getPages(pageNumber, selector, person_id, ancestors, siblings);
+                } else if (this.photoCount === 0 && galleryContainer) {
+                    // Last page and nothing found: say so, rather than leaving an empty page that looks broken.
+                    galleryContainer.append(
+                        $('<p class="no-portraits"></p>').text("No portraits found for these ancestors.")
+                    );
                 }
             }
         }).catch((error) => {

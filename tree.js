@@ -141,7 +141,9 @@ window.ViewRegistry = class ViewRegistry {
 
             document.querySelector(this.WT_ID_TEXT).value = this.session.personName;
             document.querySelector(this.VIEW_SELECT).value = this.session.viewID;
-            document.querySelector(this.SHOW_BTN).click();
+            // Call onSubmit directly rather than clicking the "Go" button: a view (e.g. One Name Trees)
+            // may have disabled the button, and a disabled button ignores clicks, so the view would never change.
+            this.onSubmit(new Event("submit", { cancelable: true }));
         }
     }
 
@@ -412,7 +414,24 @@ window.LoginManager = class LoginManager {
         const authcode = searchParams.get("authcode") ? searchParams.get("authcode") : null;
 
         if (this.user.isLoggedIn()) {
-            this.events?.onLoggedIn(this.user);
+            // Our cookies only remember who logged in. The API session (cookies on api.wikitree.com) can have
+            // expired since, and then private profiles come back without names or relatives. So check with the API
+            // before saying "Logged into Apps", and offer the login button again if the session has gone.
+            this.wtAPI
+                .postToAPI({ appId: "LoginManager", action: "clientLogin", checkLogin: this.user.id })
+                .then((data) => {
+                    if (data?.clientLogin?.result === "ok") {
+                        this.events?.onLoggedIn(this.user);
+                    } else {
+                        this.clearCookies();
+                        this.user = new WTUser();
+                        this.events?.onUnlogged();
+                    }
+                })
+                .catch(() => {
+                    // The check itself failed (e.g. no network): carry on as before rather than log the user out.
+                    this.events?.onLoggedIn(this.user);
+                });
         } else if (authcode) {
             // user is not logged in yet, but we've received authcode
             this.wtAPI.postToAPI({ action: "clientLogin", authcode: authcode }).then((data) => this.onAuth(data));
@@ -421,9 +440,13 @@ window.LoginManager = class LoginManager {
         }
     }
 
-    logout() {
+    clearCookies() {
         this.wtAPI.cookie(this.C_WT_USERNAME, "", { path: "/", expires: new Date("Thu, 01 Jan 1970 00:00:01 GMT") });
         this.wtAPI.cookie(this.C_WT_USER_ID, "", { path: "/", expires: new Date("Thu, 01 Jan 1970 00:00:01 GMT") });
+    }
+
+    logout() {
+        this.clearCookies();
         this.wtAPI.postToAPI({ appId: "LoginManager", action: "clientLogin", doLogout: 1 }).then((data) => {
             window.location.reload();
         });

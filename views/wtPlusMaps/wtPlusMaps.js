@@ -29,7 +29,7 @@ window.WtPlusMaps = class WtPlusMaps extends View {
         <button id="descendants" class="small button" onClick="wtViewRegistry.currentView.setMap('D');" title="Shows a map of descendants.">Descendants</button>
         <button id="nuclear" class="small button" onClick="wtViewRegistry.currentView.setMap('N');" title="Shows a map of the nuclear family.">Nuclear family</button>
         <button id="managed" class="small button" onClick="wtViewRegistry.currentView.setMap('M');" title="Shows a map of all managed profiles.">Managed profiles</button></center>
-        <iframe id="map" src="https://plus.wikitree.com/findmap.htm?aid=${person_id}&grouptype=A&appid=TA-wtPlusMaps-init" width="100%" height="850px"></iframe>`;
+        <iframe id="map" src="https://plus.wikitree.com/findmap.htm?aid=${person_id}&grouptype=A&appid=TA-wtPlusMaps-init" style="width: 100%; height: clamp(400px, 85vh, 850px); border: 0;"></iframe>`;
     }
 };
 

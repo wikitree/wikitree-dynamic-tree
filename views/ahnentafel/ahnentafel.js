@@ -27,11 +27,21 @@ window.AhnentafelView = class AhnentafelView extends View {
         this.close();
         $("#view-container").css("min-height", "0").addClass("ahnentafelView");
         let ahnen = new AhnentafelAncestorList(container_selector, person_id);
+        this.ahnen = ahnen;
         ahnen.clearData(); // Clear existing data
         ahnen.displayAncestorList();
     }
 
     close() {
+        // Stop the previous list/report. Otherwise, after a switch through the page hash (no reload), its
+        // unfinished loading or report build carries on and writes into the new view's #ahnentafelReport.
+        if (this.ahnen) {
+            this.ahnen.destroy();
+            this.ahnen = null;
+        }
+        $("body").removeClass("report-mode");
+        $("#ahnentafelReportWrapper,#ahnentafelHelpText").remove();
+        $(document).off("keydown.ahnentafelHelp");
         $("#moreGenerationsButton").off("click").remove();
         $("header #ahnentafelHeaderBox").remove();
         $("#ahnentafelOptions").remove();
@@ -307,25 +317,35 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
     }
 
     addHelpText() {
-        if ($("#ahnentafelHelpText").length === 0) {
-            $("#view-container").append(this.helpText);
-            $("#ahnentafelHelpText").draggable();
-            $("#help-button").on("click", () => {
-                $("#ahnentafelHelpText").slideToggle();
-            });
-            $("#ahnentafelHelpText x").on("click", () => {
-                $("#ahnentafelHelpText").slideUp();
-            });
-            $("#ahnentafelHelpText").on("dblclick", () => {
-                $("#ahnentafelHelpText").slideUp();
-            });
-            // Event listener for the Escape key
-            $(document).on("keydown", (e) => {
+        // The help text lives in #view-container, which is emptied when the list is redrawn, so add it back
+        // (with its handlers) whenever it is missing rather than only once.
+        const ensureHelpText = () => {
+            let $help = $("#ahnentafelHelpText");
+            if ($help.length === 0) {
+                $help = this.helpText.appendTo("#view-container");
+                $help.draggable();
+                $help.find("x").on("click", () => $help.slideUp());
+                $help.on("dblclick", () => $help.slideUp());
+            }
+            return $help;
+        };
+        $("#ahnentafelHeaderBox #help-button")
+            .off("click.ahnentafelHelp")
+            .on("click.ahnentafelHelp", () => ensureHelpText().slideToggle());
+        // Escape closes the help text
+        $(document)
+            .off("keydown.ahnentafelHelp")
+            .on("keydown.ahnentafelHelp", (e) => {
                 if (e.key === "Escape") {
                     $("#ahnentafelHelpText").slideUp();
                 }
             });
-        }
+    }
+
+    // Called when the view is closed or restarted: stop any loading or report building still in progress.
+    destroy() {
+        this.closed = true;
+        this.reportState.cancel = true;
     }
 
     clearData() {
@@ -551,6 +571,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
             key: this.startId,
             fields: this.profileFields,
         });
+        if (this.closed) return;
 
         if (data.length != 1) {
             wtViewRegistry.showError(`There was an error starting with ${this.startId}.`);
@@ -598,6 +619,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
                     start: start,
                     limit: limit,
                 });
+                if (this.closed) return;
                 if (!ancestorData && this.ancestors.length == 0) {
                     wtViewRegistry.showError(`Error: No ancestors found for ${p.Name}`);
                     return;
@@ -664,6 +686,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         this.trackChanges(); // Start tracking changes
         this.captureState(); // Capture the initial state
         this.addAccessKeys(); // Add access keys
+        this.addHelpText(); // Make the "?" button show the help text
         this.updateReportGenerationSelect(true);
         this.applyViewMode(this.settings.reportMode);
     }
@@ -2172,6 +2195,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
     }
 
     updateReportStatus(msg) {
+        if (this.closed) return;
         const text = msg || "";
         const $status = $("#ahnentafelReportStatus");
         if (this.reportState?.running) {
@@ -2270,6 +2294,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
         } catch (err) {
             console.error(`[startReportBuild] Unexpected error prefetching first person:`, err);
         }
+        if (this.closed) return;
         try {
             await this.processReportQueue(people);
         } catch (error) {
@@ -2288,6 +2313,10 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
     }
 
     finishReportBuild(reason = "") {
+        if (this.closed) {
+            this.reportState.running = false;
+            return;
+        }
         this.setReportUiState({ busy: false });
         this.reportState.running = false;
 
@@ -3157,6 +3186,7 @@ window.AhnentafelAncestorList = class AhnentafelAncestorList {
     }
 
     renderReportAncestor(person, data) {
+        if (this.closed) return;
         let personData = this.ancestors.find((a) => a.Id === person.id);
         if (!personData) {
             personData = {
